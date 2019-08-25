@@ -11,7 +11,7 @@ This repository provides a set of libraries and tools to ease development of IoT
     * middleware: Middle-ware libraries
 
 * test: Test folder
-    * libs: Test libraries
+    * stubs: Stub libraries
 
 * tools: Tools folder
 
