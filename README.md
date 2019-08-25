@@ -8,7 +8,7 @@ This repository provides a set of libraries and tools to ease development of IoT
 * src: Source code folder
     * comm: Communication libraries
     * drivers: Driver libraries
-    * middleware: Middle-ware libraries
+    * middleware: Middleware libraries
 
 * test: Test folder
     * stubs: Stub libraries
