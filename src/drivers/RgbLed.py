@@ -8,7 +8,7 @@ class RgbLed(object):
         self.Blue = Led(pin_blue, True)
         
 
-    def ColorSet(self, red, green, blue):
+    def Color(self, red, green, blue):
         self.Red.Intensity(red)
         self.Green.Intensity(green)
         self.Blue.Intensity(blue)
