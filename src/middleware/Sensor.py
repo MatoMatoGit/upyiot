@@ -2,7 +2,7 @@ import AvgFilter
 import Log
 import os
 import ustruct
-from errno import ENOENT
+from SubjectObserver import Subject
 
 class Sensor(object):
     FILE_SAMPLES_MAX        = 9999
@@ -30,11 +30,10 @@ class Sensor(object):
         SAMPLE_FMT = "<i"
         
         self.SensorAbstraction = sensor_abs
-        self.LastRawSample = 0
-        self.AvgSample = 0
         self.NumSamples = 0
         self.Filter = AvgFilter.AvgFilter(filter_depth)
         self.SensorFile = directory + '/' + name
+        self.NewSample = Subject()
         
         FILE_OFFSET_META = 0
         META_SIZE = ustruct.calcsize(META_FMT)
@@ -64,14 +63,10 @@ class Sensor(object):
         
         self.__SensorFileWriteSample(avg_sample)
         
-        self.LastRawSample = sample
-        self.AvgSample = avg_sample
-    
-    def ValueRaw(self):
-        return self.LastRawSample
-    
+        self.NewSample.State = avg_sample
+      
     def ValueAverage(self):
-        return self.AvgSample
+        return self.NewSample.State
     
     def SamplesCountGet(self):
         return self.NumSamples
@@ -87,13 +82,16 @@ class Sensor(object):
     
     def Reset(self):
         self.LastRawSample = 0
-        self.AvgSample = 0
         self.NumSamples = 0
         self.Filter.Reset()
         
     def Read(self):
         self.__Process(self.SensorAbstraction.Read())
-        return self.AvgSample
+        self.SubjectSample.State = self.AvgSample
+        return self.NewSample.State
+    
+    def ObserverAttachNewSample(self, observer):
+        self.NewSample.Attach(observer)
     
     def __SensorFileReadMeta(self, file):
         global FILE_OFFSET_META
