@@ -98,10 +98,8 @@ class NetCon:
 	
 	def __NetConFileRead(self):
 		f = open(self.RootDir + self.PATH_NET_CON, 'r')
-		ssid = f.readline()
-		ssid = ssid.replace('\n', '')
-		pwd = f.readline()
-		pwd = pwd.replace('\n', '')
+		ssid = f.readline().strip('\n')
+		pwd = f.readline().strip('\n')
 		f.close()
 		self.Log.Print("SSID: {}, PWD: {}".format(ssid, pwd), "FileRead")
 		return ssid, pwd
