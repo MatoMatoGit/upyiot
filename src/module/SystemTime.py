@@ -41,7 +41,7 @@ class SystemTime:
             raise Exception("Only a single instance of this class is allowed")
     
     @staticmethod
-    async def SystemTimeService():
+    async def Service():
         time_inst = SystemTime.InstanceGet()
         while True:
             ntp_time = SystemTime.__NtpTimeGet(time_inst)

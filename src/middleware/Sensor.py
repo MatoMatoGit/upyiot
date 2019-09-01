@@ -2,6 +2,7 @@ import AvgFilter
 import Log
 import os
 import ustruct
+import uasyncio
 from SubjectObserver import Subject
 
 class Sensor(object):
@@ -14,7 +15,7 @@ class Sensor(object):
     SAMPLE_FMT              = ""
     SAMPLE_SIZE             = 0
       
-    def __init__(self, directory, name, filter_depth, sensor_abs):
+    def __init__(self, directory, name, filter_depth, sensor_abs, interval_ms):
         global FILE_OFFSET_SAMPLE_DATA
         global FILE_OFFSET_META
         global FILE_SAMPLES_MAX
@@ -34,6 +35,7 @@ class Sensor(object):
         self.Filter = AvgFilter.AvgFilter(filter_depth)
         self.SensorFile = directory + '/' + name
         self.NewSample = Subject()
+        self.SampleIntervalMs = interval_ms
         
         FILE_OFFSET_META = 0
         META_SIZE = ustruct.calcsize(META_FMT)
@@ -73,7 +75,9 @@ class Sensor(object):
     
     def SamplesGet(self, buf):
         self.__SensorFileDumpSamples(buf)
-        return self.NumSamples
+        num_samples = self.NumSamples
+        self.NumSamples = 0
+        return num_samples
   
     def SamplesClear(self):
         self.__SensorFileDelete()
@@ -92,6 +96,10 @@ class Sensor(object):
     
     def ObserverAttachNewSample(self, observer):
         self.NewSample.Attach(observer)
+    
+    async def Service(self):
+        self.Read()
+        await uasyncio.sleep_ms(self.SampleIntervalMs)
     
     def __SensorFileReadMeta(self, file):
         global FILE_OFFSET_META

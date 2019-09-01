@@ -21,7 +21,7 @@ class Battery(object):
         self.Level.Attach(observer)
     
     @staticmethod
-    async def BatteryService():
+    async def Service():
         # Read the current battery voltage, convert it to a percentage,
         # and notify all observers.
         volt = Battery.VoltSensor.Read()

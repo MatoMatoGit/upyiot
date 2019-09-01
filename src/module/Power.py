@@ -16,8 +16,7 @@ class Power(object):
     
     BATTERY_LOW_SLEEP_SEC = 3600
     
-    def __init__(self, battery, battery_level_threshold):   
-        self.Battery = battery
+    def __init__(self, battery_level_threshold):   
         # Create a observer for the battery level. 
         self.BatteryObserver = BatteryObserver()
         # Create a set for all BeforeSleep callbacks.
@@ -48,7 +47,7 @@ class Power(object):
         self.SleepRequest = seconds * 1000
          
     @staticmethod  
-    def PowerService():
+    def Service():
         # Check if the current battery level is below the threshold.
         # If this is the case the device will go to sleep even when not 
         # requested.
