@@ -14,8 +14,6 @@ class MoistureObserver(Observer):
     
 class Notifyer(object):
     
-    NOTIFICATION_INTERVAL_SEC = 120
-    
     def __init__(self, color_mapping, rgbled_obj):
         super().__init__()
         self.Moisture = MoistureObserver()
@@ -29,12 +27,12 @@ class Notifyer(object):
         return 0
         
     @staticmethod
-    async def Service():
-        Notifyer.RgbLed.Color(Notifyer.__MapParametersToColors(
+    async def Service(t_sleep_sec):
+        Notifyer.RgbLed.Color(Notifyer._MapParametersToColors(
             Notifyer.Moisture.MoistureLevel))
-        await uasyncio.sleep(Notifyer.NOTIFICATION_INTERVAL_SEC)
+        await uasyncio.sleep(t_sleep_sec)
     
     @staticmethod
-    def __MapParametersToColors(moisture):
+    def _MapParametersToColors(moisture):
         return (0, 0, moisture)
     

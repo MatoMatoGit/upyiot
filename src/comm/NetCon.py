@@ -8,7 +8,7 @@ class NetCon:
 	PATH_NET_CON = "/" + FILE_NET_CON
 	CONN_RETRIES = 5
 	
-	def __init__(self, net_con_dir, ap_cfg, log_en):
+	def _init_(self, net_con_dir, ap_cfg, log_en):
 		self.RootDir = net_con_dir
 		self.Connected = False
 		self.ApSsid = ap_cfg[0]
@@ -31,24 +31,24 @@ class NetCon:
 
 	def StationSettingsStore(self, ssid, pwd):
 		self.Log.Print("Storing station settings.")
-		self.__NetConFileWrite(ssid, pwd)
+		self._NetConFileWrite(ssid, pwd)
 	
 	def StationSettingsReset(self):
 		self.Log.Print("Resetting station settings.")
-		self.__NetConFileDelete()
+		self._NetConFileDelete()
 		
 	def StationSettingsAreSet(self):
-		return self.__NetConFileExists()
+		return self._NetConFileExists()
 	
 	def StationStart(self):
-		if (self.__NetConFileExists() == False):
+		if self._NetConFileExists() is False:
 			self.Log.Print("No station settings stored.")
 			return False
-		elif (self.Connected == True):
+		elif self.Connected is True:
 			self.Log.Print("Already connected.")
 			return False
 		else:
-			ssid, pwd = self.__NetConFileRead()
+			ssid, pwd = self._NetConFileRead()
 			self.Log.Print("Starting station mode. Connecting to SSID: {}".format(ssid))
 			self.NetIf = network.WLAN(network.STA_IF)
 			self.NetIf.active(True)
@@ -60,7 +60,7 @@ class NetCon:
 				self.NetIf.connect(ssid, pwd)
 				time.sleep(5)					
 				self.Connected = self.NetIf.isconnected()
-				if (self.Connected == True):
+				if self.Connected is True:
 					self.Log.Print("Connected. ifconfig: {}".format(self.NetIf.ifconfig()))
 					break
 				else:
@@ -74,29 +74,29 @@ class NetCon:
 		self.NetIf.disconnect()
 		self.NetIf.active(False)
 		self.Log.Print("Stopping station mode.")
-		if(self.Connected == True):
+		if self.Connected is True:
 			self.Log.Print("Disconnected.")
 			self.Connected = False
 		
 		
 
-	def __NetConFileExists(self):
+	def _NetConFileExists(self):
 		ls_dir = os.listdir(self.RootDir)
 		self.Log.Print("Directory {} contains {}.".format(self.RootDir, ls_dir), "FileExists")
 		for node in ls_dir:
 			self.Log.Print("File {}".format(node), "FileExists")
-			if (self.FILE_NET_CON in node):
+			if self.FILE_NET_CON in node:
 				return True;
 
 		return False;
 	
-	def __NetConFileWrite(self, ssid, pwd):
+	def _NetConFileWrite(self, ssid, pwd):
 		f = open(self.RootDir + self.PATH_NET_CON, 'w')
 		f.write(ssid + '\n')
 		f.write(pwd + '\n')
 		f.close()
 	
-	def __NetConFileRead(self):
+	def _NetConFileRead(self):
 		f = open(self.RootDir + self.PATH_NET_CON, 'r')
 		ssid = f.readline().strip('\n')
 		pwd = f.readline().strip('\n')
@@ -104,7 +104,7 @@ class NetCon:
 		self.Log.Print("SSID: {}, PWD: {}".format(ssid, pwd), "FileRead")
 		return ssid, pwd
 	
-	def __NetConFileDelete(self):
+	def _NetConFileDelete(self):
 		self.Log.Print("Deleting file {}".format(self.RootDir + self.PATH_NET_CON))
 		try:
 			os.remove(self.RootDir + self.PATH_NET_CON)
