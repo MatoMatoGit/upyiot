@@ -1,34 +1,22 @@
 from micropython import const
-from SubjectObserver import Subject
 import uasyncio
-
 
 class Battery(object):
     
-    BATTERY_READ_INTERVAL_SEC = const(3600)
     LIPO_VOLT_TO_PERCENT_CURVE = (4.4, 3.9, 3.75, 3.7, 3,65, 3)
     LIPO_VOLT_TO_PERCENT_STEP = const(25)
     
     def __init__(self, num_cells, volt_sensor_obj):
         self.NumCells = num_cells
         self.VoltSensor = volt_sensor_obj
-        self.Level = Subject()
-        
-    def Level(self):
-        return self.Level.State
+        self.Level = 100
     
-    def ObserverAttachLevel(self, observer):
-        self.Level.Attach(observer)
-    
-    @staticmethod
-    async def Service():
-        # Read the current battery voltage, convert it to a percentage,
-        # and notify all observers.
+    def ReadLevel(self):
+        # Read the current battery voltage and convert it to a percentage.
         volt = Battery.VoltSensor.Read()
-        Battery.Level.State = Battery.VoltageToPercent(volt)
-        await uasyncio.sleep(Battery.BATTERY_READ_INTERVAL_SEC)
-        
-        
+        Battery.Level = Battery.VoltageToPercent(volt)
+        return Battery.Level
+       
     @staticmethod
     def VoltageToPercent(volt):
         if volt > Battery.LIPO_VOLT_TO_PERCENT_CURVE[0]:
