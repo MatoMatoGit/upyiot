@@ -1,53 +1,129 @@
 import uasyncio
-import uasyncio.queues
 import umqtt.simple
 import ujson
+import utime
+import uerrno
 from micropython import const
+from lib import StructFile
+from zmq.backend import exc
 
-class ExchangeEndPoint(object):
+
+class DataMessage:
     
-    def __init__(self, mtype, msub_type, url):
-        self.Queue = uasyncio.Queue()
+    SER_BUFFER_SIZE     = const(300)
+    
+    Msg = dict()
+    MSG_SECTION_META     = "meta"
+    MSG_SECTION_DATA     = "data"
+    MSG_META_DATETIME    = "dt"
+    MSG_META_VERSION     = "ver"
+    MSG_META_TYPE        = "type"
+    MSG_META_SUBTYPE     = "sbtype"
+    MSG_META_ID          = "id"
+    
+    Msg[MSG_SECTION_META][MSG_META_DATETIME]   = "2019-09-04T23:34:44"
+    Msg[MSG_SECTION_META][MSG_META_VERSION]    = 1
+    Msg[MSG_SECTION_META][MSG_META_TYPE]       = 1
+    Msg[MSG_SECTION_META][MSG_META_SUBTYPE]    = 1
+    Msg[MSG_SECTION_META][MSG_META_ID]         = 0
+        
+    _SerBuffer = bytearray(SER_BUFFER_SIZE)
+    
+    @staticmethod
+    def DeviceId(device_id=None):
+        if device_id is None:
+            return DataMessage.Msg[DataMessage.MSG_SECTION_META][DataMessage.MSG_META_ID]
+        DataMessage.Msg[DataMessage.MSG_SECTION_META][DataMessage.MSG_META_ID] = device_id
+    
+    @staticmethod
+    def Create(datetime, msg_data_dict, msg_type, msg_subtype):
+        if DataMessage._Instance is None:
+            DataMessage.__init__(self)
+        
+        DataMessage.Msg[DataMessage.MSG_SECTION_META][DataMessage.MSG_META_DATETIME] = datetime
+        DataMessage.Msg[DataMessage.MSG_SECTION_META][DataMessage.MSG_META_TYPE] = msg_type
+        DataMessage.Msg[DataMessage.MSG_SECTION_META][DataMessage.MSG_META_SUBTYPE] = msg_subtype
+        DataMessage.Msg[DataMessage.MSG_SECTION_DATA] = msg_data_dict
+    
+    @staticmethod
+    def Message():
+        return DataMessage.Msg
+    
+    @staticmethod
+    def Serialize():
+        ujson.dumpinto(DataMessage.Msg, DataMessage._SerBuffer)
+        return DataMessage._SerBuffer
+
+class ExchangeEndpoint(object):
+    
+    MSG_URL_LEN_MAX     = 30
+    MSG_DATA_LEN_MAX    = DataMessage.SER_BUFFER_SIZE
+    MSG_STRUCT_FMT      = "<ss"
+    MSG_LEN_MAX         = MSG_URL_LEN_MAX + MSG_DATA_LEN_MAX
+    
+    SourceDataFile = None
+    SinkDataFile = None
+    _PackBuffer = bytearray(MSG_LEN_MAX)
+    
+    @staticmethod
+    def FileDir(directory):
+        if ExchangeEndpoint.SourceDataFile is None:
+            ExchangeEndpoint.SourceDataFile = StructFile(directory + "/data_src", 
+                                                         ExchangeEndpoint.MSG_STRUCT_FMT)
+            ExchangeEndpoint.SinkDataFile = StructFile(directory + "/data_sink", 
+                                                       ExchangeEndpoint.MSG_STRUCT_FMT)
+
+    def __init__(self, max_count, mtype, msub_type, url):
+        self.MaxCount = max_count
         self.Type = mtype
         self.SubType = msub_type
-        self.Url = url
+        self.MsgUrl = url
+        self.MsgUrl.ljust(ExchangeEndpoint.MSG_URL_LEN_MAX, '\0')
+        
 
-    def Queue(self):
-        return self.Queue
+class DataSink(ExchangeEndpoint):
+    def __init__(self, max_count, mtype, msub_type, url):
+        super().__init__(max_count, mtype, msub_type, url)
     
-    def PutNoWait(self, *args):
+    def Put(self, json):
         if self.Queue.full() is True:
-            return -1
-
+            return uerrno.ENODATA
+        self.Queue.put(message)
         return 0
     
     def Get(self):
-        self.Queue.get()
+        """ Get a dictionary from the queue.
+        """
+        f = open('config.json', 'r')
+        cfg = ujson.load(f)
+        return self.Queue.get()
+    
+class DataSource(ExchangeEndpoint):
+    def __init__(self, max_count, mtype, msub_type, url):
+        super().__init__(max_count, mtype, msub_type, url)
+    
+    def Put(self, msg_data_dict, msg_type, msg_subtype):
+        if ExchangeEndpoint.SourceDataFile.Count is self.MaxCount:
+            return uerrno.ENODATA
         
+        DataMessage.Create(utime.datetime(), msg_data_dict, msg_type, msg_subtype)
+        ExchangeEndpoint.SourceDataFile.AppendData(self.MsgUrl, DataMessage.Serialize())
+        
+        return 0
     
-class Sink(ExchangeEndPoint):
-    
-    def __init__(self, mtype, msub_type, url):
-        super.__init__(mtype, msub_type, url)   
-
-
-class Source(ExchangeEndPoint):
-    
-    def __init__(self, mtype, msub_type, url, schema):
-        super.__init__(mtype, msub_type, url)
-        self.Schema = schema
+    def Get(self):
+        return self.Queue.get()
 
 class DataExchange(object):
     
-    DATA_EXCHANGE_INTERVAL_SEC = const(10)
     CONNECT_RETRY_INTERVAL_SEC = const(5)
     
-    def __init__(self, mqtt_client_obj, time_obj):
-        self.Time = time_obj
+    def __init__(self, directory, mqtt_client_obj, client_id):
         self.Sources = set()
         self.Sinks = set()
         self.MqttClient = mqtt_client_obj
-        
+        DataMessage.DeviceId(client_id)
+        ExchangeEndpoint.FileDir(directory)
         
     def RegisterDataSource(self, source):
         self.Sources.add(source)
@@ -56,8 +132,8 @@ class DataExchange(object):
         self.Sinks.add(sink)
     
     @staticmethod
-    async def Service():
-        DataExchange.__MqttSetup()
+    async def Service(t_sleep_sec):
+        DataExchange._MqttSetup()
         
         while True:      
             # Check the registered sources for queued data.     
@@ -72,13 +148,13 @@ class DataExchange(object):
             # has arrived. If no message is pending this function check_msg will return.
             DataExchange.MqttClient.check_msg()
             
-            await uasyncio.sleep(DataExchange.DATA_EXCHANGE_INTERVAL_SEC)
+            await uasyncio.sleep(t_sleep_sec)
     
     @staticmethod
-    def __MqttSetup():
+    def _MqttSetup():
         print("[MQTT] Connecting to server.")
         connected = False
-        # Try to connect the MQTT server, if it fails rety after the specified
+        # Try to connect the MQTT server, if it fails retry after the specified
         # interval.
         while connected is False:
             try:
