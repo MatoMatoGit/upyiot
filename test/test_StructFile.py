@@ -1,4 +1,7 @@
-import StructFile
+import sys
+sys.path.append('../src/')
+
+from middleware import StructFile
 import unittest
 import uos as os
 import ustruct
@@ -19,8 +22,8 @@ class TestStructFile(unittest.TestCase):
 			print(f_err)
 
 	def testConstructor(self):       
-	    self.assertEqual(self.Sf.Count, 0)
-	    
+		self.assertEqual(self.Sf.Count, 0)
+
 	def testAppendData(self):
 		self.assertEqual(self.Sf.AppendData(1, 2), 1)
 		
@@ -72,9 +75,7 @@ class TestStructFile(unittest.TestCase):
 		
 		self.assertFalse(f_exists)
 
-	def testIterator(self):
-		values = range(0, 10, 2)
-		
+	def testIterator(self):	
 		i = 0
 		for i in range(0, 10, 2):
 			w_data = (i, i+1)
@@ -97,10 +98,5 @@ class TestStructFile(unittest.TestCase):
 			i = i + 1
 		
 		self.assertEqual(i, 0)
-		
-		
-
-if __name__ == '__main__':
-    unittest.main()
 
 
