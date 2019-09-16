@@ -3,10 +3,7 @@ Define a one-to-many dependency between objects so that when one object
 changes state, all its dependents are notified and updated automatically.
 """
 
-import abc
-
-
-class Subject:
+class Subject(object):
     """
     Know its observers. Any number of Observer objects may observe a
     subject.
@@ -14,41 +11,41 @@ class Subject:
     """
 
     def __init__(self):
-        self._observers = set()
-        self._subject_state = None
+        self._Observers = set()
+        self._State = None
 
     def Attach(self, observer):
-        observer._subject = self
-        self._observers.add(observer)
+        observer._Subject = self
+        self._Observers.add(observer)
 
     def Detach(self, observer):
-        observer._subject = None
-        self._observers.discard(observer)
-
-    def __Notify(self):
-        for observer in self._observers:
-            observer.update(self._subject_state)
-
+        observer._Subject = None
+        self._Observers.discard(observer)
+    
     @property
     def State(self):
-        return self._subject_state
-
+        return self._State
+    
     @State.setter
-    def State(self, arg):
-        self._subject_state = arg
-        self._notify()
+    def State(self, value):
+        self._State = value
+        self._Notify()
+        
+    def _Notify(self):
+        for observer in self._Observers:
+            observer.Update(self._State)
 
-
-class Observer(metaclass=abc.ABCMeta):
+class Observer(object):
     """
     Define an updating interface for objects that should be notified of
     changes in a subject.
     """
 
     def __init__(self):
-        self._subject = None
-        self._observer_state = None
+        self._Subject = None
 
-    @abc.abstractmethod
     def Update(self, arg):
         pass
+    
+    def Subject(self):
+        return self._Subject
