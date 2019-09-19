@@ -20,7 +20,7 @@ class StructFileIterator(object):
             except:
                 pass
             finally:
-                 self.File = None
+                self.File = None
 
     def __next__(self):
         if self.File is None:
