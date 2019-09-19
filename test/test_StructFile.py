@@ -1,7 +1,7 @@
 import sys
 sys.path.append('../src/')
 
-from middleware import StructFile
+from middleware.StructFile import StructFile
 import unittest
 import uos as os
 import ustruct
@@ -23,6 +23,7 @@ class TestStructFile(unittest.TestCase):
 
 	def testConstructor(self):       
 		self.assertEqual(self.Sf.Count, 0)
+		self.assertEqual(self.Sf.DataSize, ustruct.calcsize(TestStructFile.TEST_FMT))
 
 	def testAppendData(self):
 		self.assertEqual(self.Sf.AppendData(1, 2), 1)

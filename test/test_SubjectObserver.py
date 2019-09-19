@@ -3,18 +3,9 @@ sys.path.append('../src/')
 
 import unittest
 
-from middleware.SubjectObserver import Observer
-from middleware.SubjectObserver import Subject
-
-class ConcreteObserver(Observer):
-	"""
-	Implement the SubjectObserver updating interface to keep its state
-	consistent with the subject's.
-	Store state that should stay consistent with the subject's.
-	"""
-	
-	def Update(self, arg):
-		self.State = arg
+from stubs import TestObserver
+from middleware.SubjectObserver.SubjectObserver import Observer
+from middleware.SubjectObserver.SubjectObserver import Subject
 
 class TestSubjectObserver(unittest.TestCase):
 
@@ -27,7 +18,7 @@ class TestSubjectObserver(unittest.TestCase):
 		return
 	
 	def testAttach(self):
-		observer = ConcreteObserver()
+		observer = TestObserver.TestObserver()
 		self.Subject.Attach(observer)
 		
 		self.assertEqual(len(self.Subject._Observers), 1)
@@ -35,7 +26,7 @@ class TestSubjectObserver(unittest.TestCase):
 		self.assertEqual(observer.Subject(), self.Subject)
 		
 	def testDetach(self):
-		observer = ConcreteObserver()
+		observer = TestObserver.TestObserver()
 		self.Subject.Attach(observer)
 		
 		self.Subject.Detach(observer)
@@ -53,7 +44,7 @@ class TestSubjectObserver(unittest.TestCase):
 	def testSetStateWithObservers(self):
 		value = 4
 		
-		observer = ConcreteObserver()
+		observer = TestObserver.TestObserver()
 		self.Subject.Attach(observer)
 		self.Subject.State = value
 
