@@ -1,5 +1,4 @@
 from micropython import const
-import uasyncio
 
 class Battery(object):
     
