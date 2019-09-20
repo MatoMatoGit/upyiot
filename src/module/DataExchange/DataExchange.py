@@ -5,8 +5,6 @@ import utime
 import uerrno
 from micropython import const
 from lib import StructFile
-from zmq.backend import exc
-
 
 class DataMessage:
     
