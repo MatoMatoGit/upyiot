@@ -1,6 +1,8 @@
-from machine import Pin
+from micropython import const
 
-class PinStub(object):
+class Pin(object):
+    IRQ_FALLING = const(0)
+    IRQ_RISING  = const(1)
     
     def __init__(self, default_state):
         self.State = default_state
