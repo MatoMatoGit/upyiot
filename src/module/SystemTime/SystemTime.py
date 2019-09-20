@@ -6,63 +6,78 @@ try:
     import ustruct as struct
 except:
     import struct
-    
-from machine import RTC
-import uasyncio
+try:
+    from machine import RTC
+except:
+    from stubs.RtcStub import RTC
+
 import utime
- 
-# (date(2000, 1, 1) - date(1900, 1, 1)).days * 24*60*60
-NTP_DELTA = 2208988800
+from micropython import const
 
-host = "pool.ntp.org"
-
-
-class SystemTime:
+class SystemTime(object):
     
+    # (date(2000, 1, 1) - date(1900, 1, 1)).days * 24*60*60
+    NTP_DELTA       = 2208988800
+    NTP_FMT         = "!I"
+    NTP_HOST        = "pool.ntp.org"
+    NTP_BUF_SIZE    = const(48)
+    
+    RTC_DATETIME_YEAR   = const(0)
+    RTC_DATETIME_MONTH  = const(1)
+    RTC_DATETIME_DAY    = const(2)
+    RTC_DATETIME_HOUR   = const(4)
+    RTC_DATETIME_MINUTE = const(5)
+    RTC_DATETIME_SECOND = const(6)
+       
     _Instance = None
     _Rtc = None
-    
-    @staticmethod
-    def InstanceGet():
-        if SystemTime._Instance is None:
-            SystemTime() 
-        return SystemTime._Instance
-    
-    
+
     def Now(self):
-        return SystemTime._Rtc.now()
+        datetime = SystemTime._Rtc.now()
+        return datetime
+ 
+    def NowFormatted(self):
+        datetime = SystemTime._Rtc.now()
+        # Format the datetime tuple as such: YYYY-MM-DDThh:mm:ss
+        datetime_str = str(datetime[SystemTime.RTC_DATETIME_YEAR]) + '-' + str(datetime[SystemTime.RTC_DATETIME_MONTH]) + '-' + str(datetime[SystemTime.RTC_DATETIME_DAY]) + 'T' + str(datetime[SystemTime.RTC_DATETIME_HOUR]) + ':' +  str(datetime[SystemTime.RTC_DATETIME_MINUTE]) + ':' + str(datetime[SystemTime.RTC_DATETIME_SECOND])
+        return datetime_str
     
-    def _init_(self):
+    def __init__(self):
         if SystemTime._Instance is None:
+            print("Creating SystemTime instance")
             SystemTime._Instance = self
             SystemTime._Rtc = RTC()
         else:
             raise Exception("Only a single instance of this class is allowed")
-    
-    @staticmethod
-    async def Service(t_sleep_sec):
-        time_inst = SystemTime.InstanceGet()
-        while True:
-            ntp_time = SystemTime._NtpTimeGet(time_inst)
-            print("NTP Time: {}".format(ntp_time))
-            tm = utime.localtime(ntp_time)
-            tm = tm[0:3] + (0,) + tm[3:6] + (0,)
-            SystemTime._Rtc.datetime(tm)
-            await uasyncio.sleep(t_sleep_sec)      
-            
+       
     
     def _NtpTimeGet(self):
-        NTP_QUERY = bytearray(48)
-        NTP_QUERY[0] = 0x1b
+        ntp_query = bytearray(SystemTime.NTP_BUF_SIZE)
+        ntp_query[0] = 0x1b
         try:
-            addr = socket.getaddrinfo(host, 123)[0][-1]
+            addr = socket.getaddrinfo(SystemTime.NTP_HOST, 123)[0][-1]
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.settimeout(1)
-            res = s.sendto(NTP_QUERY, addr)
-            msg = s.recv(48)
+            s.sendto(ntp_query, addr)
+            msg = s.recv(SystemTime.NTP_BUF_SIZE)
             s.close()
-            val = struct.unpack("!I", msg[40:44])[0]
+            val = struct.unpack(SystemTime.NTP_FMT, msg[40:44])[0]
         except OSError:
             print("Failed to request NTP time.")
-            val = -1
-        return val - NTP_DELTA
+            return -1
+        return val - SystemTime.NTP_DELTA
+
+def InstanceAcquire():
+    if SystemTime._Instance is None:
+        SystemTime()
+    return SystemTime._Instance
+
+def Service():
+    time_inst = InstanceAcquire()
+    ntp_time = SystemTime._NtpTimeGet(time_inst)
+    print("NTP Time: {}".format(ntp_time))
+    if ntp_time > 0:
+        tm = utime.localtime(ntp_time)
+        tm = tm[0:3] + (0,) + tm[3:6] + (0,)
+        SystemTime._Rtc.datetime(tm)
+       
