@@ -3,7 +3,7 @@ sys.path.append('../src/')
 
 import unittest
 
-class TestTemplate(unittest.TestCase):
+class test_Template(unittest.TestCase):
 
 	
 	def setUp(arg):
@@ -12,4 +12,5 @@ class TestTemplate(unittest.TestCase):
 	def tearDown(arg):
 		return
 
-
+	def test_Test(self):
+		return

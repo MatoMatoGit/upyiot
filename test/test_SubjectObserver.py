@@ -7,17 +7,17 @@ from stubs import TestObserver
 from middleware.SubjectObserver.SubjectObserver import Observer
 from middleware.SubjectObserver.SubjectObserver import Subject
 
-class TestSubjectObserver(unittest.TestCase):
+class test_SubjectObserver(unittest.TestCase):
 
 	
 	def setUp(arg):
-		TestSubjectObserver.Subject = Subject()
+		test_SubjectObserver.Subject = Subject()
 		
 		
 	def tearDown(arg):
 		return
 	
-	def testAttach(self):
+	def test_Attach(self):
 		observer = TestObserver.TestObserver()
 		self.Subject.Attach(observer)
 		
@@ -25,7 +25,7 @@ class TestSubjectObserver(unittest.TestCase):
 		self.assertEqual(observer._Subject, self.Subject)
 		self.assertEqual(observer.Subject(), self.Subject)
 		
-	def testDetach(self):
+	def test_Detach(self):
 		observer = TestObserver.TestObserver()
 		self.Subject.Attach(observer)
 		
@@ -35,13 +35,13 @@ class TestSubjectObserver(unittest.TestCase):
 		self.assertEqual(observer._Subject, None)
 		self.assertEqual(observer.Subject(), None)
 		
-	def testSetStateNoObservers(self):
+	def test_SetStateNoObservers(self):
 		value = 4
 		self.Subject.State = value
 		
 		self.assertTrue(self.Subject._State, value)
 		
-	def testSetStateWithObservers(self):
+	def test_SetStateWithObservers(self):
 		value = 4
 		
 		observer = TestObserver.TestObserver()
@@ -50,7 +50,7 @@ class TestSubjectObserver(unittest.TestCase):
 
 		self.assertEqual(observer.State, value)
 		
-	def testGetState(self):
+	def test_GetState(self):
 		value = 4
 		self.Subject.State = value
 		
