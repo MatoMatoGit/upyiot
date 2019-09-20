@@ -74,7 +74,7 @@ def InstanceAcquire():
 
 def Service():
     time_inst = InstanceAcquire()
-    ntp_time = SystemTime._NtpTimeGet(time_inst)
+    ntp_time = time_inst._NtpTimeGet()
     print("NTP Time: {}".format(ntp_time))
     if ntp_time > 0:
         tm = utime.localtime(ntp_time)
