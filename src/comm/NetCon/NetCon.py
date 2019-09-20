@@ -1,6 +1,6 @@
 import os
 import network
-import time
+import utime
 import Log
 
 class NetCon:
@@ -58,7 +58,7 @@ class NetCon:
 			i = 0
 			while i < self.CONN_RETRIES:
 				self.NetIf.connect(ssid, pwd)
-				time.sleep(5)					
+				utime.sleep(5)				
 				self.Connected = self.NetIf.isconnected()
 				if self.Connected is True:
 					self.Log.Print("Connected. ifconfig: {}".format(self.NetIf.ifconfig()))
