@@ -6,12 +6,13 @@ This repository provides a set of libraries and tools to ease development of IoT
 ## Repo structure
 
 * src: Source code folder
-    * comm: Communication libraries
     * drivers: Driver libraries
     * middleware: Middleware libraries
+    * comm: Communication libraries
+    * app: Application libraries
 
 * test: Test folder
-    * stubs: Stub libraries
+    * stubs: Stub libraries used by tests.
 
 * tools: Tools folder
 
@@ -20,10 +21,6 @@ This repository provides a set of libraries and tools to ease development of IoT
 ## Libraries
 All available libraries can be found in the list below. The dependencies of each respective library (if any) are shown in a sublist. Dependencies containing the prefix 'upy-' are part of the Micropython environment.
 
-* comm-NetCon: WLAN Network connection management. Supports AP and Station mode.
-    * upy-network
-    * upy-os
-    * upy-time
 * driver-Led: Simple LED driver with PWM support.
     * upy-machine-Pin
 * driver-RgbLed: Simple RGB LED driver with PWM support.
@@ -32,13 +29,42 @@ All available libraries can be found in the list below. The dependencies of each
     * upy-machine-Pin
     * upy-machine-I2C
     * upy-time
+* driver-Battery: LiPO battery monitor.
+    * upy-const
+    * middleware-Sensor
 * middleware-AvgFilter: Averaging filter.
-* middleware-Sensor: Generic sensor library. Stores samples in a file. Optional sample averaging.
-    * middleware-AvgFilter
+* middleware-SubjectObserver: Subject and Observer classes. Eases implementation of the Subject-Observer pattern.
+* middleware-StructFile: Persistent storage of struct objects.
     * upy-os
     * upy-ustruct
-* middleware-SystemTime: Time management library. Periodically synchronizes the internal RTC to NTP.
+    * upy-const
+* middleware-Sensor: Generic sensor library. Stores samples in a file. Optional sample averaging.
+    * middleware-AvgFilter
+    * middleware-StructFile
+    * middleware-SubjectObserver-Subject
+* comm-NetCon: WLAN Network connection management. Supports AP and Station mode.
+    * upy-network
+    * upy-os
+    * upy-time
+* app-SystemTime: Time management library. Periodically synchronizes the internal RTC to NTP.
     * upy-socket
     * upy-ustruct
     * upy-uasyncio
     * upy-machine-RTC
+* app-Power: Power management library. Provides the following classes: power manager, service power manager, power supply.
+    * driver-Battery
+    * middleware-SubjectObserver-Subject
+    * middleware-StructFile
+    * upy-machine
+    * upy-uerrno
+* app-Notifyer: Provides a user notification service.
+    * driver-RgbLed
+    * middleware-SubjectObserver-Observer
+* app-DataExchange: JSON data exchange over MQTT via sinks and sources.
+    * middleware-StructFile
+    * upy-umqtt.robust
+    * upy-ujson
+    * upy-utime
+    * upy-uerrno
+    * upy-const
+
