@@ -3,6 +3,7 @@ pipeline {
     stages {
         stage('checkout') {
             steps {
+                sh 'rm -rf micropython'
                 sh 'git submodule update --init --recursive'
             }
         }
