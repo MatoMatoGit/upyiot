@@ -1,7 +1,13 @@
 import sys
 sys.path.append('../src/')
 
+# Test libraries
 import unittest
+from TestUtil import TestUtil
+
+# Unit Under Test
+
+# Other
 
 class test_Template(unittest.TestCase):
 
