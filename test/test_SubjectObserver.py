@@ -1,9 +1,11 @@
 import sys
 sys.path.append('../src/')
 
+# Test libraries
 import unittest
-
 from stubs import TestObserver
+
+# Unit Under Test
 from middleware.SubjectObserver.SubjectObserver import Observer
 from middleware.SubjectObserver.SubjectObserver import Subject
 
@@ -55,6 +57,11 @@ class test_SubjectObserver(unittest.TestCase):
 		self.Subject.State = value
 		
 		self.assertEqual(self.Subject.State, value)
-
+		
+	def test_ObserverCount(self):
+		observer = TestObserver.TestObserver()
+		self.Subject.Attach(observer)
+		
+		self.assertEqual(self.Subject.ObserverCount, 1)
 
 
