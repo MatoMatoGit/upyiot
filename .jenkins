@@ -8,7 +8,7 @@ pipeline {
         }
         stage('build') {
             steps {
-                sh 'cd micropython/ports/unix'
+                sh 'cd ./micropython/ports/unix'
                 sh 'make'
             }
         }
