@@ -23,6 +23,10 @@ class Subject(object):
         self._Observers.discard(observer)
     
     @property
+    def ObserverCount(self):
+        return len(self._Observers)
+    
+    @property
     def State(self):
         return self._State
     
