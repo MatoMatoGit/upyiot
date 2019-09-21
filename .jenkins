@@ -9,7 +9,7 @@ pipeline {
         stage('build') {
             steps {
                 dir("micropython/ports/unix") {
-                    sh 'make'
+                    sh 'make install'
                 }
             }
         }
