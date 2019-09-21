@@ -3,8 +3,10 @@ pipeline {
     stages {
         stage('build') {
             steps {
-                cd micropython/unix
-                make
+                script {
+                    cd micropython/unix
+                    make
+                }
             }
         }
     }
