@@ -16,23 +16,24 @@ SLEEP_TIME_MAX_SEC = const(86400)
 
 class PowerSupply(object):
     
-    POWER_SUPPLY_EN_POLARITY_ACTIVE_LOW   = const(0)
-    POWER_SUPPLY_EN_POLARITY_ACTIVE_HIGH  = const(1)
+    EN_POLARITY_ACTIVE_LOW   = const(0)
+    EN_POLARITY_ACTIVE_HIGH  = const(1)
     
     def __init__(self, en_pin, en_polarity, voltage):
         self.Voltage = voltage
         self.PinEnable = Pin(en_pin, Pin.OUT)
         self.Enabled = False
         self.Polarity = en_polarity
+        self.Enable(False)
 
     def Enable(self, en):
         if self.Enabled is True:
             return
         self.Enabled = en       
-        if self.Polarity is PowerSupply.SUPPLY_EN_POLARITY_ACTIVE_LOW:
+        if self.Polarity is PowerSupply.EN_POLARITY_ACTIVE_LOW:
             en = not en
         en = int(en)
-        self.PinEnable.value(en)
+        self.PinEnable.set(en)
 
 
 class ServicePowerManager(object):
@@ -96,7 +97,7 @@ class PowerManager(object):
     def RegisterCallbackBeforeSleep(self, callback):
         self.CbsBeforeSleep.add(callback)
         
-    def RegisterCalllbackLowBattery(self, callback):
+    def RegisterCallbackLowBattery(self, callback):
         self.CbsLowBattery.add(callback)
              
     def RegisterServicePowerManager(self, svc_power_mngr_obj):
