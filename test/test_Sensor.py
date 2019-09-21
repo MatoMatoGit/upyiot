@@ -1,11 +1,15 @@
 import sys
 sys.path.append('../src/')
 
+# Test libraries
 import unittest
-
 from stubs import TestObserver
 from stubs import DummySensor
+
+# Unit Under Test
 from middleware.Sensor import Sensor
+
+# Other
 from middleware.AvgFilter import AvgFilter
 
 class test_Sensor(unittest.TestCase):
