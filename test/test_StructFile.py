@@ -1,8 +1,14 @@
 import sys
 sys.path.append('../src/')
 
-from middleware.StructFile import StructFile
+# Test libraries
 import unittest
+from TestUtil import TestUtil
+
+# Unit Under Test
+from middleware.StructFile import StructFile
+
+# Other
 import uos as os
 import ustruct
 
@@ -24,6 +30,8 @@ class test_StructFile(unittest.TestCase):
 	def test_Constructor(self):       
 		self.assertEqual(self.Sf.Count, 0)
 		self.assertEqual(self.Sf.DataSize, ustruct.calcsize(test_StructFile.TEST_FMT))
+		file_exists = TestUtil.FileExists(test_StructFile.TEST_FILE)
+		self.assertTrue(file_exists)
 
 	def test_AppendData(self):
 		self.assertEqual(self.Sf.AppendData(1, 2), 1)
@@ -68,13 +76,8 @@ class test_StructFile(unittest.TestCase):
 	def test_Delete(self):
 		self.Sf.Delete()
 		
-		f_exists = True
-		try:
-			f = open(test_StructFile.TEST_FILE)
-		except OSError:
-			f_exists = False
-		
-		self.assertFalse(f_exists)
+		file_exists = TestUtil.FileExists(test_StructFile.TEST_FILE)
+		self.assertFalse(file_exists)
 
 	def test_Iterator(self):	
 		i = 0
