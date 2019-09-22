@@ -19,7 +19,7 @@ This repository provides a set of libraries and tools to ease development of IoT
 * doc: Documentation folder
 
 ## Libraries
-All available libraries can be found in the list below. The dependencies of each respective library (if any) are shown in a sublist. Dependencies containing the prefix 'upy-' are part of the Micropython environment.
+All available libraries can be found in the list below. The dependencies of each respective library (if any) are shown in a sublist. Dependencies containing the prefix 'upy-' are part of Micropython.
 
 * driver-Led: Simple LED driver with PWM support.
     * upy-machine-Pin
