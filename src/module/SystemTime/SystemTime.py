@@ -39,7 +39,12 @@ class SystemTime(object):
     def NowFormatted(self):
         datetime = SystemTime._Rtc.now()
         # Format the datetime tuple as such: YYYY-MM-DDThh:mm:ss
-        datetime_str = str(datetime[SystemTime.RTC_DATETIME_YEAR]) + '-' + str(datetime[SystemTime.RTC_DATETIME_MONTH]) + '-' + str(datetime[SystemTime.RTC_DATETIME_DAY]) + 'T' + str(datetime[SystemTime.RTC_DATETIME_HOUR]) + ':' +  str(datetime[SystemTime.RTC_DATETIME_MINUTE]) + ':' + str(datetime[SystemTime.RTC_DATETIME_SECOND])
+        datetime_str = str(datetime[SystemTime.RTC_DATETIME_YEAR]) + \
+                       '-' + str(datetime[SystemTime.RTC_DATETIME_MONTH]) + \
+                       '-' + str(datetime[SystemTime.RTC_DATETIME_DAY]) + \
+                       'T' + str(datetime[SystemTime.RTC_DATETIME_HOUR]) + \
+                       ':' +  str(datetime[SystemTime.RTC_DATETIME_MINUTE]) + \
+                       ':' + str(datetime[SystemTime.RTC_DATETIME_SECOND])
         return datetime_str
     
     def __init__(self):
@@ -65,7 +70,9 @@ class SystemTime(object):
         except OSError:
             print("Failed to request NTP time.")
             return -1
-        return val - SystemTime.NTP_DELTA
+        if val > 0:
+            return val - SystemTime.NTP_DELTA
+        return -1
 
 def InstanceAcquire():
     if SystemTime._Instance is None:
