@@ -35,4 +35,3 @@ class Notifyer(object):
     @staticmethod
     def _MapParametersToColors(moisture):
         return (0, 0, moisture)
-    
