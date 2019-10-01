@@ -225,7 +225,7 @@ class PowerManager:
                 goto_sleep = False
                 break
 
-        # If all coros indicate to go to sleep.
+        # If all services indicate to go to sleep.
         if goto_sleep is True:
             # Append the actual sleep duration as last entry and
             # go to sleep.
