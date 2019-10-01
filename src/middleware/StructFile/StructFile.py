@@ -2,6 +2,18 @@ import uos as os
 import ustruct
 from micropython import const
 
+
+def _FileCloseOnException(f, ex, raise_ex=True):
+    try:
+        f.close()
+    except OSError:
+        print("Critical file system error")
+        if raise_ex is True:
+            raise OSError from ex
+        else:
+            pass
+
+
 class StructFileIterator(object):
     
     def __init__(self, struct_file_obj):
@@ -14,13 +26,7 @@ class StructFileIterator(object):
             print("[Iterator] Offset: {}".format(self.File.tell()))
         except OSError as ferr:
             print("Could not access Struct file: {}".format(ferr))
-            try:
-                self.File.close()
-                print("File closed after exception")
-            except:
-                pass
-            finally:
-                self.File = None
+            self.File = None
 
     def __next__(self):
         if self.File is None:
@@ -35,12 +41,8 @@ class StructFileIterator(object):
                 return ustruct.unpack(self.StructFile.DataFmt, struct)
         except OSError as ferr:
             print("Could not access Struct file: {}".format(ferr))
-            try:
-                self.File.close()
-                print("File closed after exception")
-            except:
-                pass
-        
+            _FileCloseOnException(self.File, ferr, False)
+
         self.File.close()
         raise StopIteration
             
@@ -198,11 +200,7 @@ class StructFile(object):
             f.close()
         except OSError as ferr:
             print("Could not access Struct file: {}".format(ferr))
-            try:
-                f.close()
-                print("File closed after exception")
-            except:
-                pass     
+            _FileCloseOnException(f, ferr)
     
     
     def _FileReadStruct(self, index):
@@ -218,11 +216,7 @@ class StructFile(object):
             return struct
         except OSError as ferr:
             print("Could not access Struct file: {}".format(ferr))
-            try:
-                f.close()
-                print("File closed after exception")
-            except:
-                pass
+            _FileCloseOnException(f, ferr)
     
     def _FileCreate(self):
         try:
@@ -236,6 +230,7 @@ class StructFile(object):
                 print("Struct file created")
             except OSError:
                 print("Failed to create Struct file")
+                raise
                 
     
     def _FileDelete(self):
@@ -255,8 +250,4 @@ class StructFile(object):
             f.close()
         except OSError as ferr:
             print("Could not access Struct file: {}".format(ferr))
-            try:
-                f.close()
-                print("File closed after exception")
-            except:
-                pass 
+            _FileCloseOnException(f, ferr)
