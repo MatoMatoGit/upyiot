@@ -1,0 +1,27 @@
+@startuml
+
+class SystemTime {
+}
+
+class RTC {
+}
+
+class socket {
+}
+
+class Service {
+}
+
+class utime {
+}
+
+SystemTime ..> socket : use
+
+RTC --o SystemTime
+
+Service ..> utime : use
+
+RTC --* utime
+
+
+@enduml
