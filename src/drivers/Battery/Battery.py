@@ -10,7 +10,7 @@ class Battery(object):
         self.VoltSensor = volt_sensor_obj
         self.Level = 100
     
-    def ReadLevel(self):
+    def LevelRead(self):
         # Read the current battery voltage and convert it to a percentage.
         volt = Battery.VoltSensor.Read()
         Battery.Level = Battery.VoltageToPercent(volt)
