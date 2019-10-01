@@ -9,14 +9,16 @@ from TestUtil import TestUtil
 
 # Other
 
+
 class test_Template(unittest.TestCase):
 
-	
-	def setUp(arg):
-		return
-		
-	def tearDown(arg):
-		return
 
-	def test_Test(self):
-		return
+    def setUp(arg):
+        return
+
+    def tearDown(arg):
+        return
+
+    def test_Test(self):
+        return
+
