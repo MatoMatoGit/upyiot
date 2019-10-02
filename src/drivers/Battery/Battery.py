@@ -2,7 +2,7 @@ from micropython import const
 
 class Battery(object):
     
-    LIPO_VOLT_TO_PERCENT_CURVE = (4.4, 3.9, 3.75, 3.7, 3,65, 3)
+    LIPO_VOLT_TO_PERCENT_CURVE = (4.4, 3.9, 3.75, 3.7, 3.65, 3)
     LIPO_VOLT_TO_PERCENT_STEP = const(25)
     
     def __init__(self, num_cells, volt_sensor_obj):
