@@ -1,9 +1,10 @@
 pipeline {
     agent any
     stages {
-        stage('checkout') {
+        stage('clean_checkout') {
             steps {
                 sh 'rm -rf micropython'
+                sh 'rm -rf build'
                 sh 'git submodule update --init --recursive'
             }
         }
