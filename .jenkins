@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('run_tests') {
             steps {
-                dir("src/test") {
+                dir("/test") {
                     sh './runner.sh'
                 }
             }
