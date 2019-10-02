@@ -7,10 +7,23 @@ pipeline {
                 sh 'git submodule update --init --recursive'
             }
         }
-        stage('build') {
+        stage('build_micropython') {
             steps {
-                dir("micropython/ports/unix") {
+                dir("micropython/mpy-cross") {
                     sh 'make'
+                }
+                dir("micropython/ports/unix") {
+                    sh 'make deplibs'
+                    sh 'make'
+                }
+                sh 'mkdir build'
+                sh 'cp micropython/ports/unix/micropython ./build'
+            }
+        }
+        stage('install_packages') {
+            steps {
+                dir("build") {
+                    sh './micropython -m upip install unittest'
                 }
             }
         }
