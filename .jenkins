@@ -23,7 +23,7 @@ pipeline {
         stage('install_packages') {
             steps {
                 dir("build") {
-                    sh './micropython -m upip install unittest'
+                    sh './micropython --help'
                 }
             }
         }
