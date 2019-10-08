@@ -38,7 +38,7 @@ class test_Message(unittest.TestCase):
         Message.Print()
 
     def test_SerializeDeserializeRoundTrip(self):
-        buffer = uio.BytesIO(Message.SER_BUFFER_SIZE)
+
         msg_key = "msg"
         msg_test = "test"
         id = 0x200
@@ -51,12 +51,12 @@ class test_Message(unittest.TestCase):
 
         Message.DeviceId(id)
 
-        buffer = Message.Serialize(datetime, data, type, sub_type, buffer)
+        buffer = Message.Serialize(datetime, data, type, sub_type)
         msg_str = buffer.getvalue().decode('utf-8')
 
         print(msg_str)
 
-        Message.Deserialize(msg_str)
+        Message.Deserialize(str(msg_str))
 
         Message.Print()
         self.assertEqual(Message.Msg[Message.MSG_SECTION_META][Message.MSG_META_DATETIME], datetime)
