@@ -7,28 +7,8 @@ import ustruct
 
 from micropython import const
 
-from middleware.Singleton import Singleton
 from Message import Message
 
-
-class DataSink():
-    def __init__(self, max_count):
-        self.MaxCount = max_count
-        self.ReadIndex = 0
-        
-    def Get(self, msg_type, msg_subtype):
-        return ExchangeEndpoint.SinkMessageGet(msg_type, msg_subtype)
-
-
-class DataSource():
-    def __init__(self, max_count):
-        self.MaxCount = max_count
-    
-    def Put(self, msg_data_dict, msg_type, msg_subtype):
-        if ExchangeEndpoint.SourceMessageCount() >= self.MaxCount:
-            return uerrno.ENOSPC
-        ExchangeEndpoint.SourceMessagePut(msg_data_dict, msg_type, msg_subtype)
-        return 0
 
 class DataExchange(object):
     
@@ -39,7 +19,7 @@ class DataExchange(object):
     MSG_MAP_SUBTYPE = const(1)
     MSG_MAP_URL     = const(2)
 
-    _SingletonInstance = Singleton.Singleton()
+    _Instance = None
     ExchangeBuffer = bytearray(ExchangeEndpoint.MSG_DATA_LEN_MAX)
 
     def __init__(self, directory, mqtt_client_obj, client_id, mqtt_retries):
@@ -52,12 +32,14 @@ class DataExchange(object):
         
         Message.DeviceId(client_id)
         ExchangeEndpoint.FileDir(directory)
+
+        DataExchange._Instance = self
         
-    def RegisterDataSource(self, source):
-        self.Sources.add(source)
-        
-    def RegisterDataSink(self, sink):
-        self.Sinks.add(sink)
+    def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
+        return 0
+
+    def MessageGet(self, msg_type, msg_subtype):
+        return 0
     
     def RegisterMessageMapping(self, msg_type, msg_subtype, url):
         self.MessageMapping.add((msg_type, msg_subtype, url))
@@ -101,20 +83,36 @@ class DataExchange(object):
                 data = ujson.dump(msg)
                 sink.PutNoWait(data)
 
-def Service():
-    data_ex = DataExchange.InstanceGet()
+    def Service(self):
 
-    data_ex.MqttSetup()
-    if ExchangeEndpoint.SourceMessageCount() > 0:
-        for msg in ExchangeEndpoint.SourceMessageFile:
-            topic = data_ex.UrlFromMessageType(msg[ExchangeEndpoint.MSG_STRUCT_TYPE],
-                                       msg[ExchangeEndpoint.MSG_STRUCT_SUBTYPE])
-            if topic is None:
-                print("Warning: No topic defined for message %d.%d" % (msg[ExchangeEndpoint.MSG_STRUCT_TYPE],
-                                                                       msg[ExchangeEndpoint.MSG_STRUCT_SUBTYPE]))
-                continue
-            DataExchange.MqttClient.publish(topic, msg[ExchangeEndpoint.MSG_STRUCT_DATA])
+        self.MqttSetup()
+        if ExchangeEndpoint.SourceMessageCount() > 0:
+            for msg in ExchangeEndpoint.SourceMessageFile:
+                topic = self.UrlFromMessageType(msg[ExchangeEndpoint.MSG_STRUCT_TYPE],
+                                           msg[ExchangeEndpoint.MSG_STRUCT_SUBTYPE])
+                if topic is None:
+                    print("Warning: No topic defined for message %d.%d" % (msg[ExchangeEndpoint.MSG_STRUCT_TYPE],
+                                                                           msg[ExchangeEndpoint.MSG_STRUCT_SUBTYPE]))
+                    continue
+                self.MqttClient.publish(topic, msg[ExchangeEndpoint.MSG_STRUCT_DATA])
 
-    # Check for any MQTT messages, the callback is called when a message
-    # has arrived. If no message is pending this function check_msg will return.
-    DataExchange.MqttClient.check_msg()
+        # Check for any MQTT messages, the callback is called when a message
+        # has arrived. If no message is pending this function check_msg will return.
+        self.MqttClient.check_msg()
+
+    @staticmethod
+    def InstanceGet():
+        return DataExchange._Instance
+
+
+class Endpoint:
+
+    def __init__(self):
+        self.DataEx = DataExchange.InstanceGet()
+
+    def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
+        self.DataEx.MessagePut(msg_data_dict, msg_type, msg_subtype)
+
+    def MessageGet(self, msg_type, msg_subtype):
+        return self.DataEx.MessageGet(msg_type, msg_subtype)
+
