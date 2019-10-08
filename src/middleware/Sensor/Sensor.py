@@ -2,10 +2,6 @@ from middleware.AvgFilter import AvgFilter
 from middleware.SubjectObserver.SubjectObserver import Subject
 from middleware.StructFile import StructFile
 
-try:
-    import uasyncio
-except:
-    pass
 from micropython import const
 
 class Sensor(object):
@@ -53,11 +49,7 @@ class Sensor(object):
     
     def ObserverAttachNewSample(self, observer):
         self.NewSample.Attach(observer)
-    
-    async def Service(self, t_sleep_sec):
-        self.Read()
-        await uasyncio.sleep(t_sleep_sec)
-            
+
     def _SampleStore(self, sample):
         self.SensorFile.AppendData(sample)
 
