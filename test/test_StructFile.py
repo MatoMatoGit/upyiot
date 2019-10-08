@@ -28,36 +28,44 @@ class test_StructFile(unittest.TestCase):
             print(f_err)
 
     def test_Constructor(self):
-        self.assertEqual(self.Sf.Count, 0)
         self.assertEqual(self.Sf.DataSize, ustruct.calcsize(test_StructFile.TEST_FMT))
         file_exists = TestUtil.FileExists(test_StructFile.TEST_FILE)
         self.assertTrue(file_exists)
 
-    def test_AppendData(self):
-        self.assertEqual(self.Sf.AppendData(1, 2), 1)
+    def test_ConstructorWithUserMeta(self):
+        user_meta_fmt = "<II"
+        os.remove(test_StructFile.TEST_FILE)
+        sf = StructFile.StructFile(test_StructFile.TEST_FILE, test_StructFile.TEST_FMT, user_meta_fmt)
+        self.assertEqual(sf.DataSize, ustruct.calcsize(test_StructFile.TEST_FMT))
+        file_exists = TestUtil.FileExists(test_StructFile.TEST_FILE)
+        self.assertTrue(file_exists)
+
+    def test_WriteData(self):
+        w_data = (1, 2)
+        self.assertEqual(self.Sf.WriteData(0, *w_data), 0)
 
     def test_ReloadExistingFileAtConstruction(self):
-        self.Sf.AppendData(1, 2)
+        w_data = (1, 2)
+        self.Sf.WriteData(0, *w_data)
         sf_copy = StructFile.StructFile(test_StructFile.TEST_FILE, test_StructFile.TEST_FMT)
-        self.assertEqual(sf_copy.Count, 1)
 
-    def test_AppendStruct(self):
+    def test_WriteStruct(self):
         struct = ustruct.pack(test_StructFile.TEST_FMT, 1, 2)
-        self.assertEqual(self.Sf.AppendStruct(struct), 1)
+        self.assertEqual(self.Sf.WriteStruct(0, struct), 0)
 
-    def test_AppendStructSizeMismatch(self):
+    def test_WriteStructSizeMismatch(self):
         struct = ustruct.pack(test_StructFile.TEST_FMT + 'H', 1, 2, 3)
-        self.assertEqual(self.Sf.AppendStruct(struct), -1)
+        self.assertEqual(self.Sf.WriteStruct(0, struct), -1)
 
     def test_ReadData(self):
         w_data = (1, 2)
-        self.Sf.AppendData(*w_data)
+        self.Sf.WriteData(0, *w_data)
         r_data = self.Sf.ReadData(0)
         self.assertTrue(r_data == w_data)
 
     def test_ReadStruct(self):
         w_data = (1, 2)
-        self.Sf.AppendData(*w_data)
+        self.Sf.WriteData(0, *w_data)
         struct = self.Sf.ReadStruct(0)
         r_data = ustruct.unpack(test_StructFile.TEST_FMT, struct)
         self.assertTrue(r_data == w_data)
@@ -65,12 +73,44 @@ class test_StructFile(unittest.TestCase):
     def test_ReadDataNotAvailable(self):
         self.assertEqual(self.Sf.ReadData(0), None)
 
+    def test_WriteReadMeta(self):
+        user_meta_fmt = "<HH"
+        os.remove(test_StructFile.TEST_FILE)
+        sf = StructFile.StructFile(test_StructFile.TEST_FILE, test_StructFile.TEST_FMT, user_meta_fmt)
+        w_meta = (3, 4)
+
+        sf.WriteMeta(*w_meta)
+        r_meta = sf.ReadMeta()
+
+        self.assertEqual(r_meta, w_meta)
+
+    def test_ReadMetaNotAvailable(self):
+        user_meta_fmt = "<HH"
+        os.remove(test_StructFile.TEST_FILE)
+        sf = StructFile.StructFile(test_StructFile.TEST_FILE, test_StructFile.TEST_FMT, user_meta_fmt)
+        self.assertEqual(sf.ReadMeta(), None)
+
+    def test_WriteReadMetaWriteReadData(self):
+        user_meta_fmt = "<HH"
+        os.remove(test_StructFile.TEST_FILE)
+        sf = StructFile.StructFile(test_StructFile.TEST_FILE, test_StructFile.TEST_FMT, user_meta_fmt)
+        w_meta = (3, 4)
+
+        sf.WriteMeta(*w_meta)
+        r_meta = sf.ReadMeta()
+
+        self.assertEqual(r_meta, w_meta)
+
+        w_data = (1, 2)
+        self.Sf.WriteData(0, *w_data)
+        r_data = self.Sf.ReadData(0)
+
+        self.assertEqual(r_data, w_data)
+
     def test_Clear(self):
-        self.Sf.AppendData(1, 2)
+        self.Sf.WriteData(0, 1, 2)
 
         self.Sf.Clear()
-
-        self.assertEqual(self.Sf.Count, 0)
         self.assertEqual(self.Sf.ReadData(0), None)
 
     def test_Delete(self):
@@ -79,23 +119,58 @@ class test_StructFile(unittest.TestCase):
         file_exists = TestUtil.FileExists(test_StructFile.TEST_FILE)
         self.assertFalse(file_exists)
 
-    def test_Iterator(self):
+    def test_IteratorNoMax(self):
+        index_start = 0
+        index_end = 4
+        w_data_set = []
         i = 0
-        for i in range(0, 10, 2):
+        for i in range(index_start, index_end + 1):
             w_data = (i, i+1)
+            w_data_set.append(w_data)
             print(w_data)
-            self.Sf.AppendData(*w_data)
-
+            self.Sf.WriteData(i, *w_data)
+        print(w_data_set)
+        self.Sf.IteratorConfig(index_start, index_end)
         i = 0
         for r_data in self.Sf:
             print(r_data)
-            self.assertTrue(r_data == (i, i+1))
-            i = i + 2
+            self.assertEqual(r_data, w_data_set[i])
+            i = i + 1
 
-        self.assertEqual(self.Sf.Count, i/2)
+        self.assertEqual(len(w_data_set), i)
+
+    def test_IteratorWithMax(self):
+        index_start = 3
+        index_end = 4
+        count = 5
+        i = 0
+        w_data_set = []
+        for i in range(0, 5):
+            w_data = (i, i+1)
+            w_data_set.append(w_data)
+            print(w_data)
+            self.Sf.WriteData(i, *w_data)
+        print(w_data_set)
+        self.Sf.IteratorConfig(index_start, index_end, count)
+        i = 0
+        for r_data in self.Sf:
+            print(r_data)
+            idx = self.Sf.IteratorIndex()
+            print(idx)
+            self.assertTrue(r_data == w_data_set[idx])
+            i = i + 1
+
+        self.assertEqual(len(w_data_set), i)
 
     def test_IteratorNoFile(self):
         self.Sf.Delete()
+        i = 0
+        for r_data in self.Sf:
+            i = i + 1
+
+        self.assertEqual(i, 0)
+
+    def test_IteratorNoIteratorConfig(self):
         i = 0
         for r_data in self.Sf:
             i = i + 1
