@@ -4,7 +4,7 @@ import uio
 
 
 class Message:
-    SER_BUFFER_SIZE = const(300)
+    MSG_SIZE_MAX = const(300)
 
     Msg = dict()
     MSG_SECTION_META = "meta"
@@ -28,7 +28,7 @@ class Message:
         }
     }
 
-    _StreamBuffer = uio.BytesIO(SER_BUFFER_SIZE)
+    _StreamBuffer = uio.BytesIO(MSG_SIZE_MAX)
 
     @staticmethod
     def DeviceId(device_id=None):
