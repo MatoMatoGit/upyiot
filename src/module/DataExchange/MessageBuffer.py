@@ -1,7 +1,4 @@
-import uerrno
-import ustruct
 from middleware.NvQueue import NvQueue
-from Message import Message
 
 class MessageBuffer:
 
@@ -20,14 +17,16 @@ class MessageBuffer:
         MessageBuffer.MsgDataLen = msg_len_max
         MessageBuffer.MsgStructFmt = MessageBuffer.MsgStructFmt + \
                                      str(MessageBuffer.MsgDataLen) + "s"
+        print("[MsgBuf] FMT: {}".format(MessageBuffer.MsgStructFmt))
         MessageBuffer.Directory = directory
         MessageBuffer._UnPackBuffer = bytearray(msg_len_max * 1.5)
 
     def __init__(self, file_prefix, msg_type, msg_subtype, max_entries):
         file_path = MessageBuffer.Directory + file_prefix + str(msg_type) \
                     + "_" + str(msg_subtype)
+        print("[MsgBuf] File path: {}".format(file_path))
         self.Queue = NvQueue.NvQueue(file_path, MessageBuffer.MsgStructFmt,
-                                      max_entries)
+                                     max_entries)
         self.MsgType = msg_type
         self.MsgSubtype = msg_subtype
 
@@ -35,7 +34,7 @@ class MessageBuffer:
         if len(msg_string) > MessageBuffer.MsgDataLen:
             return -1
         # TODO: Use this instead when NvQueue / StructFile can utilize an external buffer.
-        #ustruct.pack_into(MessageBuffer.MsgStructFmt, MessageBuffer._UnPackBuffer, 0,
+        # ustruct.pack_into(MessageBuffer.MsgStructFmt, MessageBuffer._UnPackBuffer, 0,
         #                  self.MsgType, self.MsgSubtype, msg_string)
         return self.Queue.Push(self.MsgType, self.MsgSubtype, msg_string)
 
