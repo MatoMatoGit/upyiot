@@ -7,7 +7,7 @@ class NvQueueIterator(object):
     def __init__(self, nvqueue_obj):
         print(nvqueue_obj)
         nvqueue_obj.Queue.IteratorConfig(nvqueue_obj.ReadOffset,
-                                              nvqueue_obj.WriteOffset, nvqueue_obj.Count)
+                                         nvqueue_obj.WriteOffset, nvqueue_obj.Count)
         self.Iterator = iter(nvqueue_obj.Queue)
 
     def __next__(self):
