@@ -116,7 +116,7 @@ class PowerManager:
         self.PowerSupplies.add(power_supply_obj)    
            
     def ObserverAttachBatteryLevel(self, observer):
-        self.BatteryLevel.Attach(observer)            
+        self.BatteryLevel.Attach(observer)
 
     def _NotifyBeforeSleep(self):
         for cb in self.CbsBeforeSleep:

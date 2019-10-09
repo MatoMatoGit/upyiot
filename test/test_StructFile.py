@@ -12,6 +12,7 @@ from middleware.StructFile import StructFile
 import uos as os
 import ustruct
 
+
 class test_StructFile(unittest.TestCase):
     TEST_FMT = "<HH"
     TEST_FILE = "./tmp"
