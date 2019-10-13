@@ -25,7 +25,6 @@ class NvQueue:
 
     def __init__(self, file, data_fmt, capacity):
         self.Queue = StructFile.StructFile(file, data_fmt, NvQueue.META_FMT)
-        self.QueueIterator = None
 
         meta = self.Queue.ReadMeta()
         print(meta)
@@ -80,6 +79,9 @@ class NvQueue:
         self.Queue.Clear()
         self._MetaReset()
         self._MetaUpdate()
+
+    def Delete(self):
+        self.Queue.Delete()
 
     def _MetaReset(self):
         self.ReadOffset = 0
