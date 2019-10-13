@@ -1,8 +1,4 @@
-import uasyncio
-import umqtt.simple
-
 import utime
-import uerrno
 from micropython import const
 
 from Message import Message
@@ -55,55 +51,6 @@ class DataExchange(object):
         # Add the new mapping to the set of mappings.
         self.MessageMappings.add((msg_type, msg_subtype, url, recv_buffer))
 
-    @staticmethod
-    def InstanceGet():
-        return DataExchange._Instance
-
-    def _MessageMapFromType(self, msg_type, msg_subtype):
-        for msg_map in self.MessageMappings:
-            if msg_map[DataExchange.MSG_MAP_TYPE] is msg_type \
-                    and msg_map[DataExchange.MSG_MAP_SUBTYPE] is msg_subtype:
-                return msg_map
-            return None
-
-    def _MessageMapFromUrl(self, url):
-        for msg_map in self.MessageMappings:
-            if msg_map[DataExchange.MSG_MAP_URL] is url:
-                return msg_map
-            return None
-
-    def _MqttMsgRecvCallback(self, topic, msg):
-        # Get the message mapping from the topic
-        msg_map = self._MessageMapFromUrl(topic)
-        if msg_map is not None:
-            # Put the message string in the corresponding buffer.
-            msg_buf = msg_map[DataExchange.MSG_MAP_RECV_BUFFER]
-            msg_buf.MessagePut(msg)
-        else:
-            print("Warning: No message mapping defined for topic %s" % topic)
-
-    def _MqttSetup(self):
-        print("[MQTT] Connecting to broker.")
-        connected = False
-        retries = 0
-        # Try to connect the MQTT broker, if it fails retry after the specified
-        # interval.
-        while connected is False and retries < self.MqttRetries:
-            try:
-                self.MqttClient.connect()
-                connected = True
-                print("[MQTT] Connected.")
-            except OSError:
-                retries = retries + 1
-                print("[MQTT] Failed to connect to server. Retries left %d"
-                      % (self.MqttRetries - retries))
-                utime.sleep(DataExchange.CONNECT_RETRY_INTERVAL_SEC)
-                continue
-
-        # Set the MQTT message receive callback which is called when a message is received
-        # on a topic.
-        DataExchange.MqttClient.set_callback(DataExchange._MqttMsgRecvCallback)
-
     def Service(self):
         if self.ServiceInit is False:
             self._MqttSetup()
@@ -122,8 +69,8 @@ class DataExchange(object):
                       (msg_struct[MessageBuffer.MSG_STRUCT_TYPE],
                        msg_struct[MessageBuffer.MSG_STRUCT_SUBTYPE]))
 
-        # Check for any MQTT messages, the callback is called when a message
-        # has arrived. If no message is pending this function check_msg will return.
+        # Check for any received MQTT messages. The 'message received'-callback is called if a message
+        # was received.
         self.MqttClient.check_msg()
 
     def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
@@ -138,6 +85,61 @@ class DataExchange(object):
         else:
             print("Warning: No message mapping for message type %d.%d" % (msg_type, msg_subtype))
         return -1
+
+    @staticmethod
+    def InstanceGet():
+        return DataExchange._Instance
+
+# #### Private methods ####
+
+    def _MessageMapFromType(self, msg_type, msg_subtype):
+        for msg_map in self.MessageMappings:
+            if msg_map[DataExchange.MSG_MAP_TYPE] is msg_type \
+                    and msg_map[DataExchange.MSG_MAP_SUBTYPE] is msg_subtype:
+                return msg_map
+            return None
+
+    def _MessageMapFromUrl(self, url):
+        for msg_map in self.MessageMappings:
+            if msg_map[DataExchange.MSG_MAP_URL] is url:
+                return msg_map
+            return None
+
+    @staticmethod
+    def _MqttMsgRecvCallback(topic, msg):
+        data_ex = DataExchange.InstanceGet()
+
+        # Get the message mapping from the topic
+        msg_map = data_ex._MessageMapFromUrl(topic)
+        if msg_map is not None:
+            # Put the message string in the corresponding buffer.
+            msg_buf = msg_map[DataExchange.MSG_MAP_RECV_BUFFER]
+            if msg_buf is not None:
+                msg_buf.MessagePut(msg)
+        else:
+            print("Warning: No message mapping defined for topic %s" % topic)
+
+    def _MqttSetup(self):
+        print("[MQTT] Connecting to broker.")
+        connected = False
+        retries = 0
+        # Try to connect to the MQTT broker, if it fails retry after the specified
+        # interval.
+        while connected is False and retries < self.MqttRetries:
+            try:
+                self.MqttClient.connect()
+                connected = True
+                print("[MQTT] Connected.")
+            except OSError:
+                retries = retries + 1
+                print("[MQTT] Failed to connect to server. Retries left %d"
+                      % (self.MqttRetries - retries))
+                utime.sleep(DataExchange.CONNECT_RETRY_INTERVAL_SEC)
+                continue
+
+        # Set the MQTT message receive callback which is called when a message is received
+        # on a topic.
+        DataExchange.MqttClient.set_callback(DataExchange._MqttMsgRecvCallback)
 
 
 class Endpoint:
