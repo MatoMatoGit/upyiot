@@ -20,7 +20,7 @@ class MessageBuffer:
         print("[MsgBuf] FMT: {}".format(MessageBuffer.MsgStructFmt))
         MessageBuffer.Directory = directory
         print(directory)
-        MessageBuffer._UnPackBuffer = bytearray(msg_len_max)
+        MessageBuffer._UnPackBuffer = bytearray(msg_len_max + msg_len_max)
         print(type(MessageBuffer._UnPackBuffer))
 
     def __init__(self, file_prefix, msg_type, msg_subtype, max_entries):
