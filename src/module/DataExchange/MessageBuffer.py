@@ -11,6 +11,7 @@ class MessageBuffer:
     Directory = ""
 
     _UnPackBuffer = None
+    Configured = False
 
     @staticmethod
     def Configure(directory, msg_len_max):
@@ -22,6 +23,7 @@ class MessageBuffer:
         print(directory)
         MessageBuffer._UnPackBuffer = bytearray(msg_len_max + msg_len_max)
         print(type(MessageBuffer._UnPackBuffer))
+        MessageBuffer.Configured = True
 
     def __init__(self, file_prefix, msg_type, msg_subtype, max_entries):
         file_path = MessageBuffer.Directory + file_prefix + str(msg_type) \
@@ -51,3 +53,6 @@ class MessageBuffer:
 
     def MaxLength(self):
         return MessageBuffer.MsgDataLen
+
+    def IsConfigured(self):
+        return MessageBuffer.Configured
