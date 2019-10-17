@@ -1,8 +1,8 @@
 import utime
 from micropython import const
 
-from Message import Message
-from MessageBuffer import MessageBuffer
+from module.DataExchange.Message import Message
+from module.DataExchange.MessageBuffer import MessageBuffer
 
 
 class DataExchange(object):
@@ -22,12 +22,13 @@ class DataExchange(object):
     MSG_MAP_SUBTYPE = const(1)
     MSG_MAP_URL     = const(2)
     MSG_MAP_RECV_BUFFER = const(3)
+    MSG_MAP_SUBSCRIBED  = const(4)
 
     _Instance = None
 
     def __init__(self, directory, mqtt_client_obj, client_id, mqtt_retries):
-        self.SendMessageBuffer = MessageBuffer.MessageBuffer('send', -1, -1,
-                                                             DataExchange.SEND_BUFFER_SIZE)
+        self.SendMessageBuffer = MessageBuffer('send', -1, -1,
+                                               DataExchange.SEND_BUFFER_SIZE)
         self.MessageMappings = set()
         self.MqttClient = mqtt_client_obj
         self.MqttRetries = mqtt_retries
@@ -38,14 +39,11 @@ class DataExchange(object):
         DataExchange._Instance = self
 
     def RegisterMessageType(self, msg_type, msg_subtype, url, direction):
-
         # If this message can be received
         if direction is not DataExchange.MSG_DIRECTION_SEND:
             # Create receive buffer for the messages of this type.
-            recv_buffer = MessageBuffer.MessageBuffer('recv', msg_type, msg_subtype,
-                                                      url, DataExchange.RECV_BUFFER_SIZE)
-            # Subscribe to the message topic.
-            self.MqttClient.subscribe(url)
+            recv_buffer = MessageBuffer('recv', msg_type, msg_subtype,
+                                        DataExchange.RECV_BUFFER_SIZE)
         else:
             recv_buffer = None
         # Add the new mapping to the set of mappings.
@@ -90,27 +88,27 @@ class DataExchange(object):
     def InstanceGet():
         return DataExchange._Instance
 
-# #### Private methods ####
-
-    def _MessageMapFromType(self, msg_type, msg_subtype):
+    def MessageMapFromType(self, msg_type, msg_subtype):
         for msg_map in self.MessageMappings:
             if msg_map[DataExchange.MSG_MAP_TYPE] is msg_type \
                     and msg_map[DataExchange.MSG_MAP_SUBTYPE] is msg_subtype:
                 return msg_map
             return None
 
-    def _MessageMapFromUrl(self, url):
+    def MessageMapFromUrl(self, url):
         for msg_map in self.MessageMappings:
             if msg_map[DataExchange.MSG_MAP_URL] is url:
                 return msg_map
             return None
+
+# #### Private methods ####
 
     @staticmethod
     def _MqttMsgRecvCallback(topic, msg):
         data_ex = DataExchange.InstanceGet()
 
         # Get the message mapping from the topic
-        msg_map = data_ex._MessageMapFromUrl(topic)
+        msg_map = data_ex.MessageMapFromUrl(topic)
         if msg_map is not None:
             # Put the message string in the corresponding buffer.
             msg_buf = msg_map[DataExchange.MSG_MAP_RECV_BUFFER]
@@ -137,12 +135,21 @@ class DataExchange(object):
                 utime.sleep(DataExchange.CONNECT_RETRY_INTERVAL_SEC)
                 continue
 
+        # TODO: Move this to the Service. Must be done periodically.
+        # Iterate through the available message mappings.
+        for msg_map in self.MessageMappings:
+            # If the message mapping contains a receive buffer the message can be
+            # received and must be subscribed to.
+            if msg_map[DataExchange.MSG_MAP_RECV_BUFFER] is not None:
+                # Subscribe to the message topic.
+                self.MqttClient.subscribe(msg_map[DataExchange.MSG_MAP_URL])
+
         # Set the MQTT message receive callback which is called when a message is received
         # on a topic.
-        DataExchange.MqttClient.set_callback(DataExchange._MqttMsgRecvCallback)
+        self.MqttClient.set_callback(DataExchange._MqttMsgRecvCallback)
 
 
-class Endpoint:
+class Endpoint(object):
 
     def __init__(self):
         self.DataEx = DataExchange.InstanceGet()
