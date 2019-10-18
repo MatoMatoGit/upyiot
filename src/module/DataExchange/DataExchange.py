@@ -1,4 +1,3 @@
-import utime
 from micropython import const
 
 from module.DataExchange.Message import Message
@@ -72,8 +71,8 @@ class DataExchange(object):
         self.MqttClient.check_msg()
 
     def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
-        Message.Serialize(utime.datetime(), msg_data_dict, msg_type, msg_subtype)
-        return self.SendMessageBuffer.MessagePut(Message.Stream.getvalue().decode('utf-8'))
+        Message.Serialize(123, msg_data_dict, msg_type, msg_subtype)
+        return self.SendMessageBuffer.MessagePut(Message.Stream().getvalue().decode('utf-8'))
 
     def MessageGet(self, msg_type, msg_subtype):
         msg_map = self._MessageMapFromType(msg_type, msg_subtype)
