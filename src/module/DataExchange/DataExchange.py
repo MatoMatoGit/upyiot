@@ -3,6 +3,7 @@ from micropython import const
 from module.DataExchange.Message import Message
 from module.DataExchange.MessageBuffer import MessageBuffer
 
+import utime
 
 class DataExchange(object):
 
@@ -54,10 +55,10 @@ class DataExchange(object):
             self.ServiceInit = True
 
         msg_count = self.SendMessageBuffer.MessageCount()
-        for i in msg_count:
+        for i in range(0, msg_count):
             msg_struct = self.SendMessageBuffer.MessageGet()
-            msg_map = self._MessageMapFromType(msg_struct[MessageBuffer.MSG_STRUCT_TYPE],
-                                               msg_struct[MessageBuffer.MSG_STRUCT_SUBTYPE])
+            msg_map = self.MessageMapFromType(msg_struct[MessageBuffer.MSG_STRUCT_TYPE],
+                                              msg_struct[MessageBuffer.MSG_STRUCT_SUBTYPE])
             if msg_map is not None:
                 topic = msg_map[DataExchange.MSG_MAP_URL]
                 self.MqttClient.publish(topic, msg_struct[MessageBuffer.MSG_STRUCT_DATA])
@@ -75,12 +76,22 @@ class DataExchange(object):
         return self.SendMessageBuffer.MessagePut(Message.Stream().getvalue().decode('utf-8'))
 
     def MessageGet(self, msg_type, msg_subtype):
-        msg_map = self._MessageMapFromType(msg_type, msg_subtype)
+        msg_map = self.MessageMapFromType(msg_type, msg_subtype)
+        print("Found message map: {}".format(msg_map))
         if msg_map is not None:
             msg_buf = msg_map[DataExchange.MSG_MAP_RECV_BUFFER]
-            return msg_buf.MessageGet()
+            if msg_buf is not None:
+                msg_tup = msg_buf.MessageGet()
+                if msg_tup is not None:
+                    return Message.Deserialize(msg_tup[MessageBuffer.MSG_STRUCT_DATA])
+                else:
+                    print("Info: No message of type %d.%d received." % (msg_type, msg_subtype))
+                    return -3
+            else:
+                print("Error: Message type %d.%d is specified as SEND." % (msg_type, msg_subtype))
+                return -2
         else:
-            print("Warning: No message mapping for message type %d.%d" % (msg_type, msg_subtype))
+            print("Error: No message mapping for message type %d.%d" % (msg_type, msg_subtype))
         return -1
 
     @staticmethod
@@ -129,7 +140,7 @@ class DataExchange(object):
                 print("[MQTT] Connected.")
             except OSError:
                 retries = retries + 1
-                print("[MQTT] Failed to connect to server. Retries left %d"
+                print("[MQTT] Failed to connect to broker. Retries left %d"
                       % (self.MqttRetries - retries))
                 utime.sleep(DataExchange.CONNECT_RETRY_INTERVAL_SEC)
                 continue
@@ -146,7 +157,6 @@ class DataExchange(object):
         # Set the MQTT message receive callback which is called when a message is received
         # on a topic.
         self.MqttClient.set_callback(DataExchange._MqttMsgRecvCallback)
-
 
 class Endpoint(object):
 
