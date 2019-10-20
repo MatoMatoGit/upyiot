@@ -13,18 +13,24 @@ from module.DataExchange.DataExchange import Endpoint
 # Other
 from module.DataExchange.Message import Message
 from module.DataExchange.MessageBuffer import MessageBuffer
+from module.SystemTime import SystemTime
+
+from umqtt.simple import MQTTClient as UMqttClient
 
 class test_DataExchange(unittest.TestCase):
 
     DIR = "./"
-    ID = 32
+    ID = "32"
     RETRIES = 3
 
     MqttClient = None
     DataEx = None
+    Time = SystemTime.InstanceAcquire()
     RecvTopic = None
     RecvMsg = None
     RecvMsgCount = 0
+
+    SystemTime.Service()
 
     def setUp(arg):
         test_DataExchange.RecvMsgCount = 0
@@ -77,6 +83,18 @@ class test_DataExchange(unittest.TestCase):
         self.assertEqual(msg_map[DataExchange.MSG_MAP_URL], msg_url)
         self.assertIsNotNone(msg_map[DataExchange.MSG_MAP_RECV_BUFFER])
         self.assertIsInstance(msg_map[DataExchange.MSG_MAP_RECV_BUFFER], MessageBuffer)
+
+    def test_RegisterMessageTypeWithIdField(self):
+        msg_type = 3
+        msg_subtype = 3
+        msg_url = "<id>/sensor/temp"
+        exp_msg_url = test_DataExchange.ID + "/sensor/temp"
+        msg_dir = DataExchange.MSG_DIRECTION_RECV
+
+        self.DataEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_map = self.DataEx.MessageMapFromType(msg_type, msg_subtype)
+
+        self.assertEqual(msg_map[DataExchange.MSG_MAP_URL], exp_msg_url)
 
     def test_RegisterMessageTypeDirectionBoth(self):
         msg_type = 3
@@ -162,7 +180,7 @@ class test_DataExchange(unittest.TestCase):
         msg_map = self.DataEx.MessageMapFromType(msg_type, msg_subtype)
         buf = msg_map[DataExchange.MSG_MAP_RECV_BUFFER]
 
-        Message.Serialize(123, msg, msg_type, msg_subtype)
+        Message.Serialize("2019-09-04T23:34:44", msg, msg_type, msg_subtype)
         buf.MessagePut(Message.Stream().getvalue().decode('utf-8'))
         recv_msg = self.DataEx.MessageGet(msg_type, msg_subtype)
         print(recv_msg)
@@ -292,7 +310,7 @@ class test_DataExchange(unittest.TestCase):
 class test_Endpoint(unittest.TestCase):
 
     DIR = "./"
-    ID = ""
+    ID = "32"
     RETRIES = 3
 
     MqttClient = None
@@ -340,7 +358,7 @@ class test_Endpoint(unittest.TestCase):
         msg_map = self.DataEx.MessageMapFromType(msg_type, msg_subtype)
         buf = msg_map[DataExchange.MSG_MAP_RECV_BUFFER]
 
-        Message.Serialize(123, msg, msg_type, msg_subtype)
+        Message.Serialize("2019-09-04T23:34:44", msg, msg_type, msg_subtype)
         buf.MessagePut(Message.Stream().getvalue().decode('utf-8'))
         recv_msg = self.Ep.MessageGet(msg_type, msg_subtype)
         self.assertEqual(recv_msg[Message.MSG_SECTION_DATA], msg)
