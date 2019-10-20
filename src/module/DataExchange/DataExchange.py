@@ -2,10 +2,13 @@ from micropython import const
 
 from module.DataExchange.Message import Message
 from module.DataExchange.MessageBuffer import MessageBuffer
+from module.SystemTime import SystemTime
 
 import utime
 
 class DataExchange(object):
+
+    URL_FIELD_DEVICE_ID = "<id>"
 
     MSG_DIRECTION_SEND = const(0)
     MSG_DIRECTION_RECV = const(1)
@@ -33,8 +36,11 @@ class DataExchange(object):
         self.MqttClient = mqtt_client_obj
         self.MqttRetries = mqtt_retries
         self.ServiceInit = False
+        self.NewMessage = False
 
+        self.Time = SystemTime.InstanceAcquire()
         Message.DeviceId(client_id)
+        print("Device ID: {}".format(Message.DeviceId()))
         MessageBuffer.Configure(directory, Message.MSG_SIZE_MAX)
         DataExchange._Instance = self
 
@@ -46,6 +52,10 @@ class DataExchange(object):
                                         DataExchange.RECV_BUFFER_SIZE)
         else:
             recv_buffer = None
+
+        if DataExchange.URL_FIELD_DEVICE_ID in url:
+            url = url.replace(DataExchange.URL_FIELD_DEVICE_ID, Message.DeviceId())
+
         # Add the new mapping to the set of mappings.
         self.MessageMappings.add((msg_type, msg_subtype, url, recv_buffer))
 
@@ -72,18 +82,21 @@ class DataExchange(object):
                 topic = msg_map[DataExchange.MSG_MAP_URL]
                 msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
                 print("Publishing message on topic {}".format(topic))
-                self.MqttClient.publish(topic, msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len].decode('utf-8'))
+                self.MqttClient.publish(topic, msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len])
             else:
                 print("Warning: No topic defined for message type %d.%d" %
                       (msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
                        msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE]))
-
-        # Check for any received MQTT messages. The 'message received'-callback is called if a message
-        # was received.
-        self.MqttClient.check_msg()
+        while True:
+            # Check for any received MQTT messages. The 'message received'-callback is called if a message
+            # was received.
+            self.MqttClient.check_msg()
+            if self.NewMessage is False:
+                break
+            self.NewMessage = False
 
     def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
-        Message.Serialize(123, msg_data_dict, msg_type, msg_subtype)
+        Message.Serialize(self.Time.DateTime(), msg_data_dict, msg_type, msg_subtype)
         return self.SendMessageBuffer.MessagePutWithType(msg_type, msg_subtype,
                                                          Message.Stream().getvalue().decode('utf-8'))
 
@@ -95,7 +108,8 @@ class DataExchange(object):
             if msg_buf is not None:
                 msg_tup = msg_buf.MessageGet()
                 if msg_tup is not None:
-                    return Message.Deserialize(msg_tup[MessageBuffer.MSG_STRUCT_DATA])
+                    msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
+                    return Message.Deserialize(msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len])
                 else:
                     print("Info: No message of type %d.%d received." % (msg_type, msg_subtype))
                     return -3
@@ -119,7 +133,7 @@ class DataExchange(object):
 
     def MessageMapFromUrl(self, url):
         for msg_map in self.MessageMappings:
-            if msg_map[DataExchange.MSG_MAP_URL] is url:
+            if msg_map[DataExchange.MSG_MAP_URL] == url:
                 return msg_map
             return None
 
@@ -127,8 +141,9 @@ class DataExchange(object):
 
     @staticmethod
     def _MqttMsgRecvCallback(topic, msg):
+        topic = topic.decode('utf-8')
         data_ex = DataExchange.InstanceGet()
-
+        
         # Get the message mapping from the topic
         msg_map = data_ex.MessageMapFromUrl(topic)
         if msg_map is not None:
@@ -136,6 +151,7 @@ class DataExchange(object):
             msg_buf = msg_map[DataExchange.MSG_MAP_RECV_BUFFER]
             if msg_buf is not None:
                 msg_buf.MessagePut(msg)
+                data_ex.NewMessage = True
         else:
             print("Warning: No message mapping defined for topic %s" % topic)
 
@@ -157,18 +173,20 @@ class DataExchange(object):
                 utime.sleep(DataExchange.CONNECT_RETRY_INTERVAL_SEC)
                 continue
 
-        # TODO: Move this to the Service. Must be done periodically.
-        # Iterate through the available message mappings.
-        for msg_map in self.MessageMappings:
-            # If the message mapping contains a receive buffer the message can be
-            # received and must be subscribed to.
-            if msg_map[DataExchange.MSG_MAP_RECV_BUFFER] is not None:
-                # Subscribe to the message topic.
-                self.MqttClient.subscribe(msg_map[DataExchange.MSG_MAP_URL])
-
         # Set the MQTT message receive callback which is called when a message is received
         # on a topic.
         self.MqttClient.set_callback(DataExchange._MqttMsgRecvCallback)
+
+        # TODO: Move this to the Service. Must be done periodically.
+        # Iterate through the available message mappings.
+        for msg_map in self.MessageMappings:
+            print("Found message map: {}".format(msg_map))
+            # If the message mapping contains a receive buffer the message can be
+            # received and must be subscribed to.
+            if msg_map[DataExchange.MSG_MAP_RECV_BUFFER] is not None:
+                print("Subscribing to topic {}".format(msg_map[DataExchange.MSG_MAP_URL]))
+                # Subscribe to the message topic.
+                self.MqttClient.subscribe(msg_map[DataExchange.MSG_MAP_URL])
 
 
 class Endpoint(object):
