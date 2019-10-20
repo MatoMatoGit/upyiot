@@ -56,7 +56,7 @@ class MQTTClient:
             print("[MQTTClient] Not connected; cannot publish on topic {}".format(topic))
             return -1
         MQTTClient.PublishedMessages[topic] = message
-        print("[MQTTClient] Published message {} on topic {}".format(message, topic))
+        print("[MQTTClient] Published message on topic {}".format(topic))
         return 0
 
     def check_msg(self):
