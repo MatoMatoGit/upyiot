@@ -48,12 +48,12 @@ class test_SystemTime(unittest.TestCase):
 
         self.assertFalse(now[0] is 0)
 
-    def test_NowFormatted(self):
+    def test_DateTime(self):
         sys_time = SystemTime.InstanceAcquire()
 
         SystemTime.Service()
-        now = sys_time.NowFormatted()
-        print("Formatted time: {}".format(now))
+        dt = sys_time.DateTime()
+        print("Formatted time: {}".format(dt))
 
-        self.assertIn('2019', now)
-        self.assertIn('T', now)
+        self.assertIn('2019', dt)
+        self.assertIn('T', dt)

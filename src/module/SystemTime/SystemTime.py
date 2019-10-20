@@ -36,7 +36,7 @@ class SystemTime(object):
         datetime = SystemTime._Rtc.now()
         return datetime
  
-    def NowFormatted(self):
+    def DateTime(self):
         datetime = SystemTime._Rtc.now()
         # Format the datetime tuple as such: YYYY-MM-DDThh:mm:ss
         datetime_str = str(datetime[SystemTime.RTC_DATETIME_YEAR]) + \
