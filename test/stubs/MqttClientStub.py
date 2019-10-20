@@ -64,7 +64,7 @@ class MQTTClient:
             print("[MQTTClient] Checking topic {}".format(topic))
             if topic in MQTTClient.SubscribedTopics:
                 print("[MQTTClient] Subscription: Yes")
-                self.CbMessageReceived(topic, MQTTClient.PublishedMessages[topic])
+                self.CbMessageReceived(topic.encode('utf-8'), MQTTClient.PublishedMessages[topic])
             else:
                 print("[MQTTClient] Subscription: No")
         MQTTClient.PublishedMessages.clear()
