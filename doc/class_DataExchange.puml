@@ -1,34 +1,38 @@
 
 @startuml
 
-interface Endpoint {
-	errno Put (dict, type, sub_type)
-	dict Get (type, sub_type)
+class Endpoint {
+	Put (dict, type, sub_type)
+	Get (type, sub_type)
 }
 
 class Service {
 }
 
-class ExchangeBuffer {
-	Persistent data buffer per type/sub-type.
+class MessageBuffer {
+	Persistent message buffer per type:sub-type.
 }
 
 class Message {
+    Defines a common message structure.
 	Serializes dictionaries to JSON.
 	De-serializes JSON to dictionaries.
 }
 
 class DataExchange {
-	Exchanges data with the MQTT broker.
+	Publishes queued messages to the corresponding
+	topics.
+	Receives messages on subscribed
+	topics and queues them.
 }
 
-DataExchange -up--|> Endpoint
+Endpoint "1.."--o "1" DataExchange
 
 DataExchange ..> Message : use
 
-ExchangeBuffer "1.." -right--* DataExchange
+MessageBuffer "1.." -right--* DataExchange
 
-Service ..> Endpoint : use
+Service "1" ..* "1" Endpoint
 
 
 @enduml
