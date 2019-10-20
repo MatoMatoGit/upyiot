@@ -56,10 +56,11 @@ class Message:
 
     @staticmethod
     def Deserialize(msg_str):
+        del Message.Msg[Message.MSG_SECTION_DATA]
         try:
             Message.Msg = ujson.loads(msg_str)
         except ValueError:
-            print("Invalid JSON string")
+            print("Invalid JSON string: {}".format(msg_str))
         return Message.Msg
 
     @staticmethod
