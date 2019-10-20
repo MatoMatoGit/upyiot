@@ -4,7 +4,8 @@ class MessageBuffer:
 
     MSG_STRUCT_TYPE     = const(0)
     MSG_STRUCT_SUBTYPE  = const(1)
-    MSG_STRUCT_DATA     = const(2)
+    MSG_STRUCT_LEN      = const(2)
+    MSG_STRUCT_DATA     = const(3)
 
     MsgDataLen = 30
     MsgStructFmt = ""
@@ -16,7 +17,7 @@ class MessageBuffer:
     @staticmethod
     def Configure(directory, msg_len_max):
         MessageBuffer.MsgDataLen = msg_len_max
-        MessageBuffer.MsgStructFmt = "<ii" + \
+        MessageBuffer.MsgStructFmt = "<iiI" + \
                                      str(MessageBuffer.MsgDataLen) + "s"
         print("[MsgBuf] FMT: {}".format(MessageBuffer.MsgStructFmt))
         MessageBuffer.Directory = directory
@@ -37,11 +38,18 @@ class MessageBuffer:
     def MessagePut(self, msg_string):
         if len(msg_string) > MessageBuffer.MsgDataLen:
             return -1
-        print("Message string: {}".format(msg_string))
         # TODO: Use this instead when NvQueue / StructFile can utilize an external buffer.
         # ustruct.pack_into(MessageBuffer.MsgStructFmt, MessageBuffer._UnPackBuffer, 0,
         #                  self.MsgType, self.MsgSubtype, msg_string)
-        return self.Queue.Push(self.MsgType, self.MsgSubtype, msg_string)
+        return self.Queue.Push(self.MsgType, self.MsgSubtype, len(msg_string), msg_string)
+
+    def MessagePutWithType(self, msg_type, msg_subtype, msg_string):
+        if len(msg_string) > MessageBuffer.MsgDataLen:
+            return -1
+        # TODO: Use this instead when NvQueue / StructFile can utilize an external buffer.
+        # ustruct.pack_into(MessageBuffer.MsgStructFmt, MessageBuffer._UnPackBuffer, 0,
+        #                  self.MsgType, self.MsgSubtype, msg_string)
+        return self.Queue.Push(msg_type, msg_subtype, len(msg_string), msg_string)
 
     def MessageGet(self, msg_buffer=None):
         # TODO: Use the provided message buffer to unpack the struct.
@@ -56,3 +64,6 @@ class MessageBuffer:
 
     def IsConfigured(self):
         return MessageBuffer.Configured
+
+    def Delete(self):
+        self.Queue.Delete()
