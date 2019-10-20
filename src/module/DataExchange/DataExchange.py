@@ -11,7 +11,7 @@ class DataExchange(object):
     MSG_DIRECTION_RECV = const(1)
     MSG_DIRECTION_BOTH = const(2)
 
-    CONNECT_RETRY_INTERVAL_SEC  = const(5)
+    CONNECT_RETRY_INTERVAL_SEC  = const(1)
     MSG_URL_LEN_MAX             = const(30)
 
     # Buffer sizes (number of messages).
@@ -49,23 +49,34 @@ class DataExchange(object):
         # Add the new mapping to the set of mappings.
         self.MessageMappings.add((msg_type, msg_subtype, url, recv_buffer))
 
+    def Reset(self):
+        self.SendMessageBuffer.Delete()
+        for msg_map in self.MessageMappings:
+            msg_buf = msg_map[DataExchange.MSG_MAP_RECV_BUFFER]
+            if msg_buf is not None:
+                msg_buf.Delete()
+
     def Service(self):
         if self.ServiceInit is False:
             self._MqttSetup()
             self.ServiceInit = True
 
         msg_count = self.SendMessageBuffer.MessageCount()
+        print("Messages in send-buffer: {}".format(msg_count))
         for i in range(0, msg_count):
-            msg_struct = self.SendMessageBuffer.MessageGet()
-            msg_map = self.MessageMapFromType(msg_struct[MessageBuffer.MSG_STRUCT_TYPE],
-                                              msg_struct[MessageBuffer.MSG_STRUCT_SUBTYPE])
+            msg_tup = self.SendMessageBuffer.MessageGet()
+            msg_map = self.MessageMapFromType(msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
+                                              msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE])
             if msg_map is not None:
+                print("Found message map: {}".format(msg_map))
                 topic = msg_map[DataExchange.MSG_MAP_URL]
-                self.MqttClient.publish(topic, msg_struct[MessageBuffer.MSG_STRUCT_DATA])
+                msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
+                print("Publishing message on topic {}".format(topic))
+                self.MqttClient.publish(topic, msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len].decode('utf-8'))
             else:
                 print("Warning: No topic defined for message type %d.%d" %
-                      (msg_struct[MessageBuffer.MSG_STRUCT_TYPE],
-                       msg_struct[MessageBuffer.MSG_STRUCT_SUBTYPE]))
+                      (msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
+                       msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE]))
 
         # Check for any received MQTT messages. The 'message received'-callback is called if a message
         # was received.
@@ -73,7 +84,8 @@ class DataExchange(object):
 
     def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
         Message.Serialize(123, msg_data_dict, msg_type, msg_subtype)
-        return self.SendMessageBuffer.MessagePut(Message.Stream().getvalue().decode('utf-8'))
+        return self.SendMessageBuffer.MessagePutWithType(msg_type, msg_subtype,
+                                                         Message.Stream().getvalue().decode('utf-8'))
 
     def MessageGet(self, msg_type, msg_subtype):
         msg_map = self.MessageMapFromType(msg_type, msg_subtype)
@@ -158,13 +170,14 @@ class DataExchange(object):
         # on a topic.
         self.MqttClient.set_callback(DataExchange._MqttMsgRecvCallback)
 
+
 class Endpoint(object):
 
     def __init__(self):
         self.DataEx = DataExchange.InstanceGet()
 
     def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
-        self.DataEx.MessagePut(msg_data_dict, msg_type, msg_subtype)
+        return self.DataEx.MessagePut(msg_data_dict, msg_type, msg_subtype)
 
     def MessageGet(self, msg_type, msg_subtype):
         return self.DataEx.MessageGet(msg_type, msg_subtype)
