@@ -54,8 +54,7 @@ class SystemTime(object):
             SystemTime._Rtc = RTC()
         else:
             raise Exception("Only a single instance of this class is allowed")
-       
-    
+
     def _NtpTimeGet(self):
         ntp_query = bytearray(SystemTime.NTP_BUF_SIZE)
         ntp_query[0] = 0x1b
@@ -87,4 +86,4 @@ def Service():
         tm = utime.localtime(ntp_time)
         tm = tm[0:3] + (0,) + tm[3:6] + (0,)
         SystemTime._Rtc.datetime(tm)
-       
+
