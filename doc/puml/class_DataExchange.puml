@@ -9,6 +9,10 @@ class Endpoint {
 class Service {
 }
 
+class SystemTime {
+    Provides the current date-time.
+}
+
 class MessageBuffer {
 	Persistent message buffer per type:sub-type.
 }
@@ -30,9 +34,10 @@ Endpoint "1.."--o "1" DataExchange
 
 DataExchange ..> Message : use
 
+DataExchange ..> SystemTime : use
+
 MessageBuffer "1.." -right--* DataExchange
 
 Service "1" ..* "1" Endpoint
-
 
 @enduml
