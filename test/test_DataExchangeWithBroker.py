@@ -74,7 +74,7 @@ class test_DataExchangeWithBroker(unittest.TestCase):
 
         msg_type = 3
         msg_subtype = 3
-        msg_url = "<id>/sensor/temp"
+        msg_url = "<pn>/<id>/temp"
         msg = {"test": "msg"}
         msg_dir = DataExchange.MSG_DIRECTION_BOTH
 
@@ -85,14 +85,15 @@ class test_DataExchangeWithBroker(unittest.TestCase):
 
         ep.MessagePut(msg, msg_type, msg_subtype)
 
-        # Run the Service again to publish and check for received messages.
+        # Run the Service again to publish the message.
         self.DataEx.Service()
 
         utime.sleep(1)
 
-        # Run the Service again to publish and check for received messages.
+        # Run the Service again to receive the message.
         self.DataEx.Service()
 
         recv_msg = ep.MessageGet(msg_type, msg_subtype)
         print(recv_msg)
         self.assertEqual(recv_msg[Message.MSG_SECTION_DATA], msg)
+
