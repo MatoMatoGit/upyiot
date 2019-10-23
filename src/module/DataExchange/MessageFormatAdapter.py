@@ -1,62 +1,70 @@
 from micropython import const
 from middleware.SubjectObserver.SubjectObserver import Observer
-from module.DataExchange.DataExchange import Endpoint
 
 
-class MessagePartObserver(Observer):
+class MessagePartSource:
 
     def __init__(self, msg_formatter_obj, key):
         self.MsgFormatter = msg_formatter_obj
         self.Key = key
+
+
+class MessagePartObserver(MessagePartSource, Observer):
+
+    def __init__(self, msg_formatter_obj, key):
+        super().__init__(msg_formatter_obj, key)
 
     def Update(self, arg):
         self.MsgFormatter.MessagePartAdd(self.Key, arg)
 
 
-class MessagePartStream:
+class MessagePartStream(MessagePartSource):
 
     def __init__(self, msg_formatter_obj, key):
-        self.MsgFormatter = msg_formatter_obj
-        self.Key = key
+        super().__init__(msg_formatter_obj, key)
 
     def write(self, data):
         self.MsgFormatter.MessagePartAdd(self.Key, data)
 
 
 class MessageFormatAdapter:
-    SEND_ON_CHANGE   = const(0)
-    SEND_ON_COMPLETE = const(1)
+    SEND_ON_CHANGE      = const(0)
+    SEND_ON_COMPLETE    = const(1)
 
-    def __init__(self, msg_def, msg_type, msg_subtype, mode):
+    def __init__(self, endpoint, msg_def, msg_type, msg_subtype, mode):
         self.MsgDef = msg_def
         self.Mode = mode
         self.Inputs = set()
         self.MsgType = msg_type
         self.MsgSubtype = msg_subtype
         self.PartCount = 0
-        self.Endpoint = Endpoint()
+        self.Endpoint = endpoint
 
-    def CreateObserver(key):
-        if key is not in self.MsgDef:
-             return -1
+    def CreateObserver(self, key):
+        if key not in self.MsgDef:
+            return -1
         observer = MessagePartObserver(self, key)
         self.Inputs.add(observer)
         return observer
 
-    def CreateStream(key):
-        if key is not in self.MsgDef:
-             return -1
+    def CreateStream(self, key):
+        if key not in self.MsgDef:
+            return -1
         stream = MessagePartStream(self, key)
         self.Inputs.add(stream)
         return stream
 
-    def MessagePartAdd(key, value)
+    def MessagePartAdd(self, key, value):
         self.MsgDef[key] = value
+        print(self.MsgDef)
         self.PartCount = self.PartCount + 1
+        print(self.PartCount)
         # If all parts of the message have been updated, or
         # the message must be sent on any change,
         # hand over the message to the DataExchange Endpoint.
-        if self.PartCount is len(self.Msg) or self.Mode is MessageFormatAdapter.SEND_ON_CHANGE:
+        if self.PartCount is len(self.MsgDef) or \
+                self.Mode is MessageFormatAdapter.SEND_ON_CHANGE:
+            print("Sending message")
             self.Endpoint.MessagePut(self.MsgDef, self.MsgType, 
                                      self.MsgSubtype)
             self.PartCount = 0
