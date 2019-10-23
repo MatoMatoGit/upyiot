@@ -15,7 +15,6 @@ from module.DataExchange.Message import Message
 from module.DataExchange.MessageBuffer import MessageBuffer
 from module.SystemTime import SystemTime
 
-from umqtt.simple import MQTTClient as UMqttClient
 
 class test_DataExchange(unittest.TestCase):
 
