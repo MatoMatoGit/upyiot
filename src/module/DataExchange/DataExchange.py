@@ -9,6 +9,9 @@ import utime
 class DataExchange(object):
 
     URL_FIELD_DEVICE_ID = "<id>"
+    URL_FIELD_PRODUCT_NAME = "<pn>"
+
+    PRODUCT_NAME = "smartsensor"
 
     MSG_DIRECTION_SEND = const(0)
     MSG_DIRECTION_RECV = const(1)
@@ -54,7 +57,11 @@ class DataExchange(object):
             recv_buffer = None
 
         if DataExchange.URL_FIELD_DEVICE_ID in url:
-            url = url.replace(DataExchange.URL_FIELD_DEVICE_ID, Message.DeviceId())
+            url = url.replace(DataExchange.URL_FIELD_DEVICE_ID,
+                              Message.DeviceId())
+        if DataExchange.URL_FIELD_PRODUCT_NAME in url:
+            url = url.replace(DataExchange.URL_FIELD_PRODUCT_NAME,
+                              DataExchange.PRODUCT_NAME)
 
         # Add the new mapping to the set of mappings.
         self.MessageMappings.add((msg_type, msg_subtype, url, recv_buffer))
@@ -143,7 +150,7 @@ class DataExchange(object):
     def _MqttMsgRecvCallback(topic, msg):
         topic = topic.decode('utf-8')
         data_ex = DataExchange.InstanceGet()
-        
+
         # Get the message mapping from the topic
         msg_map = data_ex.MessageMapFromUrl(topic)
         if msg_map is not None:
