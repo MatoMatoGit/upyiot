@@ -16,7 +16,7 @@ class NvQueueIterator(object):
 
 class NvQueue:
 
-    # Capacity, read offset, write offset.
+    # Capacity, count, read offset, write offset.
     META_FMT = "<HHHH"
     META_STRUCT_CAP     = const(0)
     META_STRUCT_CNT     = const(1)
@@ -55,7 +55,7 @@ class NvQueue:
     def Push(self, *item):
         if self.Space() is 0:
             return -1
-
+        print("[NvQueue] Writing tuple to file: {}".format(item))
         self.Queue.WriteData(self.WriteOffset, *item)
         self.WriteOffset = self._OffsetAdvance(self.WriteOffset)
         self._CountInc()
