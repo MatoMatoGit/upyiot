@@ -18,21 +18,21 @@ class DataExchange(object):
     MSG_DIRECTION_BOTH = const(2)
 
     CONNECT_RETRY_INTERVAL_SEC  = const(1)
-    MSG_URL_LEN_MAX             = const(30)
 
     # Buffer sizes (number of messages).
-    SEND_BUFFER_SIZE = const(40)
-    RECV_BUFFER_SIZE = const(10)
+    SEND_BUFFER_SIZE = const(1000)
+    RECV_BUFFER_SIZE = const(100)
     
-    MSG_MAP_TYPE    = const(0)
-    MSG_MAP_SUBTYPE = const(1)
-    MSG_MAP_URL     = const(2)
+    MSG_MAP_TYPE        = const(0)
+    MSG_MAP_SUBTYPE     = const(1)
+    MSG_MAP_URL         = const(2)
     MSG_MAP_RECV_BUFFER = const(3)
     MSG_MAP_SUBSCRIBED  = const(4)
 
     _Instance = None
 
     def __init__(self, directory, mqtt_client_obj, client_id, mqtt_retries):
+        MessageBuffer.Configure(directory, Message.MSG_SIZE_MAX)
         self.SendMessageBuffer = MessageBuffer('send', -1, -1,
                                                DataExchange.SEND_BUFFER_SIZE)
         self.MessageMappings = set()
@@ -44,7 +44,6 @@ class DataExchange(object):
         self.Time = SystemTime.InstanceAcquire()
         Message.DeviceId(client_id)
         print("Device ID: {}".format(Message.DeviceId()))
-        MessageBuffer.Configure(directory, Message.MSG_SIZE_MAX)
         DataExchange._Instance = self
 
     def RegisterMessageType(self, msg_type, msg_subtype, url, direction):
@@ -103,7 +102,9 @@ class DataExchange(object):
             self.NewMessage = False
 
     def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
+        print("[DataEx] Serializing message: {}".format(msg_data_dict))
         Message.Serialize(self.Time.DateTime(), msg_data_dict, msg_type, msg_subtype)
+        print("[DataEx] Serialized length: {}".format(len(Message.Stream().getvalue().decode('utf-8'))))
         return self.SendMessageBuffer.MessagePutWithType(msg_type, msg_subtype,
                                                          Message.Stream().getvalue().decode('utf-8'))
 
