@@ -181,8 +181,9 @@ class StructFile(object):
         return 0
         
     def WriteData(self, index, *data):
-        print("Index: {}".format(index))
+        print("[StructFile] Format: {}".format(self.DataFmt))
         struct = ustruct.pack(self.DataFmt, *data)
+        # print("[StructFile] Packed data: {}".format(struct))
         self._FileWriteStruct(struct, index)
 
         return 0
