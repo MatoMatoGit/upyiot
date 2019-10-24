@@ -7,7 +7,7 @@ class MessageBuffer:
     MSG_STRUCT_LEN      = const(2)
     MSG_STRUCT_DATA     = const(3)
 
-    MsgDataLen = 30
+    MsgDataLen = 0
     MsgStructFmt = ""
     Directory = ""
 
@@ -37,7 +37,10 @@ class MessageBuffer:
 
     def MessagePut(self, msg_string):
         if len(msg_string) > MessageBuffer.MsgDataLen:
+            print("[MsgBuf] Error: Message string length ({})exceeds max length ({})".format(len(msg_string),
+                                                                                             MessageBuffer.MsgDataLen))
             return -1
+        print("[MsgBuf] Pushing message string: {}".format(msg_string))
         # TODO: Use this instead when NvQueue / StructFile can utilize an external buffer.
         # ustruct.pack_into(MessageBuffer.MsgStructFmt, MessageBuffer._UnPackBuffer, 0,
         #                  self.MsgType, self.MsgSubtype, msg_string)
@@ -45,7 +48,10 @@ class MessageBuffer:
 
     def MessagePutWithType(self, msg_type, msg_subtype, msg_string):
         if len(msg_string) > MessageBuffer.MsgDataLen:
+            print("[MsgBuf] Error: Message string length ({})exceeds max length ({})".format(len(msg_string),
+                                                                                             MessageBuffer.MsgDataLen))
             return -1
+        print("[MsgBuf] Pushing message string: {}".format(msg_string))
         # TODO: Use this instead when NvQueue / StructFile can utilize an external buffer.
         # ustruct.pack_into(MessageBuffer.MsgStructFmt, MessageBuffer._UnPackBuffer, 0,
         #                  self.MsgType, self.MsgSubtype, msg_string)
