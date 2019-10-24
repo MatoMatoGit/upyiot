@@ -1,63 +1,60 @@
 from middleware.AvgFilter import AvgFilter
 from middleware.SubjectObserver.SubjectObserver import Subject
-from middleware.StructFile import StructFile
+from middleware.NvQueue import NvQueue
 
 from micropython import const
 
 class Sensor(object):
     FILE_SAMPLES_MAX        = const(9999)
-    FILE_OFFSET_MAX         = const(9999)
     SAMPLE_FMT              = "<i"
-    SAMPLE_SIZE             = 0
       
     def __init__(self, directory, name, filter_depth, sensor_abs):
         self.SensorAbstraction = sensor_abs
         self.Filter = AvgFilter.AvgFilter(filter_depth)
-        self.SensorFile = StructFile.StructFile(directory + '/' + name, Sensor.SAMPLE_FMT)
+        self.SampleQueue = NvQueue.NvQueue(directory + '/' + name, Sensor.SAMPLE_FMT, Sensor.FILE_SAMPLES_MAX)
         self.NewSample = Subject()
-    
-    def _Process(self, sample):
-        self.Filter.Input(sample)
-        avg_sample = self.Filter.Output()
-        self._SampleStore(avg_sample)
-        self.NewSample.State = avg_sample
-    
+
     @property  
     def ValueAverage(self):
         return self.NewSample.State
     
     @property
     def SamplesCount(self):
-        return self.SensorFile.Count
+        return self.SampleQueue.Count
     
-    def SamplesGet(self, buf):
-        self._SamplesLoad(buf)
-        return self.SensorFile.Count
+    def SamplesGet(self, sample_buf):
+        self._SamplesLoad(sample_buf)
+        return self.SampleQueue.Count
   
     def SamplesClear(self):
-        self.SensoFile.Clear()
+        self.SampleQueue.Clear()
         
     def SamplesDelete(self):
-        self.SensorFile.Delete()
+        self.SampleQueue.Delete()
     
     def FilterReset(self):
         self.Filter.Reset()
         
     def Read(self):
-        self._Process(self.SensorAbstraction.Read())
+        self._SampleProcess(self.SensorAbstraction.Read())
         return self.NewSample.State
     
     def ObserverAttachNewSample(self, observer):
         self.NewSample.Attach(observer)
 
+    def _SampleProcess(self, sample):
+        self.Filter.Input(sample)
+        avg_sample = self.Filter.Output()
+        self._SampleStore(avg_sample)
+        self.NewSample.State = avg_sample
+
     def _SampleStore(self, sample):
-        self.SensorFile.AppendData(sample)
+        self.SampleQueue.Push(sample)
 
     def _SamplesLoad(self, sample_buf):
-
-        print("Dumping {} samples:".format(self.SensorFile.Count))
+        print("Dumping {} samples:".format(self.SampleQueue.Count))
         i = 0
-        for sample in self.SensorFile:
-            sample_buf[i] = sample[0]
-            i = i + 1
-    
+        num_samples = self.SampleQueue.Count
+        for i in range(0, num_samples):
+            sample_buf[i] = self.SampleQueue.Pop()[0]
+
