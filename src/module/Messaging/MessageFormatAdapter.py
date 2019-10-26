@@ -1,5 +1,6 @@
 from micropython import const
 from middleware.SubjectObserver.SubjectObserver import Observer
+from module.Messaging.MessageSpecification import MessageSpecification
 
 
 class MessagePartSource:
@@ -31,12 +32,12 @@ class MessageFormatAdapter:
     SEND_ON_CHANGE      = const(0)
     SEND_ON_COMPLETE    = const(1)
 
-    def __init__(self, endpoint, msg_def, msg_type, msg_subtype, mode):
-        self.MsgDef = msg_def
+    def __init__(self, endpoint, mode, msg_spec_obj):
+        self.MsgDef = msg_spec_obj.DataDef
         self.Mode = mode
         self.Inputs = set()
-        self.MsgType = msg_type
-        self.MsgSubtype = msg_subtype
+        self.MsgType = msg_spec_obj.Type
+        self.MsgSubtype = msg_spec_obj.Subtype
         self.PartCount = 0
         self.Endpoint = endpoint
 
