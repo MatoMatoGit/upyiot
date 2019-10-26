@@ -8,6 +8,7 @@ from TestUtil import TestUtil
 # Unit Under Test
 from module.Messaging.MessageExchange import MessageExchange
 from module.Messaging.MessageExchange import Endpoint
+from module.Messaging.MessageSpecification import MessageSpecification
 
 # Other
 from module.Messaging.Message import Message
@@ -78,7 +79,9 @@ class test_MessagingWithBroker(unittest.TestCase):
         msg = {"test": "msg"}
         msg_dir = MessageExchange.MSG_DIRECTION_BOTH
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
 
         # Initialize the Service on the first run
         self.MsgEx.Service()

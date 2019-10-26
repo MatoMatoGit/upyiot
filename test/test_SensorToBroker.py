@@ -5,15 +5,15 @@ sys.path.append('../src/')
 import unittest
 from TestUtil import TestUtil
 from stubs import DummySensor
+from ExampleMessage import ExampleMessage
 
 # Unit Under Test
-from module.DataExchange.DataExchange import DataExchange
-from module.DataExchange.DataExchange import Endpoint
-from module.DataExchange.MessageFormatAdapter import MessageFormatAdapter
+from module.Messaging.MessageExchange import MessageExchange
+from module.Messaging.MessageExchange import Endpoint
+from module.Messaging.MessageFormatAdapter import MessageFormatAdapter
 from middleware.Sensor import Sensor
 
 # Other
-from module.DataExchange.Message import Message
 from module.SystemTime import SystemTime
 from umqtt.simple import MQTTClient
 import utime
@@ -28,7 +28,7 @@ class test_SensorToBroker(unittest.TestCase):
     PORT = 1883
 
     MqttClient = None
-    DataEx = None
+    MsgEx = None
     Time = SystemTime.InstanceAcquire()
     RecvTopic = None
     RecvMsg = None
@@ -49,16 +49,16 @@ class test_SensorToBroker(unittest.TestCase):
         test_SensorToBroker.MqttClient = MQTTClient(test_SensorToBroker.ID,
                                                     test_SensorToBroker.BROKER,
                                                     test_SensorToBroker.PORT)
-        test_SensorToBroker.DataEx = DataExchange(test_SensorToBroker.DIR,
-                                                  test_SensorToBroker.MqttClient,
-                                                  test_SensorToBroker.ID,
-                                                  test_SensorToBroker.RETRIES)
+        test_SensorToBroker.MsgEx = MessageExchange(test_SensorToBroker.DIR,
+                                                    test_SensorToBroker.MqttClient,
+                                                    test_SensorToBroker.ID,
+                                                    test_SensorToBroker.RETRIES)
         test_SensorToBroker.RecvMsgCount = 0
         test_SensorToBroker.RecvTopic = None
         test_SensorToBroker.RecvMsg = None
 
     def tearDown(arg):
-        test_SensorToBroker.DataEx.Reset()
+        test_SensorToBroker.MsgEx.Reset()
 
     @staticmethod
     def MqttMsgRecvCallback(topic, msg):
@@ -69,24 +69,20 @@ class test_SensorToBroker(unittest.TestCase):
     def test_PublishSensorValues(self):
 
         # Message definition
-        msg_type = 3
-        msg_subtype = 1
-        msg_url = "<pn>/<id>/temp"
-        msg = {"arr": "", "n": 0}
-        msg_dir = DataExchange.MSG_DIRECTION_BOTH
+        msg_spec = ExampleMessage()
 
         # Create a Messaging Endpoint and a MessageFormatAdapter.
         ep = Endpoint()
-        adapt = MessageFormatAdapter(ep, msg, msg_type, msg_subtype, MessageFormatAdapter.SEND_ON_COMPLETE)
+        adapt = MessageFormatAdapter(ep, MessageFormatAdapter.SEND_ON_COMPLETE, msg_spec)
 
-        sample_stream = adapt.CreateStream("arr")
-        sample_count_stream = adapt.CreateStream("n")
+        sample_stream = adapt.CreateStream(ExampleMessage.DATA_KEY_ARRAY)
+        sample_count_stream = adapt.CreateStream(ExampleMessage.DATA_KEY_N)
 
         # Register the temperature message type and topic.
-        self.DataEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        self.MsgEx.RegisterMessageType(msg_spec)
 
         # Initialize the Messaging Service on the first run
-        self.DataEx.Service()
+        self.MsgEx.Service()
 
         # Read sensor values.
         for i in range(0, 5):
@@ -116,16 +112,16 @@ class test_SensorToBroker(unittest.TestCase):
         sample_stream.write(buf)
 
         # Run the Service again to publish the messages.
-        self.DataEx.Service()
+        self.MsgEx.Service()
 
         utime.sleep(1)
 
         # Run the Service again to receive the message.
-        self.DataEx.Service()
+        self.MsgEx.Service()
 
         # Receive both published temperature messages.
-        recv_msg = ep.MessageGet(msg_type, msg_subtype)
+        recv_msg = ep.MessageGet(msg_spec.Type, msg_spec.Subtype)
         print("Received message: {}".format(recv_msg))
-        recv_msg = ep.MessageGet(msg_type, msg_subtype)
+        recv_msg = ep.MessageGet(msg_spec.Type, msg_spec.Subtype)
         print("Received message: {}".format(recv_msg))
 

@@ -6,10 +6,10 @@ import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from module.DataExchange.MessageFormatAdapter import MessageFormatAdapter
+from module.Messaging.MessageFormatAdapter import MessageFormatAdapter
 
 # Other
-
+from ExampleMessage import ExampleMessage
 
 class EndpointStub:
 
@@ -32,9 +32,10 @@ class test_MessageFormatAdapter(unittest.TestCase):
         return
 
     def test_Constructor(self):
-        msg_fmt = {"arr": "", "n": 0}
+        msg_spec = ExampleMessage()
+
         ep = EndpointStub()
-        adapt = MessageFormatAdapter(ep, msg_fmt, 1, 2, MessageFormatAdapter.SEND_ON_COMPLETE)
+        adapt = MessageFormatAdapter(ep, MessageFormatAdapter.SEND_ON_COMPLETE, msg_spec)
 
         observer = adapt.CreateObserver("n")
         stream = adapt.CreateStream("arr")
