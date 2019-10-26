@@ -60,7 +60,7 @@ class MessageFormatAdapter:
         self.PartCount = self.PartCount + 1
         # If all parts of the message have been updated, or
         # the message must be sent on any change,
-        # hand over the message to the DataExchange Endpoint.
+        # hand over the message to the Messaging Endpoint.
         if self.PartCount is len(self.MsgDef) or \
                 self.Mode is MessageFormatAdapter.SEND_ON_CHANGE:
             print("Handover to endpoint: {}".format(self.MsgDef))

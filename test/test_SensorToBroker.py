@@ -75,7 +75,7 @@ class test_SensorToBroker(unittest.TestCase):
         msg = {"arr": "", "n": 0}
         msg_dir = DataExchange.MSG_DIRECTION_BOTH
 
-        # Create a DataExchange Endpoint and a MessageFormatAdapter.
+        # Create a Messaging Endpoint and a MessageFormatAdapter.
         ep = Endpoint()
         adapt = MessageFormatAdapter(ep, msg, msg_type, msg_subtype, MessageFormatAdapter.SEND_ON_COMPLETE)
 
@@ -85,7 +85,7 @@ class test_SensorToBroker(unittest.TestCase):
         # Register the temperature message type and topic.
         self.DataEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
 
-        # Initialize the DataExchange Service on the first run
+        # Initialize the Messaging Service on the first run
         self.DataEx.Service()
 
         # Read sensor values.
