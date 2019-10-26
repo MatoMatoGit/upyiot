@@ -46,6 +46,7 @@ class Message:
 
     @staticmethod
     def Serialize(datetime, msg_data_dict, msg_type, msg_subtype):
+        Message.Msg[Message.MSG_SECTION_DATA] = ""
         Message._StreamBuffer.seek(0)
         Message.Msg[Message.MSG_SECTION_META][Message.MSG_META_DATETIME] = datetime
         Message.Msg[Message.MSG_SECTION_META][Message.MSG_META_TYPE] = msg_type
@@ -56,7 +57,7 @@ class Message:
 
     @staticmethod
     def Deserialize(msg_str):
-        del Message.Msg[Message.MSG_SECTION_DATA]
+        Message.Msg[Message.MSG_SECTION_DATA] = ""
         try:
             Message.Msg = ujson.loads(msg_str)
         except ValueError:
