@@ -9,6 +9,7 @@ from stubs.MqttClientStub import MQTTClient
 # Unit Under Test
 from module.Messaging.MessageExchange import MessageExchange
 from module.Messaging.MessageExchange import Endpoint
+from module.Messaging.MessageSpecification import MessageSpecification
 
 # Other
 from module.Messaging.Message import Message
@@ -58,9 +59,12 @@ class test_MessageExchange(unittest.TestCase):
         msg_type = 1
         msg_subtype = 3
         msg_url = "/sensor/temp"
+        msg_data = {}
         msg_dir = MessageExchange.MSG_DIRECTION_SEND
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         msg_map = self.MsgEx.MessageMapFromType(msg_type, msg_subtype)
         print(msg_map)
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_TYPE], msg_type)
@@ -72,9 +76,12 @@ class test_MessageExchange(unittest.TestCase):
         msg_type = 3
         msg_subtype = 3
         msg_url = "/sensor/temp"
+        msg_data = {}
         msg_dir = MessageExchange.MSG_DIRECTION_RECV
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         msg_map = self.MsgEx.MessageMapFromType(msg_type, msg_subtype)
 
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_TYPE], msg_type)
@@ -88,9 +95,12 @@ class test_MessageExchange(unittest.TestCase):
         msg_subtype = 3
         msg_url = "<id>/sensor/temp"
         exp_msg_url = test_MessageExchange.ID + "/sensor/temp"
+        msg_data = {}
         msg_dir = MessageExchange.MSG_DIRECTION_RECV
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         msg_map = self.MsgEx.MessageMapFromType(msg_type, msg_subtype)
 
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_URL], exp_msg_url)
@@ -99,9 +109,12 @@ class test_MessageExchange(unittest.TestCase):
         msg_type = 3
         msg_subtype = 3
         msg_url = "/sensor/temp"
+        msg_data = {}
         msg_dir = MessageExchange.MSG_DIRECTION_BOTH
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         msg_map = self.MsgEx.MessageMapFromType(msg_type, msg_subtype)
 
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_TYPE], msg_type)
@@ -114,9 +127,12 @@ class test_MessageExchange(unittest.TestCase):
         msg_type = 3
         msg_subtype = 3
         msg_url = "/sensor/temp"
+        msg_data = {}
         msg_dir = MessageExchange.MSG_DIRECTION_BOTH
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         msg_map = self.MsgEx.MessageMapFromType(msg_type, msg_subtype)
 
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_TYPE], msg_type)
@@ -135,9 +151,12 @@ class test_MessageExchange(unittest.TestCase):
         msg_type = 3
         msg_subtype = 3
         msg_url = "/sensor/temp"
+        msg_data = {}
         msg_dir = MessageExchange.MSG_DIRECTION_BOTH
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         msg_map = self.MsgEx.MessageMapFromUrl(msg_url)
 
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_TYPE], msg_type)
@@ -155,10 +174,13 @@ class test_MessageExchange(unittest.TestCase):
         msg_type = 3
         msg_subtype = 3
         msg_url = "/sensor/temp"
+        msg_data = {}
         msg = {"test": "msg"}
         msg_dir = MessageExchange.MSG_DIRECTION_BOTH
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         res = self.MsgEx.MessagePut(msg, msg_type, msg_subtype)
         msg_tuple = self.MsgEx.SendMessageBuffer.MessageGet()
 
@@ -172,10 +194,13 @@ class test_MessageExchange(unittest.TestCase):
         msg_type = 3
         msg_subtype = 3
         msg_url = "/sensor/temp"
+        msg_data = {}
         msg = {"test": "msg"}
         msg_dir = MessageExchange.MSG_DIRECTION_BOTH
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         msg_map = self.MsgEx.MessageMapFromType(msg_type, msg_subtype)
         buf = msg_map[MessageExchange.MSG_MAP_RECV_BUFFER]
 
@@ -190,9 +215,12 @@ class test_MessageExchange(unittest.TestCase):
         msg_type = 3
         msg_subtype = 3
         msg_url = "/sensor/temp"
+        msg_data = {}
         msg_dir = MessageExchange.MSG_DIRECTION_BOTH
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         recv_msg = self.MsgEx.MessageGet(msg_type, msg_subtype)
 
         self.assertEqual(recv_msg, -3)
@@ -201,9 +229,12 @@ class test_MessageExchange(unittest.TestCase):
         msg_type = 3
         msg_subtype = 3
         msg_url = "/sensor/temp"
+        msg_data = {}
         msg_dir = MessageExchange.MSG_DIRECTION_SEND
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         recv_msg = self.MsgEx.MessageGet(msg_type, msg_subtype)
 
         self.assertEqual(recv_msg, -2)
@@ -250,9 +281,12 @@ class test_MessageExchange(unittest.TestCase):
         msg_type = 3
         msg_subtype = 3
         msg_url = "/sensor/temp"
+        msg_data = {}
         msg_dir = MessageExchange.MSG_DIRECTION_BOTH
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         self.MsgEx.Service()
         subscription = self.MqttClient.has_subscription(msg_url)
 
@@ -263,7 +297,10 @@ class test_MessageExchange(unittest.TestCase):
         msg_subtype = 3
         msg_url = "/sensor/temp"
         msg = {"test": "msg"}
+        msg_data  = {}
         msg_dir = MessageExchange.MSG_DIRECTION_SEND
+
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
         # Initialize the Service on the first run
         self.MsgEx.Service()
@@ -274,7 +311,7 @@ class test_MessageExchange(unittest.TestCase):
         # Subscribe to the topic.
         self.MqttClient.subscribe(msg_url)
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        self.MsgEx.RegisterMessageType(msg_spec)
         self.MsgEx.MessagePut(msg, msg_type, msg_subtype)
 
         # Run the Service again to publish the message
@@ -290,12 +327,15 @@ class test_MessageExchange(unittest.TestCase):
         msg_subtype = 3
         msg_url = "/sensor/temp"
         msg = {"test": "msg"}
+        msg_data = {}
         msg_dir = MessageExchange.MSG_DIRECTION_BOTH
+
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
         # Initialize the Service on the first run
         self.MsgEx.Service()
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        self.MsgEx.RegisterMessageType(msg_spec)
         self.MsgEx.MessagePut(msg, msg_type, msg_subtype)
 
         # Run the Service again to publish and check for received messages.
@@ -339,9 +379,12 @@ class test_Endpoint(unittest.TestCase):
         msg_subtype = 3
         msg_url = "/sensor/temp"
         msg = {"test": "msg"}
+        msg_data = {}
         msg_dir = MessageExchange.MSG_DIRECTION_BOTH
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         res = self.Ep.MessagePut(msg, msg_type, msg_subtype)
 
         self.assertEqual(res, 1)
@@ -351,9 +394,12 @@ class test_Endpoint(unittest.TestCase):
         msg_subtype = 3
         msg_url = "/sensor/temp"
         msg = {"test": "msg"}
+        msg_data ={}
         msg_dir = MessageExchange.MSG_DIRECTION_BOTH
 
-        self.MsgEx.RegisterMessageType(msg_type, msg_subtype, msg_url, msg_dir)
+        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
+
+        self.MsgEx.RegisterMessageType(msg_spec)
         msg_map = self.MsgEx.MessageMapFromType(msg_type, msg_subtype)
         buf = msg_map[MessageExchange.MSG_MAP_RECV_BUFFER]
 

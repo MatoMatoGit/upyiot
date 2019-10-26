@@ -1,5 +1,6 @@
 from micropython import const
 
+from module.Messaging.MessageSpecification import MessageSpecification
 from module.Messaging.Message import Message
 from module.Messaging.MessageBuffer import MessageBuffer
 from module.SystemTime import SystemTime
@@ -47,15 +48,16 @@ class MessageExchange(object):
         print("Device ID: {}".format(Message.DeviceId()))
         MessageExchange._Instance = self
 
-    def RegisterMessageType(self, msg_type, msg_subtype, url, direction):
+    def RegisterMessageType(self, msg_spec_obj):
         # If this message can be received
-        if direction is not MessageExchange.MSG_DIRECTION_SEND:
+        if msg_spec_obj.Direction is not MessageExchange.MSG_DIRECTION_SEND:
             # Create receive buffer for the messages of this type.
-            recv_buffer = MessageBuffer('recv', msg_type, msg_subtype,
+            recv_buffer = MessageBuffer('recv', msg_spec_obj.Type, msg_spec_obj.Subtype,
                                         MessageExchange.RECV_BUFFER_SIZE)
         else:
             recv_buffer = None
 
+        url = msg_spec_obj.Url
         if MessageExchange.URL_FIELD_DEVICE_ID in url:
             url = url.replace(MessageExchange.URL_FIELD_DEVICE_ID,
                               Message.DeviceId())
@@ -64,7 +66,8 @@ class MessageExchange(object):
                               MessageExchange.PRODUCT_NAME)
 
         # Add the new mapping to the set of mappings.
-        self.MessageMappings.add((msg_type, msg_subtype, url, recv_buffer))
+        self.MessageMappings.add((msg_spec_obj.Type, msg_spec_obj.Subtype,
+                                  url, recv_buffer))
 
     def Reset(self):
         self.SendMessageBuffer.Delete()
