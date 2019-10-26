@@ -1,5 +1,5 @@
 from micropython import const
-from module.DataExchange.MessageSpecification import MessageSpecification
+from module.Messaging.MessageSpecification import MessageSpecification
 
 
 class ExampleMessage(MessageSpecification):
@@ -7,8 +7,10 @@ class ExampleMessage(MessageSpecification):
     TYPE        = const(0)
     SUBTYPE     = const(1)
     URL         = "<pn>/<id>/example"
-    DATA_DEF    = {"arr": "", "n": 0}
-    DIRECTION   = const(1)
+    DATA_KEY_ARRAY  = "arr"
+    DATA_KEY_N      = "n"
+    DATA_DEF    = {DATA_KEY_ARRAY: "", DATA_KEY_N: 0}
+    DIRECTION   = const(2)
 
     def __init__(self):
         super().__init__(ExampleMessage.TYPE,
