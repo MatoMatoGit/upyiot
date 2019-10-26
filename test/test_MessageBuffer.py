@@ -6,7 +6,7 @@ import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from module.DataExchange.MessageBuffer import MessageBuffer
+from module.Messaging.MessageBuffer import MessageBuffer
 
 # Other
 

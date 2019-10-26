@@ -7,7 +7,7 @@ import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from module.DataExchange.Message import Message
+from module.Messaging.Message import Message
 
 # Other
 import uio
