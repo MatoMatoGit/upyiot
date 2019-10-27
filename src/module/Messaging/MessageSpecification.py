@@ -1,4 +1,7 @@
-import ujson
+try:
+    import ujson as json
+except:
+    import json
 
 MSG_SPEC_KEY_TYPE       = "type"
 MSG_SPEC_KEY_SUBTYPE    = "stype"
@@ -24,15 +27,16 @@ class MessageSpecification:
                                                                    self.Url,
                                                                    self.Direction)
 
-def CreateFromFile(file):
+    @staticmethod
+    def CreateFromFile(file):
 
-    f_in = open(file, 'r')
-    json = f_in.read()
-    f_in.close()
+        f_in = open(file, 'r')
+        json_str = f_in.read()
+        f_in.close()
 
-    spec = ujson.loads(json)
-    return MessageSpecification(spec[MSG_SPEC_KEY_TYPE],
-                                spec[MSG_SPEC_KEY_SUBTYPE],
-                                spec[MSG_SPEC_KEY_DATA],
-                                spec[MSG_SPEC_KEY_URL],
-                                spec[MSG_SPEC_KEY_DIR])
+        spec = json.loads(json_str)
+        return MessageSpecification(spec[MSG_SPEC_KEY_TYPE],
+                                    spec[MSG_SPEC_KEY_SUBTYPE],
+                                    spec[MSG_SPEC_KEY_DATA],
+                                    spec[MSG_SPEC_KEY_URL],
+                                    spec[MSG_SPEC_KEY_DIR])
