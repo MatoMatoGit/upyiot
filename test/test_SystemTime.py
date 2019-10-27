@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append('../src/')
+sys.path.append('../upyiot/')
 
 # Test libraries
 import unittest
