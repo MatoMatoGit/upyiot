@@ -14,7 +14,7 @@ from module.Messaging.MessageFormatAdapter import MessageFormatAdapter
 from middleware.Sensor import Sensor
 
 # Other
-from module.SystemTime import SystemTime
+from module.SystemTime.SystemTime import SystemTime
 from umqtt.simple import MQTTClient
 import utime
 
@@ -29,7 +29,7 @@ class test_SensorToBroker(unittest.TestCase):
 
     MqttClient = None
     MsgEx = None
-    Time = SystemTime.InstanceAcquire()
+    Time = SystemTime.InstanceGet()
     RecvTopic = None
     RecvMsg = None
     RecvMsgCount = 0
@@ -38,7 +38,7 @@ class test_SensorToBroker(unittest.TestCase):
     Sensor = None
     Samples = [20, 21, 25, 30, 35, 35, 20, 12, 10, 40]
 
-    SystemTime.Service()
+    Time.Service()
 
     def setUp(arg):
         filter_depth = len(test_SensorToBroker.Samples)
@@ -98,7 +98,7 @@ class test_SensorToBroker(unittest.TestCase):
         utime.sleep(5)
 
         # Sync time
-        SystemTime.Service()
+        self.Time.Service()
 
         # Read sensor values.
         for i in range(0, 5):

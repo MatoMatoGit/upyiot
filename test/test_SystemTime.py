@@ -6,7 +6,7 @@ sys.path.append('../src/')
 import unittest
 
 # Unit Under Test
-from module.SystemTime import SystemTime
+from module.SystemTime.SystemTime import SystemTime
 
 
 class test_SystemTime(unittest.TestCase):
@@ -19,13 +19,13 @@ class test_SystemTime(unittest.TestCase):
         return
 
     def test_Constructor(self):
-        sys_time = SystemTime.InstanceAcquire()
+        sys_time = SystemTime.InstanceGet()
 
         self.assertFalse(sys_time is None)
 
     def test_Singleton(self):
-        sys_time = SystemTime.InstanceAcquire()
-        sys_time1 = SystemTime.InstanceAcquire()
+        sys_time = SystemTime.InstanceGet()
+        sys_time1 = SystemTime.InstanceGet()
 
         self.assertEqual(sys_time, sys_time1)
 
@@ -38,20 +38,22 @@ class test_SystemTime(unittest.TestCase):
             self.assertTrue(except_occurred)
 
     def test_Service(self):
-        SystemTime.Service()
+        sys_time = SystemTime.InstanceGet()
+
+        sys_time.Service()
 
     def test_testNow(self):
-        sys_time = SystemTime.InstanceAcquire()
+        sys_time = SystemTime.InstanceGet()
 
-        SystemTime.Service()
+        sys_time.Service()
         now = sys_time.Now()
 
         self.assertFalse(now[0] is 0)
 
     def test_DateTime(self):
-        sys_time = SystemTime.InstanceAcquire()
+        sys_time = SystemTime.InstanceGet()
 
-        SystemTime.Service()
+        sys_time.Service()
         dt = sys_time.DateTime()
         print("Formatted time: {}".format(dt))
 

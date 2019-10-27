@@ -12,7 +12,7 @@ from module.Messaging.MessageSpecification import MessageSpecification
 
 # Other
 from module.Messaging.Message import Message
-from module.SystemTime import SystemTime
+from module.SystemTime.SystemTime import SystemTime
 from umqtt.simple import MQTTClient
 import utime
 
@@ -27,12 +27,12 @@ class test_MessagingWithBroker(unittest.TestCase):
 
     MqttClient = None
     MsgEx = None
-    Time = SystemTime.InstanceAcquire()
+    Time = SystemTime.InstanceGet()
     RecvTopic = None
     RecvMsg = None
     RecvMsgCount = 0
 
-    SystemTime.Service()
+    Time.Service()
 
     def setUp(arg):
         test_MessagingWithBroker.RecvMsgCount = 0

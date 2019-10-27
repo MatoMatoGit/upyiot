@@ -32,21 +32,6 @@ class SystemTime(object):
     _Instance = None
     _Rtc = None
 
-    def Now(self):
-        datetime = SystemTime._Rtc.now()
-        return datetime
- 
-    def DateTime(self):
-        datetime = SystemTime._Rtc.now()
-        # Format the datetime tuple as such: YYYY-MM-DDThh:mm:ss
-        datetime_str = str(datetime[SystemTime.RTC_DATETIME_YEAR]) + \
-                       '-' + str(datetime[SystemTime.RTC_DATETIME_MONTH]) + \
-                       '-' + str(datetime[SystemTime.RTC_DATETIME_DAY]) + \
-                       'T' + str(datetime[SystemTime.RTC_DATETIME_HOUR]) + \
-                       ':' +  str(datetime[SystemTime.RTC_DATETIME_MINUTE]) + \
-                       ':' + str(datetime[SystemTime.RTC_DATETIME_SECOND])
-        return datetime_str
-    
     def __init__(self):
         if SystemTime._Instance is None:
             print("Creating SystemTime instance")
@@ -54,6 +39,36 @@ class SystemTime(object):
             SystemTime._Rtc = RTC()
         else:
             raise Exception("Only a single instance of this class is allowed")
+
+    @staticmethod
+    def InstanceGet():
+        print("[SysTime] Getting instance")
+        if SystemTime._Instance is None:
+            SystemTime()
+        return SystemTime._Instance
+
+    def Now(self):
+        datetime = SystemTime._Rtc.now()
+        return datetime
+
+    def DateTime(self):
+        datetime = SystemTime._Rtc.now()
+        # Format the datetime tuple as such: YYYY-MM-DDThh:mm:ss
+        datetime_str = str(datetime[SystemTime.RTC_DATETIME_YEAR]) + \
+                       '-' + str(datetime[SystemTime.RTC_DATETIME_MONTH]) + \
+                       '-' + str(datetime[SystemTime.RTC_DATETIME_DAY]) + \
+                       'T' + str(datetime[SystemTime.RTC_DATETIME_HOUR]) + \
+                       ':' + str(datetime[SystemTime.RTC_DATETIME_MINUTE]) + \
+                       ':' + str(datetime[SystemTime.RTC_DATETIME_SECOND])
+        return datetime_str
+
+    def Service(self):
+        ntp_time = self._NtpTimeGet()
+        print("NTP Time: {}".format(ntp_time))
+        if ntp_time > 0:
+            tm = utime.localtime(ntp_time)
+            tm = tm[0:3] + (0,) + tm[3:6] + (0,)
+            self._Rtc.datetime(tm)
 
     def _NtpTimeGet(self):
         ntp_query = bytearray(SystemTime.NTP_BUF_SIZE)
@@ -73,17 +88,5 @@ class SystemTime(object):
             return val - SystemTime.NTP_DELTA
         return -1
 
-def InstanceAcquire():
-    if SystemTime._Instance is None:
-        SystemTime()
-    return SystemTime._Instance
 
-def Service():
-    time_inst = InstanceAcquire()
-    ntp_time = time_inst._NtpTimeGet()
-    print("NTP Time: {}".format(ntp_time))
-    if ntp_time > 0:
-        tm = utime.localtime(ntp_time)
-        tm = tm[0:3] + (0,) + tm[3:6] + (0,)
-        SystemTime._Rtc.datetime(tm)
 

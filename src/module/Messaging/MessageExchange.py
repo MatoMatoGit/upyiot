@@ -3,7 +3,7 @@ from micropython import const
 from module.Messaging.MessageSpecification import MessageSpecification
 from module.Messaging.Message import Message
 from module.Messaging.MessageBuffer import MessageBuffer
-from module.SystemTime import SystemTime
+from module.SystemTime.SystemTime import SystemTime
 
 import utime
 
@@ -43,7 +43,7 @@ class MessageExchange(object):
         self.ServiceInit = False
         self.NewMessage = False
 
-        self.Time = SystemTime.InstanceAcquire()
+        self.Time = SystemTime.InstanceGet()
         Message.DeviceId(client_id)
         print("Device ID: {}".format(Message.DeviceId()))
         MessageExchange._Instance = self

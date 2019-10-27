@@ -14,7 +14,7 @@ from module.Messaging.MessageSpecification import MessageSpecification
 # Other
 from module.Messaging.Message import Message
 from module.Messaging.MessageBuffer import MessageBuffer
-from module.SystemTime import SystemTime
+from module.SystemTime.SystemTime import SystemTime
 
 
 class test_MessageExchange(unittest.TestCase):
@@ -25,12 +25,12 @@ class test_MessageExchange(unittest.TestCase):
 
     MqttClient = None
     MsgEx = None
-    Time = SystemTime.InstanceAcquire()
+    Time = SystemTime.InstanceGet()
     RecvTopic = None
     RecvMsg = None
     RecvMsgCount = 0
 
-    SystemTime.Service()
+    Time.Service()
 
     def setUp(arg):
         test_MessageExchange.RecvMsgCount = 0
