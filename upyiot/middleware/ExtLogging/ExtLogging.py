@@ -93,49 +93,37 @@ def debug(msg, *args):
     getLogger(None).debug(msg, *args)
 
 
-def basicConfig(level=INFO, filename=None, stream=None, format=None):
+def basicConfig(level=INFO, stream=None):
     global _level, _stream
     _level = level
     if stream:
         _stream = stream
-    if filename is not None:
-        print("logging.basicConfig: filename arg is not supported")
-    if format is not None:
-        print("logging.basicConfig: format arg is not supported")
+    print("[Logger] Configured.")
 
 
 class LoggerStream(object):
 
-    def __init__(self, file_global):
-        self.StreamGlobal = io.StringIO(LOGGER_STREAM_BUFFER_SIZE)
-        self.FileGlobal = file_global
-        self.FileLevels = {}
-        self.StreamLevel = {}
-        self.Stream = None
-        print(self.StreamGlobal)
+    def __init__(self, stream, file):
+        self.Stream = stream
+        self.File = file
         return
-
-    def LevelStreamAdd(self, level, file):
-        self.FileLevels[level] = file
-        self.StreamLevel[level] = io.StringIO(LOGGER_STREAM_BUFFER_SIZE)
 
 # #### IO stream API ####
 
     def write(self, string):
-        level_sep_index = string.find(':')
-        if level_sep_index > 0:
-            level = string[0:level_sep_index]
-            print("Log level: {}".format(level))
-            if level in self.StreamLevel:
-                self.Stream = self.StreamLevel[level]
-                print("Using level stream")
-            else:
-                self.Stream = self.StreamGlobal
-                print("Using global stream")
+        print("[LoggerStream] Writing string: {}".format(string))
 
-        self.Stream.write(string)
-        self.Stream.seek(0)
-        print(self.Stream.read())
+        if self.Stream is not None:
+            self.Stream.write(string)
+
+        if self.File is not None:
+            try:
+                f = open(self.File, 'a')
+                f.write(string)
+                f.close()
+            except OSError:
+                print("[LoggerStream] Failed to write to file.")
+
         return 1
 
     def flush(self):
@@ -152,11 +140,27 @@ class ExtLogger(Logger):
 _Stream = None
 
 
-def ConfigGlobal(level=INFO, file=None):
+def _FileCreate(file):
+    try:
+        f = open(file, 'r')
+        f.close()
+        print("File already exists")
+    except OSError:
+        try:
+            f = open(file, 'w')
+            f.close()
+            print("File created")
+        except OSError:
+            print("Failed to create file")
+            raise
+
+
+def ConfigGlobal(level=INFO, stream=None, file=None):
     global _Stream
 
     if file is not None:
-        _Stream = LoggerStream(file)
+        _FileCreate(file)
+        _Stream = LoggerStream(stream, file)
     basicConfig(level=level, stream=_Stream)
 
 
@@ -168,35 +172,14 @@ def ConfigLevel(level, file):
     _Stream.LevelStreamAdd(level, file)
 
 
-def GetLogger(name):
+def LoggerGet(name):
     if name in _loggers:
         return _loggers[name]
-    l = Logger(name)
+    print("[ExtLogging] Creating new ExtLogger for \"{}\"".format(name))
+    l = ExtLogger(name)
     _loggers[name] = l
     return l
 
 
-def Flush():
+def Clear():
     return
-
-
-ConfigGlobal(level=DEBUG, file="./log")
-
-log = ExtLogger("test")
-
-log.info("hi")
-
-log.debug("hoi")
-
-ConfigLevel(CRITICAL, file="./crit")
-
-log.info("hi")
-
-log.critical("crit")
-
-
-log1 = getLogger("test")
-
-log1.debug("new")
-
-log1.exception("Error!")

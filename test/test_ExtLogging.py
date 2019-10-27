@@ -11,6 +11,15 @@ from middleware.ExtLogging.ExtLogging import ExtLogger
 
 # Other
 
+class TestStream:
+
+    def __init__(self):
+        return
+
+    def write(self, str):
+        print("[TestStream] {}".format(str))
+
+
 class test_ExtLogging(unittest.TestCase):
 
 
@@ -22,16 +31,25 @@ class test_ExtLogging(unittest.TestCase):
 
     def test_ConfigGlobal(self):
 
-        ExtLogging.ConfigGlobal(level=logging.INFO, file="./log")
+        file = "./extlog"
+        name = "test"
+        text = "hi"
 
-        log = ExtLogger("test")
+        ExtLogging.ConfigGlobal(level=ExtLogging.INFO, file=file, stream=TestStream())
 
-        log.info("hi")
+        log = ExtLogging.LoggerGet(name)
+        print(log)
 
-ConfigGlobal(level=DEBUG, file="./log")
+        log.info(text)
 
-log = ExtLogger("test")
+        exc_occurred = False
+        try:
+            f = open(file, 'r')
+            line = f.read()
+            f.close()
+        except OSError:
+            exc_occurred = True
 
-log.info("hi")
-
-log.debug("hoi")
+        self.assertFalse(exc_occurred)
+        self.assertTrue(text in line)
+        self.assertTrue(name in line)
