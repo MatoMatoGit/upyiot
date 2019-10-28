@@ -11,6 +11,7 @@ from ExampleMessage import ExampleMessage
 from module.Messaging.MessageExchange import MessageExchange
 from module.Messaging.MessageExchange import Endpoint
 from module.Messaging.MessageFormatAdapter import MessageFormatAdapter
+from module.Messaging.MessageSpecification import MessageSpecification
 from middleware.Sensor import Sensor
 
 # Other
@@ -33,32 +34,36 @@ class test_SensorToBroker(unittest.TestCase):
     RecvTopic = None
     RecvMsg = None
     RecvMsgCount = 0
+    UrlFields = {MessageSpecification.URL_FIELD_DEVICE_ID: ID,
+                 MessageSpecification.URL_FIELD_PRODUCT_NAME: "smartsensor"}
 
-    SensorName = "dummy"
+    SensorName = "temp"
     Sensor = None
     Samples = [20, 21, 25, 30, 35, 35, 20, 12, 10, 40]
 
     Time.Service()
 
-    def setUp(arg):
-        filter_depth = len(test_SensorToBroker.Samples)
-        dummy = DummySensor.DummySensor(test_SensorToBroker.Samples)
-        test_SensorToBroker.Sensor = Sensor.Sensor(test_SensorToBroker.DIR,
-                                                   test_SensorToBroker.SensorName,
-                                                   filter_depth, dummy)
-        test_SensorToBroker.MqttClient = MQTTClient(test_SensorToBroker.ID,
-                                                    test_SensorToBroker.BROKER,
-                                                    test_SensorToBroker.PORT)
-        test_SensorToBroker.MsgEx = MessageExchange(test_SensorToBroker.DIR,
-                                                    test_SensorToBroker.MqttClient,
-                                                    test_SensorToBroker.ID,
-                                                    test_SensorToBroker.RETRIES)
-        test_SensorToBroker.RecvMsgCount = 0
-        test_SensorToBroker.RecvTopic = None
-        test_SensorToBroker.RecvMsg = None
+    def setUp(self):
+        MessageSpecification.Config(self.UrlFields)
+        filter_depth = len(self.Samples)
+        dummy = DummySensor.DummySensor(self.Samples)
+        self.Sensor = Sensor.Sensor(self.DIR,
+                                    self.SensorName,
+                                    filter_depth, dummy)
+        self.MqttClient = MQTTClient(self.ID,
+                                     self.BROKER,
+                                     self.PORT)
+        self.MsgEx = MessageExchange(self.DIR,
+                                     self.MqttClient,
+                                     self.ID,
+                                     self.RETRIES)
+        self.RecvMsgCount = 0
+        self.RecvTopic = None
+        self.RecvMsg = None
 
-    def tearDown(arg):
-        test_SensorToBroker.MsgEx.Reset()
+    def tearDown(self):
+        self.MsgEx.Reset()
+        self.Sensor.SamplesClear()
 
     @staticmethod
     def MqttMsgRecvCallback(topic, msg):

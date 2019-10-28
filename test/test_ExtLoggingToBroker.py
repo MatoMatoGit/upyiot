@@ -50,23 +50,26 @@ class test_ExtLoggingToBroker(unittest.TestCase):
     RecvTopic = None
     RecvMsg = None
     RecvMsgCount = 0
+    UrlFields = {MessageSpecification.URL_FIELD_DEVICE_ID: ID,
+                 MessageSpecification.URL_FIELD_PRODUCT_NAME: "smartsensor"}
 
     Time.Service()
 
-    def setUp(arg):
-        test_ExtLoggingToBroker.MqttClient = MQTTClient(test_ExtLoggingToBroker.ID,
-                                                        test_ExtLoggingToBroker.BROKER,
-                                                        test_ExtLoggingToBroker.PORT)
-        test_ExtLoggingToBroker.MsgEx = MessageExchange(test_ExtLoggingToBroker.DIR,
-                                                        test_ExtLoggingToBroker.MqttClient,
-                                                        test_ExtLoggingToBroker.ID,
-                                                        test_ExtLoggingToBroker.RETRIES)
-        test_ExtLoggingToBroker.RecvMsgCount = 0
-        test_ExtLoggingToBroker.RecvTopic = None
-        test_ExtLoggingToBroker.RecvMsg = None
+    def setUp(self):
+        MessageSpecification.Config(self.UrlFields)
+        self.MqttClient = MQTTClient(self.ID,
+                                     self.BROKER,
+                                     self.PORT)
+        self.MsgEx = MessageExchange(self.DIR,
+                                     self.MqttClient,
+                                     self.ID,
+                                     self.RETRIES)
+        self.RecvMsgCount = 0
+        self.RecvTopic = None
+        self.RecvMsg = None
 
-    def tearDown(arg):
-        test_ExtLoggingToBroker.MsgEx.Reset()
+    def tearDown(self):
+        self.MsgEx.Reset()
 
     @staticmethod
     def MqttMsgRecvCallback(topic, msg):

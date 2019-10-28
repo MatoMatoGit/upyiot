@@ -90,21 +90,6 @@ class test_MessageExchange(unittest.TestCase):
         self.assertIsNotNone(msg_map[MessageExchange.MSG_MAP_RECV_BUFFER])
         self.assertIsInstance(msg_map[MessageExchange.MSG_MAP_RECV_BUFFER], MessageBuffer)
 
-    def test_RegisterMessageTypeWithIdField(self):
-        msg_type = 3
-        msg_subtype = 3
-        msg_url = "<id>/sensor/temp"
-        exp_msg_url = test_MessageExchange.ID + "/sensor/temp"
-        msg_data = {}
-        msg_dir = MessageSpecification.MSG_DIRECTION_RECV
-
-        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
-
-        self.MsgEx.RegisterMessageType(msg_spec)
-        msg_map = self.MsgEx.MessageMapFromType(msg_type, msg_subtype)
-
-        self.assertEqual(msg_map[MessageExchange.MSG_MAP_URL], exp_msg_url)
-
     def test_RegisterMessageTypeDirectionBoth(self):
         msg_type = 3
         msg_subtype = 3

@@ -26,6 +26,7 @@ class test_ExtLogging(unittest.TestCase):
         return
 
     def tearDown(arg):
+        ExtLogging.Clear()
         return
 
     def test_ConfigGlobal(self):

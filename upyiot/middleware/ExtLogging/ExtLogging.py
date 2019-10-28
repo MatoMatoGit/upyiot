@@ -178,6 +178,8 @@ def LoggerGet(name):
 
 
 def Clear():
-    os.remove(_File)
-    _FileCreate(_File)
-
+    try:
+        os.remove(_File)
+        _FileCreate(_File)
+    except OSError:
+        print("[ExtLogging]  Failed to clear log file")
