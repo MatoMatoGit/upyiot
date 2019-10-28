@@ -1,6 +1,5 @@
 from micropython import const
 from middleware.SubjectObserver.SubjectObserver import Observer
-from module.Messaging.MessageSpecification import MessageSpecification
 
 
 class MessagePartSource:
@@ -63,7 +62,7 @@ class MessageFormatAdapter:
         self.Inputs.add(observer)
         return observer
 
-    def CreateStream(self, key, count):
+    def CreateStream(self, key, count=1):
         if key not in self.MsgDef:
             return -1
         stream = MessagePartStream(self, key, count)

@@ -172,9 +172,9 @@ def LoggerGet(name):
     if name in _loggers:
         return _loggers[name]
     print("[ExtLogging] Creating new ExtLogger for \"{}\"".format(name))
-    l = ExtLogger(name)
-    _loggers[name] = l
-    return l
+    logger = ExtLogger(name)
+    _loggers[name] = logger
+    return logger
 
 
 def Clear():

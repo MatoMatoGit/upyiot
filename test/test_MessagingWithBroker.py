@@ -77,7 +77,7 @@ class test_MessagingWithBroker(unittest.TestCase):
         msg_subtype = 3
         msg_url = "<pn>/<id>/temp"
         msg = {"test": "msg"}
-        msg_dir = MessageExchange.MSG_DIRECTION_BOTH
+        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg, msg_url, msg_dir)
 

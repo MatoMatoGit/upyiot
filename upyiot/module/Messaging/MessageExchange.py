@@ -15,10 +15,6 @@ class MessageExchange(object):
 
     PRODUCT_NAME = "smartsensor"
 
-    MSG_DIRECTION_SEND = const(0)
-    MSG_DIRECTION_RECV = const(1)
-    MSG_DIRECTION_BOTH = const(2)
-
     CONNECT_RETRY_INTERVAL_SEC  = const(1)
 
     # Buffer sizes (number of messages).
@@ -50,7 +46,7 @@ class MessageExchange(object):
 
     def RegisterMessageType(self, msg_spec_obj):
         # If this message can be received
-        if msg_spec_obj.Direction is not MessageExchange.MSG_DIRECTION_SEND:
+        if msg_spec_obj.Direction is not MessageSpecification.MSG_DIRECTION_SEND:
             # Create receive buffer for the messages of this type.
             recv_buffer = MessageBuffer('recv', msg_spec_obj.Type, msg_spec_obj.Subtype,
                                         MessageExchange.RECV_BUFFER_SIZE)

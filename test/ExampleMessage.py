@@ -10,7 +10,7 @@ class ExampleMessage(MessageSpecification):
     DATA_KEY_ARRAY  = "arr"
     DATA_KEY_N      = "n"
     DATA_DEF    = {DATA_KEY_ARRAY: "", DATA_KEY_N: 0}
-    DIRECTION   = const(2)
+    DIRECTION   = MessageSpecification.MSG_DIRECTION_BOTH
 
     def __init__(self):
         super().__init__(ExampleMessage.TYPE,

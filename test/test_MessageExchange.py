@@ -60,7 +60,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_subtype = 3
         msg_url = "/sensor/temp"
         msg_data = {}
-        msg_dir = MessageExchange.MSG_DIRECTION_SEND
+        msg_dir = MessageSpecification.MSG_DIRECTION_SEND
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -77,7 +77,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_subtype = 3
         msg_url = "/sensor/temp"
         msg_data = {}
-        msg_dir = MessageExchange.MSG_DIRECTION_RECV
+        msg_dir = MessageSpecification.MSG_DIRECTION_RECV
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -96,7 +96,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_url = "<id>/sensor/temp"
         exp_msg_url = test_MessageExchange.ID + "/sensor/temp"
         msg_data = {}
-        msg_dir = MessageExchange.MSG_DIRECTION_RECV
+        msg_dir = MessageSpecification.MSG_DIRECTION_RECV
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -110,7 +110,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_subtype = 3
         msg_url = "/sensor/temp"
         msg_data = {}
-        msg_dir = MessageExchange.MSG_DIRECTION_BOTH
+        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -128,7 +128,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_subtype = 3
         msg_url = "/sensor/temp"
         msg_data = {}
-        msg_dir = MessageExchange.MSG_DIRECTION_BOTH
+        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -152,7 +152,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_subtype = 3
         msg_url = "/sensor/temp"
         msg_data = {}
-        msg_dir = MessageExchange.MSG_DIRECTION_BOTH
+        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -176,7 +176,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_url = "/sensor/temp"
         msg_data = {}
         msg = {"test": "msg"}
-        msg_dir = MessageExchange.MSG_DIRECTION_BOTH
+        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -196,7 +196,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_url = "/sensor/temp"
         msg_data = {}
         msg = {"test": "msg"}
-        msg_dir = MessageExchange.MSG_DIRECTION_BOTH
+        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -216,7 +216,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_subtype = 3
         msg_url = "/sensor/temp"
         msg_data = {}
-        msg_dir = MessageExchange.MSG_DIRECTION_BOTH
+        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -230,7 +230,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_subtype = 3
         msg_url = "/sensor/temp"
         msg_data = {}
-        msg_dir = MessageExchange.MSG_DIRECTION_SEND
+        msg_dir = MessageSpecification.MSG_DIRECTION_SEND
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -282,7 +282,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_subtype = 3
         msg_url = "/sensor/temp"
         msg_data = {}
-        msg_dir = MessageExchange.MSG_DIRECTION_BOTH
+        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -298,7 +298,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_url = "/sensor/temp"
         msg = {"test": "msg"}
         msg_data  = {}
-        msg_dir = MessageExchange.MSG_DIRECTION_SEND
+        msg_dir = MessageSpecification.MSG_DIRECTION_SEND
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -328,7 +328,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_url = "/sensor/temp"
         msg = {"test": "msg"}
         msg_data = {}
-        msg_dir = MessageExchange.MSG_DIRECTION_BOTH
+        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -380,7 +380,7 @@ class test_Endpoint(unittest.TestCase):
         msg_url = "/sensor/temp"
         msg = {"test": "msg"}
         msg_data = {}
-        msg_dir = MessageExchange.MSG_DIRECTION_BOTH
+        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
@@ -395,7 +395,7 @@ class test_Endpoint(unittest.TestCase):
         msg_url = "/sensor/temp"
         msg = {"test": "msg"}
         msg_data ={}
-        msg_dir = MessageExchange.MSG_DIRECTION_BOTH
+        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
 
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 

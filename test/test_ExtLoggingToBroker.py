@@ -26,7 +26,7 @@ class LogMessage(MessageSpecification):
     URL         = "<pn>/<id>/log"
     DATA_KEY_MSG  = "msg"
     DATA_DEF    = {DATA_KEY_MSG: ""}
-    DIRECTION   = const(2)
+    DIRECTION   = MessageSpecification.MSG_DIRECTION_BOTH
 
     def __init__(self):
         super().__init__(LogMessage.TYPE,

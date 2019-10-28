@@ -3,6 +3,7 @@ try:
 except:
     import json
 
+
 MSG_SPEC_KEY_TYPE       = "type"
 MSG_SPEC_KEY_SUBTYPE    = "stype"
 MSG_SPEC_KEY_DATA       = "data"
@@ -11,6 +12,10 @@ MSG_SPEC_KEY_DIR        = "dir"
 
 
 class MessageSpecification:
+
+    MSG_DIRECTION_SEND = 0
+    MSG_DIRECTION_RECV = 1
+    MSG_DIRECTION_BOTH = 2
 
     def __init__(self, msg_type, msg_subtype, msg_data_def, msg_url, direction):
         self.Type = msg_type
