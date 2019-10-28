@@ -17,11 +17,16 @@ class MessageSpecification:
     MSG_DIRECTION_RECV = 1
     MSG_DIRECTION_BOTH = 2
 
+    URL_FIELD_DEVICE_ID = "<id>"
+    URL_FIELD_PRODUCT_NAME = "<pn>"
+
+    UrlFields = None
+
     def __init__(self, msg_type, msg_subtype, msg_data_def, msg_url, direction):
         self.Type = msg_type
         self.Subtype = msg_subtype
         self.DataDef = msg_data_def
-        self.Url = msg_url
+        self.Url = MessageSpecification.UrlResolve(msg_url)
         self.Direction = direction
 
     def __str__(self):
@@ -30,7 +35,30 @@ class MessageSpecification:
                                                                    self.Subtype,
                                                                    self.DataDef,
                                                                    self.Url,
-                                                                   self.Direction)
+                                                                   MessageSpecification.DirectionString(self.Direction))
+
+    @staticmethod
+    def Config(url_fields):
+        MessageSpecification.UrlFields = url_fields
+
+    @staticmethod
+    def UrlResolve(url):
+        if MessageSpecification.UrlFields is None:
+            return url
+        for key in MessageSpecification.UrlFields:
+            if key in url:
+                url = url.replace(key,
+                                  MessageSpecification.UrlFields[key])
+        return url
+
+    @staticmethod
+    def DirectionString(direction):
+        if direction is MessageSpecification.MSG_DIRECTION_SEND:
+            return "send"
+        elif direction is MessageSpecification.MSG_DIRECTION_RECV:
+            return "recv"
+        else:
+            return "both"
 
     @staticmethod
     def CreateFromFile(file):
