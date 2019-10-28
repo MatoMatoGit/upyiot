@@ -10,11 +10,6 @@ import utime
 
 class MessageExchange(object):
 
-    URL_FIELD_DEVICE_ID = "<id>"
-    URL_FIELD_PRODUCT_NAME = "<pn>"
-
-    PRODUCT_NAME = "smartsensor"
-
     CONNECT_RETRY_INTERVAL_SEC  = const(1)
 
     # Buffer sizes (number of messages).
@@ -53,17 +48,9 @@ class MessageExchange(object):
         else:
             recv_buffer = None
 
-        url = msg_spec_obj.Url
-        if MessageExchange.URL_FIELD_DEVICE_ID in url:
-            url = url.replace(MessageExchange.URL_FIELD_DEVICE_ID,
-                              Message.DeviceId())
-        if MessageExchange.URL_FIELD_PRODUCT_NAME in url:
-            url = url.replace(MessageExchange.URL_FIELD_PRODUCT_NAME,
-                              MessageExchange.PRODUCT_NAME)
-
         # Add the new mapping to the set of mappings.
         self.MessageMappings.add((msg_spec_obj.Type, msg_spec_obj.Subtype,
-                                  url, recv_buffer))
+                                  msg_spec_obj.Url, recv_buffer))
 
     def Reset(self):
         self.SendMessageBuffer.Delete()
