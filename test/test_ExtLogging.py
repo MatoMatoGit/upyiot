@@ -7,7 +7,6 @@ from TestUtil import TestUtil
 
 # Unit Under Test
 from middleware.ExtLogging import ExtLogging
-from middleware.ExtLogging.ExtLogging import ExtLogger
 
 # Other
 
