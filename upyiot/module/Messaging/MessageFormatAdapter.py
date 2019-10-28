@@ -5,27 +5,42 @@ from module.Messaging.MessageSpecification import MessageSpecification
 
 class MessagePartSource:
 
-    def __init__(self, msg_formatter_obj, key):
+    def __init__(self, msg_formatter_obj, key, complete_count):
         self.MsgFormatter = msg_formatter_obj
         self.Key = key
+        self.Count = 0
+        self.CompleteCount = complete_count
+
+    def MessagePart(self, data):
+        if self.Count is 0:
+            self.MsgFormatter.MessagePartAdd(self.Key, data)
+        else:
+            self.MsgFormatter.MessagePartAppend(self.Key, data)
+        self._CountInc()
+
+    def _CountInc(self):
+        self.Count += 1
+        if self.Count is self.CompleteCount:
+            self.Count = 0
+            self.MsgFormatter.MessagePartFinalize()
 
 
 class MessagePartObserver(MessagePartSource, Observer):
 
-    def __init__(self, msg_formatter_obj, key):
-        super().__init__(msg_formatter_obj, key)
+    def __init__(self, msg_formatter_obj, key, complete_count):
+        super().__init__(msg_formatter_obj, key, complete_count)
 
     def Update(self, arg):
-        self.MsgFormatter.MessagePartAdd(self.Key, arg)
+        self.MessagePart(arg)
 
 
 class MessagePartStream(MessagePartSource):
 
-    def __init__(self, msg_formatter_obj, key):
-        super().__init__(msg_formatter_obj, key)
+    def __init__(self, msg_formatter_obj, key, complete_count):
+        super().__init__(msg_formatter_obj, key, complete_count)
 
     def write(self, data):
-        self.MsgFormatter.MessagePartAdd(self.Key, data)
+        self.MessagePart(data)
 
 
 class MessageFormatAdapter:
@@ -44,21 +59,31 @@ class MessageFormatAdapter:
     def CreateObserver(self, key):
         if key not in self.MsgDef:
             return -1
-        observer = MessagePartObserver(self, key)
+        observer = MessagePartObserver(self, key, 1)
         self.Inputs.add(observer)
         return observer
 
-    def CreateStream(self, key):
+    def CreateStream(self, key, count):
         if key not in self.MsgDef:
             return -1
-        stream = MessagePartStream(self, key)
+        stream = MessagePartStream(self, key, count)
         self.Inputs.add(stream)
         return stream
 
     def MessagePartAdd(self, key, value):
         self.MsgDef[key] = value
 
-        self.PartCount = self.PartCount + 1
+    def MessagePartAppend(self, key, value):
+        if type(value) is int or type(self.MsgDef[key]) is list:
+            self.MsgDef[key].append(value)
+        elif type(value) is str and type(self.MsgDef[key]) is str:
+            self.MsgDef[key] += value
+
+    def MessagePartFinalize(self):
+        self.PartCount += 1
+        self._MessageHandover()
+
+    def _MessageHandover(self):
         # If all parts of the message have been updated, or
         # the message must be sent on any change,
         # hand over the message to the Messaging Endpoint.
@@ -67,6 +92,9 @@ class MessageFormatAdapter:
             print("Handover to endpoint: {}".format(self.MsgDef))
             res = self.Endpoint.MessagePut(self.MsgDef, self.MsgType,
                                            self.MsgSubtype)
+            for key in self.MsgDef.keys():
+                self.MsgDef[key] = None
+
             if res is -1:
                 print("Error: message handover failed.")
             self.PartCount = 0
