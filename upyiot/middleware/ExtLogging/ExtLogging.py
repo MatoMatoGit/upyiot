@@ -1,5 +1,5 @@
-import uio as io
 from micropython import const
+import uos as os
 import sys
 
 LOGGER_STREAM_BUFFER_SIZE = const(400)
@@ -138,6 +138,7 @@ class ExtLogger(Logger):
 
 
 _Stream = None
+_File = None
 
 
 def _FileCreate(file):
@@ -157,19 +158,14 @@ def _FileCreate(file):
 
 def ConfigGlobal(level=INFO, stream=None, file=None):
     global _Stream
+    global _File
 
     if file is not None:
+        _File = file
         _FileCreate(file)
+    if stream is not None:
         _Stream = LoggerStream(stream, file)
     basicConfig(level=level, stream=_Stream)
-
-
-def ConfigLevel(level, file):
-    global _Stream
-
-    if _Stream is None:
-        return
-    _Stream.LevelStreamAdd(level, file)
 
 
 def LoggerGet(name):
@@ -182,4 +178,6 @@ def LoggerGet(name):
 
 
 def Clear():
-    return
+    os.remove(_File)
+    _FileCreate(_File)
+
