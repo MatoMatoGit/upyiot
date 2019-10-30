@@ -18,7 +18,7 @@ class Service:
         self.Interval = interval
         self.LastRun = 0
         self.State = Service.STATE_UNINITIALIZED
-        self.Activated = False
+        self.Active = False
 
 # #### Service base interface ####
 
@@ -41,10 +41,13 @@ class Service:
         return self.State is Service.STATE_READY
 
     def IsActive(self):
-        return self.Activated
+        return self.Active
 
     def Activate(self):
-        self.Activated = True
+        self.Active = True
+
+    def Deactivate(self):
+        self.Active = False
 
     def StateGet(self):
         return self.State
