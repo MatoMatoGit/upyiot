@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/upyiot/badge/?version=latest)](https://upyiot.readthedocs.io/en/latest/?badge=latest)
+
 # upyiot
 Micropython IoT SDK
 
