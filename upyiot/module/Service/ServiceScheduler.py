@@ -10,16 +10,33 @@ class ServiceScheduler:
         return
 
     def ServiceRegister(self, service):
-        self.Services.append(service)
-        return
+        res = 0
+        try:
+            if service.IsInitialized() is False:
+                service.Init()
+                service.StateSet(Service.STATE_SUSPENDED)
+                self.Services.append(service)
+        except:
+            service.StateSet(Service.STATE_DISABLED)
+            res = -1
+
+        return res
 
     def ServiceDeregister(self, service):
-        self.Services.remove(service)
-        return
+        res = 0
+        try:
+            if service.IsInitialized() is True:
+                service.Deinit()
+                service.StateSet(Service.STATE_UNINITIALIZED)
+                self.Services.remove(service)
+        except:
+            service.StateSet(Service.STATE_DISABLED)
+            res = -1
+
+        return res
 
     def Run(self, start_service):
-        exe_service = start_service
-        exe_service.Activate()
+        start_service.Activate()
 
         # Infinite loop
         while True:
@@ -28,13 +45,6 @@ class ServiceScheduler:
             # Service run loop.
             # Runs a service until none are ready.
             while True:
-                try:
-                    if exe_service.IsInitialized() is False:
-                        exe_service.Init()
-                        exe_service.StateSet(Service.STATE_SUSPENDED)
-                except:
-                    exe_service.StateSet(Service.STATE_DISABLED)
-
                 # Handle periodic services.
                 if exe_service.Mode is Service.MODE_RUN_PERIODIC:
                     # If interval time has passed, activate the service.
