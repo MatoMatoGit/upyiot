@@ -35,42 +35,57 @@ class ServiceScheduler:
 
         return res
 
-    def Run(self, start_service):
-        start_service.Activate()
+    def Run(self):
 
         # Infinite loop
         while True:
             self.Ticks += 1
 
+            # Activate periodic services.
+            for svc in self.Services:
+                if svc.Mode is Service.MODE_RUN_PERIODIC:
+                    # If interval time has passed, activate the service.
+                    if self.Ticks + svc.LastRun >= svc.Interval:
+                        svc.Activate()
+
             # Service run loop.
             # Runs a service until none are ready.
+            index = 0
+            svc_ran = False
             while True:
-                # Handle periodic services.
-                if exe_service.Mode is Service.MODE_RUN_PERIODIC:
-                    # If interval time has passed, activate the service.
-                    if self.Ticks + exe_service.LastRun >= exe_service.Interval:
-                        exe_service.Activate()
+                service = self.Services[index]
 
                 # Check if all services that this service is dependent on
-                # ran at least once.
-                if self._CheckServiceDependencies(exe_service) is True:
-                    exe_service.StateSet(Service.STATE_READY)
+                # ran at least once. If this is the case the service is ready
+                # to run.
+                if service.IsActive() and self._CheckServiceDependencies(service) is True:
+                    service.StateSet(Service.STATE_READY)
 
-                if exe_service.IsReady() is True:
-
+                # If the service is ready to run, call its Run method.
+                if service.IsReady() is True:
+                    svc_ran = True
+                    service.Deactivate()
                     try:
-                        exe_service.Run()
-                        exe_service.StateSet(Service.STATE_SUSPENDED)
-                        exe_service.LastRun(self.Ticks)
-                        exe_service = None
+                        service.Run()
+                        service.StateSet(Service.STATE_SUSPENDED)
+                        # Update the last run timestamp.
+                        service.LastRun(self.Ticks)
                     except:
-                        exe_service.StateSet(Service.STATE_DISABLED)
+                        service.StateSet(Service.STATE_DISABLED)
 
+                # Increment the service list index.
+                # Wrap around if the end if reached.
+                index += 1
+                if index >= len(self.Services):
+                    index = 0
+                    # A minimum of one service must
+                    # have ran.
+                    if svc_ran is False:
+                        break
+                    svc_ran = False
 
             # No services are ready at this moment.
             utime.sleep(1)
-
-        return
 
     def _CheckServiceDependencies(self, service):
         ready = True
