@@ -12,11 +12,10 @@ from TestUtil import TestUtil
 
 class test_Template(unittest.TestCase):
 
-
-    def setUp(arg):
+    def setUp(self):
         return
 
-    def tearDown(arg):
+    def tearDown(self):
         return
 
     def test_Test(self):
