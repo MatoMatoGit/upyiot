@@ -11,9 +11,8 @@ class Service:
     STATE_SUSPENDED     = const(0)
     STATE_READY         = const(1)
 
-    def __init__(self, mode, name, service_deps, interval=0):
+    def __init__(self, mode, service_deps, interval=0):
         self.Mode = mode
-        self.Name = name
         self.ServiceDeps = service_deps
         self.Interval = interval
         self.LastRun = 0
@@ -22,13 +21,13 @@ class Service:
 
 # #### Service base interface ####
 
-    def Init(self, *args):
+    def Init(self):
         pass
 
     def Deinit(self):
         pass
 
-    def Run(self, *args):
+    def Run(self):
         pass
 
 
