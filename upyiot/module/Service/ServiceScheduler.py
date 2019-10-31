@@ -28,14 +28,14 @@ class ServiceScheduler:
             if service.IsInitialized() is True:
                 service.Deinit()
                 service.StateSet(Service.STATE_UNINITIALIZED)
-                self.Services.remove(service)
         except:
             service.StateSet(Service.STATE_DISABLED)
             res = -1
-
+        finally:
+            self.Services.remove(service)
         return res
 
-    def Run(self):
+    def Run(self, cycles=None):
 
         # Infinite loop
         while True:
@@ -53,6 +53,9 @@ class ServiceScheduler:
             index = 0
             svc_ran = False
             while True:
+                if index >= len(self.Services):
+                    break
+
                 service = self.Services[index]
 
                 # Check if all services that this service is dependent on
@@ -86,6 +89,11 @@ class ServiceScheduler:
 
             # No services are ready at this moment.
             utime.sleep(1)
+
+            if cycles is not None:
+                cycles -= 1
+                if cycles is 0:
+                    break
 
     def _CheckServiceDependencies(self, service):
         ready = True
