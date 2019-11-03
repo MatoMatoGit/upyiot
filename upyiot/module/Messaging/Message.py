@@ -53,6 +53,7 @@ class Message:
         Message.Msg[Message.MSG_SECTION_META][Message.MSG_META_SUBTYPE] = msg_subtype
         Message.Msg[Message.MSG_SECTION_DATA] = msg_data_dict
         ujson.dump(Message.Msg, Message._StreamBuffer)
+        Message._StreamBuffer.write('\0')
         return Message._StreamBuffer
 
     @staticmethod
