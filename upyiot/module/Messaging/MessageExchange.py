@@ -4,11 +4,20 @@ from module.Messaging.MessageSpecification import MessageSpecification
 from module.Messaging.Message import Message
 from module.Messaging.MessageBuffer import MessageBuffer
 from module.SystemTime.SystemTime import SystemTime
+from module.Service.Service import Service
+from module.Service.Service import ServiceException
 
 import utime
 
 
-class MessageExchange(object):
+class MessageExchangeService(Service):
+    MSG_EX_SERVICE_MODE = Service.MODE_RUN_ONCE
+
+    def __init__(self):
+        super().__init__(self.MSG_EX_SERVICE_MODE, ())
+
+
+class MessageExchange(MessageExchangeService):
 
     CONNECT_RETRY_INTERVAL_SEC  = const(1)
 
@@ -25,6 +34,9 @@ class MessageExchange(object):
     _Instance = None
 
     def __init__(self, directory, mqtt_client_obj, client_id, mqtt_retries):
+        # Initialize the MessageExchangeService class.
+        super().__init__()
+
         MessageBuffer.Configure(directory, Message.MSG_SIZE_MAX)
         self.SendMessageBuffer = MessageBuffer('send', -1, -1,
                                                MessageExchange.SEND_BUFFER_SIZE)
@@ -59,11 +71,10 @@ class MessageExchange(object):
             if msg_buf is not None:
                 msg_buf.Delete()
 
-    def Service(self):
-        if self.ServiceInit is False:
-            self._MqttSetup()
-            self.ServiceInit = True
+    def SvcInit(self):
+        self._MqttSetup()
 
+    def SvcRun(self):
         msg_count = self.SendMessageBuffer.MessageCount()
         print("Messages in send-buffer: {}".format(msg_count))
         for i in range(0, msg_count):
@@ -172,7 +183,7 @@ class MessageExchange(object):
         # on a topic.
         self.MqttClient.set_callback(MessageExchange._MqttMsgRecvCallback)
 
-        # TODO: Move this to the Service. Must be done periodically.
+        # TODO: Move this to the SvcRun. Must be done periodically.
         # Iterate through the available message mappings.
         for msg_map in self.MessageMappings:
             print("Found message map: {}".format(msg_map))

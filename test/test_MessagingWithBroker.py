@@ -34,7 +34,7 @@ class test_MessagingWithBroker(unittest.TestCase):
     UrlFields = {MessageSpecification.URL_FIELD_DEVICE_ID: ID,
                  MessageSpecification.URL_FIELD_PRODUCT_NAME: "smartsensor"}
 
-    Time.Service()
+    Time.SvcRun()
 
     def setUp(self):
         MessageSpecification.Config(self.UrlFields)
@@ -87,17 +87,17 @@ class test_MessagingWithBroker(unittest.TestCase):
         self.MsgEx.RegisterMessageType(msg_spec)
 
         # Initialize the Service on the first run
-        self.MsgEx.Service()
+        self.MsgEx.SvcInit()
 
         ep.MessagePut(msg, msg_type, msg_subtype)
 
         # Run the Service again to publish the message.
-        self.MsgEx.Service()
+        self.MsgEx.SvcRun()
 
         utime.sleep(1)
 
         # Run the Service again to receive the message.
-        self.MsgEx.Service()
+        self.MsgEx.SvcRun()
 
         recv_msg = ep.MessageGet(msg_type, msg_subtype)
         print(recv_msg)

@@ -41,7 +41,7 @@ class test_SensorToBroker(unittest.TestCase):
     Sensor = None
     Samples = [20, 21, 25, 30, 35, 35, 20, 12, 10, 40]
 
-    Time.Service()
+    Time.SvcRun()
 
     def setUp(self):
         MessageSpecification.Config(self.UrlFields)
@@ -87,7 +87,7 @@ class test_SensorToBroker(unittest.TestCase):
         self.MsgEx.RegisterMessageType(msg_spec)
 
         # Initialize the Messaging Service on the first run
-        self.MsgEx.Service()
+        self.MsgEx.SvcInit()
 
         # Read sensor values.
         for i in range(0, 5):
@@ -103,7 +103,7 @@ class test_SensorToBroker(unittest.TestCase):
         utime.sleep(5)
 
         # Sync time
-        self.Time.Service()
+        self.Time.SvcRun()
 
         # Read sensor values.
         for i in range(0, 5):
@@ -117,12 +117,12 @@ class test_SensorToBroker(unittest.TestCase):
         sample_stream.write(buf)
 
         # Run the Service again to publish the messages.
-        self.MsgEx.Service()
+        self.MsgEx.SvcRun()
 
         utime.sleep(1)
 
         # Run the Service again to receive the message.
-        self.MsgEx.Service()
+        self.MsgEx.SvcRun()
 
         # Receive both published temperature messages.
         recv_msg = ep.MessageGet(msg_spec.Type, msg_spec.Subtype)

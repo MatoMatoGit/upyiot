@@ -53,7 +53,7 @@ class test_ExtLoggingToBroker(unittest.TestCase):
     UrlFields = {MessageSpecification.URL_FIELD_DEVICE_ID: ID,
                  MessageSpecification.URL_FIELD_PRODUCT_NAME: "smartsensor"}
 
-    Time.Service()
+    Time.SvcRun()
 
     def setUp(self):
         MessageSpecification.Config(self.UrlFields)
@@ -102,7 +102,7 @@ class test_ExtLoggingToBroker(unittest.TestCase):
         self.MsgEx.RegisterMessageType(msg_spec)
 
         # Initialize the Messaging Service on the first run
-        self.MsgEx.Service()
+        self.MsgEx.SvcInit()
 
         log_a.info(log_test_a[1])
         log_a.error(log_test_a[2])
@@ -111,12 +111,12 @@ class test_ExtLoggingToBroker(unittest.TestCase):
         log_b.error(log_test_b[2])
 
         # Run the Service again to publish the messages.
-        self.MsgEx.Service()
+        self.MsgEx.SvcRun()
 
         utime.sleep(1)
 
         # Run the Service again to receive the message.
-        self.MsgEx.Service()
+        self.MsgEx.SvcRun()
 
         # Receive both published log messages.
         recv_msg = ep.MessageGet(msg_spec.Type, msg_spec.Subtype)

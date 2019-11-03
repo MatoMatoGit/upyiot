@@ -15,7 +15,7 @@ from module.Messaging.MessageSpecification import MessageSpecification
 from module.Messaging.Message import Message
 from module.Messaging.MessageBuffer import MessageBuffer
 from module.SystemTime.SystemTime import SystemTime
-
+from module.Service.Service import Service
 
 class test_MessageExchange(unittest.TestCase):
 
@@ -30,7 +30,7 @@ class test_MessageExchange(unittest.TestCase):
     RecvMsg = None
     RecvMsgCount = 0
 
-    Time.Service()
+    Time.SvcRun()
 
     def setUp(arg):
         test_MessageExchange.RecvMsgCount = 0
@@ -48,6 +48,7 @@ class test_MessageExchange(unittest.TestCase):
         self.assertIsNotNone(self.MsgEx.SendMessageBuffer)
         self.assertEqual(Message.DeviceId(), test_MessageExchange.ID)
         self.assertTrue(self.MsgEx.SendMessageBuffer.IsConfigured())
+        self.assertIsInstance(self.MsgEx, Service)
 
     @staticmethod
     def MqttMsgRecvCallback(topic, msg):
@@ -234,7 +235,7 @@ class test_MessageExchange(unittest.TestCase):
 
     def test_ServiceInitConnectSuccessfulNoRetries(self):
 
-        self.MsgEx.Service()
+        self.MsgEx.SvcInit()
 
         connected = self.MqttClient.is_connected()
         callback_set = self.MqttClient.has_callback()
@@ -244,7 +245,7 @@ class test_MessageExchange(unittest.TestCase):
 
     def test_ServiceInitConnectSuccessfulAfterRetries(self):
         self.MqttClient.connect_fail_count(test_MessageExchange.RETRIES - 1)
-        self.MsgEx.Service()
+        self.MsgEx.SvcInit()
 
         connected = self.MqttClient.is_connected()
         callback_set = self.MqttClient.has_callback()
@@ -254,7 +255,7 @@ class test_MessageExchange(unittest.TestCase):
 
     def test_ServiceInitConnectFailureAfterRetries(self):
         self.MqttClient.connect_fail_count(test_MessageExchange.RETRIES + 1)
-        self.MsgEx.Service()
+        self.MsgEx.SvcInit()
 
         connected = self.MqttClient.is_connected()
         callback_set = self.MqttClient.has_callback()
@@ -272,7 +273,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
         self.MsgEx.RegisterMessageType(msg_spec)
-        self.MsgEx.Service()
+        self.MsgEx.SvcInit()
         subscription = self.MqttClient.has_subscription(msg_url)
 
         self.assertTrue(subscription)
@@ -288,7 +289,7 @@ class test_MessageExchange(unittest.TestCase):
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
         # Initialize the Service on the first run
-        self.MsgEx.Service()
+        self.MsgEx.SvcInit()
 
         # Override the MQTT message receive callback set by the Service
         # so messages are received by the test.
@@ -300,7 +301,7 @@ class test_MessageExchange(unittest.TestCase):
         self.MsgEx.MessagePut(msg, msg_type, msg_subtype)
 
         # Run the Service again to publish the message
-        self.MsgEx.Service()
+        self.MsgEx.SvcRun()
 
         recv_msg = Message.Deserialize(self.RecvMsg)
         self.assertEqual(self.RecvMsgCount, 1)
@@ -318,13 +319,13 @@ class test_MessageExchange(unittest.TestCase):
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
         # Initialize the Service on the first run
-        self.MsgEx.Service()
+        self.MsgEx.SvcInit()
 
         self.MsgEx.RegisterMessageType(msg_spec)
         self.MsgEx.MessagePut(msg, msg_type, msg_subtype)
 
         # Run the Service again to publish and check for received messages.
-        self.MsgEx.Service()
+        self.MsgEx.SvcRun()
 
         recv_msg = self.MsgEx.MessageGet(msg_type, msg_subtype)
         print(recv_msg)

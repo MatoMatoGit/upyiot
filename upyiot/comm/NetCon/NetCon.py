@@ -28,7 +28,9 @@ class NetCon(NetConService):
     MODE_ACCESS_POINT   = const(1)
 
     def __init__(self, net_con_dir, ap_cfg, mode, wlan_if_obj):
+        # Initialize the NetConService class.
         super().__init__()
+
         self.RootDir = net_con_dir
         self.ApSsid = ap_cfg["ssid"]
         self.ApPwd = ap_cfg["pwd"]
