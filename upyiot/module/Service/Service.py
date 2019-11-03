@@ -1,6 +1,18 @@
 from micropython import const
 
 
+class ServiceException(Exception):
+
+    def __init__(self):
+        return
+
+
+class ServiceExceptionSuspend(ServiceException):
+
+    def __init__(self):
+        return
+
+
 class Service:
 
     MODE_RUN_ONCE       = const(0)
@@ -12,52 +24,55 @@ class Service:
     STATE_READY         = const(1)
 
     def __init__(self, mode, service_deps, interval=0):
-        self.Mode = mode
-        self.ServiceDeps = service_deps
-        self.Interval = interval
-        self.LastRun = 0
-        self.State = Service.STATE_UNINITIALIZED
-        self.Active = False
+        print("[Service] Dependencies: {}".format(service_deps))
+        self.SvcMode = mode
+        self.SvcDeps = service_deps
+        self.SvcInterval = interval
+        self.SvcLastRun = 0
+        self.SvcState = Service.STATE_UNINITIALIZED
+        self.SvcActive = False
 
 # #### Service base interface ####
 
-    def Init(self):
+    def SvcInit(self):
         pass
 
-    def Deinit(self):
+    def SvcDeinit(self):
         pass
 
-    def Run(self):
+    def SvcRun(self):
         pass
 
 
 # #### Service core interface ####
 
-    def IsInitialized(self):
-        return self.State is not Service.STATE_UNINITIALIZED
+    def SvcIsInitialized(self):
+        return self.SvcState is not Service.STATE_UNINITIALIZED
 
-    def IsReady(self):
-        return self.State is Service.STATE_READY
+    def SvcIsReady(self):
+        return self.SvcState is Service.STATE_READY
 
-    def IsActive(self):
-        return self.Active
+    def SvcIsActive(self):
+        return self.SvcActive
 
-    def Activate(self):
-        self.Active = True
+    def SvcActivate(self):
+        self.SvcActive = True
 
-    def Deactivate(self):
-        self.Active = False
+    def SvcDeactivate(self):
+        self.SvcActive = False
 
-    def StateGet(self):
-        return self.State
+    def SvcStateGet(self):
+        return self.SvcState
+
+    def SvcSuspend(self):
+        raise ServiceExceptionSuspend
 
 # #### Service scheduler only ####
 
-    def StateSet(self, state):
-        self.State = state
+    def SvcStateSet(self, state):
+        self.SvcState = state
+        print("[Service] New state: {}".format(self.SvcState))
 
-    def LastRun(self, t=None):
-        if t is None:
-            return self.LastRun
-        self.LastRun = t
-
+    def SvcLastRunSet(self, t):
+        self.SvcLastRun = t
+        print("[Service] Last run: {}".format(self.SvcLastRun))
