@@ -37,6 +37,8 @@ class test_NetCon(unittest.TestCase):
         self.assertEqual(netcon.WlanMode, NetCon.MODE_ACCESS_POINT)
         self.assertEqual(netcon.SvcMode, NetConService.NET_CON_SERVICE_MODE)
 
+        netcon.StationSettingsReset()
+
     def test_RunApMode(self):
         wlan_ap = WLAN()
         netcon = NetCon(self.DIR, self.ApCfg, NetCon.MODE_ACCESS_POINT, wlan_ap)
@@ -44,6 +46,8 @@ class test_NetCon(unittest.TestCase):
         netcon.SvcRun()
 
         self.assertTrue(wlan_ap.active())
+
+        netcon.StationSettingsReset()
 
     def test_DeinitApMode(self):
         wlan_ap = WLAN()
@@ -54,6 +58,8 @@ class test_NetCon(unittest.TestCase):
 
         self.assertFalse(wlan_ap.active())
         self.assertFalse(wlan_ap.isconnected())
+
+        netcon.StationSettingsReset()
 
     def test_StationSettingsStoreLoad(self):
         wlan_ap = WLAN()
