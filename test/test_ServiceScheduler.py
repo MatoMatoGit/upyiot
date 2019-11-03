@@ -8,11 +8,11 @@ from TestUtil import TestUtil
 
 # Unit Under Test
 from module.Service.ServiceScheduler import ServiceScheduler
+
+# Other
 from module.Service.Service import Service
 from module.Service.Service import ServiceException
 from module.Service.Service import ServiceExceptionSuspend
-
-# Other
 
 
 class TestService(Service):
