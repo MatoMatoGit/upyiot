@@ -14,7 +14,17 @@ except:
 import utime
 from micropython import const
 
-class SystemTime(object):
+from module.Service.Service import Service
+
+
+class SystemTimeService(Service):
+    SYS_TIME_SERVICE_MODE = Service.MODE_RUN_ONCE
+
+    def __init__(self):
+        super().__init__(self.SYS_TIME_SERVICE_MODE, ())
+
+
+class SystemTime(SystemTimeService):
     
     # (date(2000, 1, 1) - date(1900, 1, 1)).days * 24*60*60
     NTP_DELTA       = 2208988800
@@ -34,6 +44,9 @@ class SystemTime(object):
 
     def __init__(self):
         if SystemTime._Instance is None:
+            # Initialize the SystemTimeService class.
+            super().__init__()
+
             print("Creating SystemTime instance")
             SystemTime._Instance = self
             SystemTime._Rtc = RTC()
@@ -62,7 +75,7 @@ class SystemTime(object):
                        ':' + str(datetime[SystemTime.RTC_DATETIME_SECOND])
         return datetime_str
 
-    def Service(self):
+    def SvcRun(self):
         ntp_time = self._NtpTimeGet()
         print("NTP Time: {}".format(ntp_time))
         if ntp_time > 0:

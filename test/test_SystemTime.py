@@ -11,7 +11,6 @@ from module.SystemTime.SystemTime import SystemTime
 
 class test_SystemTime(unittest.TestCase):
 
-
     def setUp(arg):
         return
 
@@ -40,12 +39,12 @@ class test_SystemTime(unittest.TestCase):
     def test_Service(self):
         sys_time = SystemTime.InstanceGet()
 
-        sys_time.Service()
+        sys_time.SvcRun()
 
     def test_testNow(self):
         sys_time = SystemTime.InstanceGet()
 
-        sys_time.Service()
+        sys_time.SvcRun()
         now = sys_time.Now()
 
         self.assertFalse(now[0] is 0)
@@ -53,7 +52,7 @@ class test_SystemTime(unittest.TestCase):
     def test_DateTime(self):
         sys_time = SystemTime.InstanceGet()
 
-        sys_time.Service()
+        sys_time.SvcRun()
         dt = sys_time.DateTime()
         print("Formatted time: {}".format(dt))
 
