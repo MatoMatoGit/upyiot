@@ -47,7 +47,8 @@ class MessageFormatAdapter:
     SEND_ON_COMPLETE    = const(1)
 
     def __init__(self, endpoint, mode, msg_spec_obj):
-        self.MsgDef = msg_spec_obj.DataDef
+        self.MsgDef = msg_spec_obj.DataDef.copy()
+        print("[MsgFmtAdapt] Definition: {}".format(self.MsgDef))
         self.Mode = mode
         self.Inputs = set()
         self.MsgType = msg_spec_obj.Type
@@ -55,10 +56,10 @@ class MessageFormatAdapter:
         self.PartCount = 0
         self.Endpoint = endpoint
 
-    def CreateObserver(self, key):
+    def CreateObserver(self, key, count=1):
         if key not in self.MsgDef:
             return -1
-        observer = MessagePartObserver(self, key, 1)
+        observer = MessagePartObserver(self, key, count)
         self.Inputs.add(observer)
         return observer
 
@@ -70,13 +71,19 @@ class MessageFormatAdapter:
         return stream
 
     def MessagePartAdd(self, key, value):
-        self.MsgDef[key] = value
+        if type(self.MsgDef[key]) is list:
+            self.MsgDef[key].clear()
+            self.MsgDef[key].append(value)
+        else:
+            self.MsgDef[key] = value
 
     def MessagePartAppend(self, key, value):
-        if type(value) is int or type(self.MsgDef[key]) is list:
-            self.MsgDef[key].append(value)
-        elif type(value) is str and type(self.MsgDef[key]) is str:
+        # If the message value is a string, append it.
+        if type(value) is str:
             self.MsgDef[key] += value
+        else:
+            # Append the new value to the list.
+            self.MsgDef[key].append(value)
 
     def MessagePartFinalize(self):
         self.PartCount += 1
@@ -88,12 +95,10 @@ class MessageFormatAdapter:
         # hand over the message to the Messaging Endpoint.
         if self.PartCount is len(self.MsgDef) or \
                 self.Mode is MessageFormatAdapter.SEND_ON_CHANGE:
-            print("Handover to endpoint: {}".format(self.MsgDef))
+            print("[MsgFmtAdapt] Handover to endpoint: {}".format(self.MsgDef))
             res = self.Endpoint.MessagePut(self.MsgDef, self.MsgType,
                                            self.MsgSubtype)
-            for key in self.MsgDef.keys():
-                self.MsgDef[key] = None
 
             if res is -1:
-                print("Error: message handover failed.")
+                print("[MsgFmtAdapt] Error: message handover failed.")
             self.PartCount = 0
