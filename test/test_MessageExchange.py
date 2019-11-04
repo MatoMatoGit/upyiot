@@ -261,7 +261,7 @@ class test_MessageExchange(unittest.TestCase):
         callback_set = self.MqttClient.has_callback()
 
         self.assertFalse(connected)
-        self.assertTrue(callback_set)
+        self.assertFalse(callback_set)
 
     def test_ServiceInitSubscribe(self):
         msg_type = 3
