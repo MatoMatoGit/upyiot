@@ -24,13 +24,13 @@ class Service:
     STATE_READY         = const(1)
 
     def __init__(self, mode, service_deps, interval=0):
-        print("[Service] Dependencies: {}".format(service_deps))
         self.SvcMode = mode
         self.SvcDeps = service_deps
         self.SvcInterval = interval
         self.SvcLastRun = 0
         self.SvcState = Service.STATE_UNINITIALIZED
         self.SvcActive = False
+        print("[Service] Dependencies: {}".format(self.SvcDeps))
 
 # #### Service base interface ####
 
@@ -43,8 +43,14 @@ class Service:
     def SvcRun(self):
         pass
 
-
 # #### Service core interface ####
+
+    def SvcDependencies(self, svc_deps):
+        self.SvcDeps = svc_deps
+        print("[Service] Dependencies: {}".format(self.SvcDeps))
+
+    def SvcIntervalSet(self, interval):
+        self.SvcInterval = interval
 
     def SvcIsInitialized(self):
         return self.SvcState is not Service.STATE_UNINITIALIZED
