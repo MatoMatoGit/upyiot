@@ -1,18 +1,39 @@
 from middleware.AvgFilter import AvgFilter
 from middleware.SubjectObserver.SubjectObserver import Subject
 from middleware.NvQueue import NvQueue
-
+from module.Service.Service import Service
+from module.Service.Service import ServiceException
 from micropython import const
 
-class Sensor(object):
+
+class SensorException(ServiceException):
+
+    def __init__(self):
+        super().__init__()
+
+
+class SensorService(Service):
+    SENSOR_SERVICE_MODE = Service.MODE_RUN_PERIODIC
+
+    def __init__(self):
+        super().__init__(self.SENSOR_SERVICE_MODE, ())
+
+
+class Sensor(SensorService):
     FILE_SAMPLES_MAX        = const(9999)
     SAMPLE_FMT              = "<i"
       
     def __init__(self, directory, name, filter_depth, sensor_abs):
+        # Initialize the SensorService class
+        super().__init__()
+
         self.SensorAbstraction = sensor_abs
         self.Filter = AvgFilter.AvgFilter(filter_depth)
         self.SampleQueue = NvQueue.NvQueue(directory + '/' + name, Sensor.SAMPLE_FMT, Sensor.FILE_SAMPLES_MAX)
         self.NewSample = Subject()
+
+    def SvcRun(self):
+        self.Read()
 
     @property  
     def ValueAverage(self):
