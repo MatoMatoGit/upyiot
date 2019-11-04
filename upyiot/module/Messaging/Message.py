@@ -28,7 +28,7 @@ class Message:
         }
     }
 
-    _StreamBuffer = uio.BytesIO(MSG_SIZE_MAX)
+    _StreamBuffer = None
 
     @staticmethod
     def DeviceId(device_id=None):
@@ -47,13 +47,14 @@ class Message:
     @staticmethod
     def Serialize(datetime, msg_data_dict, msg_type, msg_subtype):
         Message.Msg[Message.MSG_SECTION_DATA] = ""
-        Message._StreamBuffer.seek(0)
+        if Message._StreamBuffer is not None:
+            Message._StreamBuffer.close()
+        Message._StreamBuffer = uio.BytesIO(Message.MSG_SIZE_MAX)
         Message.Msg[Message.MSG_SECTION_META][Message.MSG_META_DATETIME] = datetime
         Message.Msg[Message.MSG_SECTION_META][Message.MSG_META_TYPE] = msg_type
         Message.Msg[Message.MSG_SECTION_META][Message.MSG_META_SUBTYPE] = msg_subtype
         Message.Msg[Message.MSG_SECTION_DATA] = msg_data_dict
         ujson.dump(Message.Msg, Message._StreamBuffer)
-        Message._StreamBuffer.write('\0')
         return Message._StreamBuffer
 
     @staticmethod
@@ -62,9 +63,10 @@ class Message:
         try:
             Message.Msg = ujson.loads(msg_str)
         except ValueError:
-            print("Invalid JSON string: {}".format(msg_str))
+            print("[MsgBuf] Invalid JSON string: {}".format(msg_str))
         return Message.Msg
 
     @staticmethod
     def Print():
         print(Message.Msg)
+
