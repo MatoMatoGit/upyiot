@@ -6,12 +6,13 @@ from module.Messaging.MessageBuffer import MessageBuffer
 from module.SystemTime.SystemTime import SystemTime
 from module.Service.Service import Service
 from module.Service.Service import ServiceException
+from middleware.ExtLogging import ExtLogging
 
 import utime
 
 
 class MessageExchangeService(Service):
-    MSG_EX_SERVICE_MODE = Service.MODE_RUN_ONCE
+    MSG_EX_SERVICE_MODE = Service.MODE_RUN_PERIODIC
 
     def __init__(self):
         super().__init__(self.MSG_EX_SERVICE_MODE, ())
@@ -46,9 +47,10 @@ class MessageExchange(MessageExchangeService):
         self.ServiceInit = False
         self.NewMessage = False
 
+        self.Log = ExtLogging.LoggerGet("MsgEx")
         self.Time = SystemTime.InstanceGet()
         Message.DeviceId(client_id)
-        print("Device ID: {}".format(Message.DeviceId()))
+        print("[MsgEx] Device ID: {}".format(Message.DeviceId()))
         MessageExchange._Instance = self
 
     def RegisterMessageType(self, msg_spec_obj):
@@ -59,7 +61,7 @@ class MessageExchange(MessageExchangeService):
                                         MessageExchange.RECV_BUFFER_SIZE)
         else:
             recv_buffer = None
-
+        print("[MsgEx] Registering message specification: {}".format(msg_spec_obj))
         # Add the new mapping to the set of mappings.
         self.MessageMappings.add((msg_spec_obj.Type, msg_spec_obj.Subtype,
                                   msg_spec_obj.Url, recv_buffer))
@@ -75,20 +77,22 @@ class MessageExchange(MessageExchangeService):
         self._MqttSetup()
 
     def SvcRun(self):
+        # TODO: REMOVE
+        self.Log.info("PUB")
         msg_count = self.SendMessageBuffer.MessageCount()
-        print("Messages in send-buffer: {}".format(msg_count))
+        print("[MsgEx] Messages in send-buffer: {}".format(msg_count))
         for i in range(0, msg_count):
             msg_tup = self.SendMessageBuffer.MessageGet()
             msg_map = self.MessageMapFromType(msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
                                               msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE])
             if msg_map is not None:
-                print("Found message map: {}".format(msg_map))
+                print("[MsgEx] Found message map: {}".format(msg_map))
                 topic = msg_map[MessageExchange.MSG_MAP_URL]
                 msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
-                print("Publishing message on topic {}".format(topic))
+                print("[MsgEx] Publishing message on topic {}".format(topic))
                 self.MqttClient.publish(topic, msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len])
             else:
-                print("Warning: No topic defined for message type %d.%d" %
+                print("[MsgEx] Warning: No topic defined for message type %d.%d" %
                       (msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
                        msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE]))
         while True:
@@ -100,15 +104,15 @@ class MessageExchange(MessageExchangeService):
             self.NewMessage = False
 
     def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
-        print("[DataEx] Serializing message: {}".format(msg_data_dict))
+        print("[MsgEx] Serializing message: {}".format(msg_data_dict))
         Message.Serialize(self.Time.DateTime(), msg_data_dict, msg_type, msg_subtype)
-        print("[DataEx] Serialized length: {}".format(len(Message.Stream().getvalue().decode('utf-8'))))
+        print("[MsgEx] Serialized length: {}".format(len(Message.Stream().getvalue()))) #.decode('utf-8')
         return self.SendMessageBuffer.MessagePutWithType(msg_type, msg_subtype,
-                                                         Message.Stream().getvalue().decode('utf-8'))
+                                                         Message.Stream().getvalue()) #.decode('utf-8')
 
     def MessageGet(self, msg_type, msg_subtype):
         msg_map = self.MessageMapFromType(msg_type, msg_subtype)
-        print("Found message map: {}".format(msg_map))
+        print("[MsgEx] Found message map: {}".format(msg_map))
         if msg_map is not None:
             msg_buf = msg_map[MessageExchange.MSG_MAP_RECV_BUFFER]
             if msg_buf is not None:
@@ -117,13 +121,13 @@ class MessageExchange(MessageExchangeService):
                     msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
                     return Message.Deserialize(msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len])
                 else:
-                    print("Info: No message of type %d.%d received." % (msg_type, msg_subtype))
+                    print("[MsgEx] Info: No message of type %d.%d received." % (msg_type, msg_subtype))
                     return -3
             else:
-                print("Error: Message type %d.%d is specified as SEND." % (msg_type, msg_subtype))
+                print("[MsgEx] Error: Message type %d.%d is specified as SEND." % (msg_type, msg_subtype))
                 return -2
         else:
-            print("Error: No message mapping for message type %d.%d" % (msg_type, msg_subtype))
+            print("[MsgEx] Error: No message mapping for message type %d.%d" % (msg_type, msg_subtype))
         return -1
 
     @staticmethod
@@ -135,13 +139,13 @@ class MessageExchange(MessageExchangeService):
             if msg_map[MessageExchange.MSG_MAP_TYPE] is msg_type \
                     and msg_map[MessageExchange.MSG_MAP_SUBTYPE] is msg_subtype:
                 return msg_map
-            return None
+        return None
 
     def MessageMapFromUrl(self, url):
         for msg_map in self.MessageMappings:
             if msg_map[MessageExchange.MSG_MAP_URL] == url:
                 return msg_map
-            return None
+        return None
 
 # #### Private methods ####
 
@@ -159,10 +163,10 @@ class MessageExchange(MessageExchangeService):
                 msg_buf.MessagePut(msg)
                 data_ex.NewMessage = True
         else:
-            print("Warning: No message mapping defined for topic %s" % topic)
+            print("[MsgEx] Warning: No message mapping defined for topic %s" % topic)
 
     def _MqttSetup(self):
-        print("[MQTT] Connecting to broker.")
+        print("[MsgEx] Connecting to broker.")
         connected = False
         retries = 0
         # Try to connect to the MQTT broker, if it fails retry after the specified
@@ -171,13 +175,17 @@ class MessageExchange(MessageExchangeService):
             try:
                 self.MqttClient.connect()
                 connected = True
-                print("[MQTT] Connected.")
+                print("[MsgEx] Connected.")
             except OSError:
                 retries = retries + 1
-                print("[MQTT] Failed to connect to broker. Retries left %d"
+                print("[MsgEx] Failed to connect to broker. Retries left %d"
                       % (self.MqttRetries - retries))
                 utime.sleep(MessageExchange.CONNECT_RETRY_INTERVAL_SEC)
                 continue
+
+        if connected is False:
+            # TODO: Raise ServiceException
+            return
 
         # Set the MQTT message receive callback which is called when a message is received
         # on a topic.
@@ -186,11 +194,11 @@ class MessageExchange(MessageExchangeService):
         # TODO: Move this to the SvcRun. Must be done periodically.
         # Iterate through the available message mappings.
         for msg_map in self.MessageMappings:
-            print("Found message map: {}".format(msg_map))
+            print("[MsgEx] Found message map: {}".format(msg_map))
             # If the message mapping contains a receive buffer the message can be
             # received and must be subscribed to.
             if msg_map[MessageExchange.MSG_MAP_RECV_BUFFER] is not None:
-                print("Subscribing to topic {}".format(msg_map[MessageExchange.MSG_MAP_URL]))
+                print("[MsgEx] Subscribing to topic {}".format(msg_map[MessageExchange.MSG_MAP_URL]))
                 # Subscribe to the message topic.
                 self.MqttClient.subscribe(msg_map[MessageExchange.MSG_MAP_URL])
 
