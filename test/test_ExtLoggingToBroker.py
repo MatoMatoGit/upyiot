@@ -89,7 +89,7 @@ class test_ExtLoggingToBroker(unittest.TestCase):
         adapt = MessageFormatAdapter(ep, MessageFormatAdapter.SEND_ON_COMPLETE, msg_spec)
 
         # Create a stream for the msg field.
-        log_stream = adapt.CreateStream(LogMessage.DATA_KEY_MSG, 2)
+        log_stream = adapt.CreateStream(LogMessage.DATA_KEY_MSG, ExtLogging.WRITES_PER_LOG)
 
         # Configure the ExtLogging class.
         ExtLogging.ConfigGlobal(level=ExtLogging.INFO, stream=log_stream)

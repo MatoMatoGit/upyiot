@@ -93,7 +93,6 @@ class test_SensorToBroker(unittest.TestCase):
     UrlFields = {MessageSpecification.URL_FIELD_DEVICE_ID: ID,
                  MessageSpecification.URL_FIELD_PRODUCT_NAME: PRODUCT_NAME}
 
-    Sensor = None
     TempSamples = [20, 21, 25, 30, 35, 35, 20, 12, 10, 40]
     MoistSamples = [200, 300, 350, 360, 290, 500, 250, 300, 240, 320]
 
@@ -102,6 +101,7 @@ class test_SensorToBroker(unittest.TestCase):
     SensorReadInterval  = const(3)
 
     def setUp(self):
+        # Configure the URL fields.
         MessageSpecification.Config(self.UrlFields)
 
         # Create objects.
@@ -166,7 +166,7 @@ class test_SensorToBroker(unittest.TestCase):
         self.MoistSensor.ObserverAttachNewSample(self.MoistObserver)
 
         # Create a stream for the log messages.
-        self.LogStream = self.LogAdapt.CreateStream(LogMessage.DATA_KEY_LOG_MSG, 2)
+        self.LogStream = self.LogAdapt.CreateStream(LogMessage.DATA_KEY_LOG_MSG, ExtLogging.WRITES_PER_LOG)
 
         # Configure the ExtLogging class.
         ExtLogging.ConfigGlobal(level=ExtLogging.INFO, stream=self.LogStream)
@@ -174,6 +174,7 @@ class test_SensorToBroker(unittest.TestCase):
         # Configure the station settings to connect to a WLAN AP.
         self.NetCon.StationSettingsStore(self.ApCfg["ssid"], self.ApCfg["pwd"])
 
+        # Declare test variables.
         self.RecvMsgCount = 0
         self.RecvTopic = None
         self.RecvMsg = None
@@ -190,7 +191,7 @@ class test_SensorToBroker(unittest.TestCase):
         test_SensorToBroker.RecvMsg = msg
         test_SensorToBroker.RecvMsgCount = test_SensorToBroker.RecvMsgCount + 1
 
-    def test_RunApp(self):
+    def test_RunComponentIntegration(self):
 
         self.MsgEx.SvcIntervalSet(self.MsgExInterval)
         self.MoistSensor.SvcIntervalSet(self.SensorReadInterval)
