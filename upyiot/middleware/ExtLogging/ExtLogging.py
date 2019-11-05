@@ -2,7 +2,7 @@ from micropython import const
 import uos as os
 import sys
 
-LOGGER_STREAM_BUFFER_SIZE = const(400)
+WRITES_PER_LOG = const(2)
 
 CRITICAL = 50
 ERROR    = 40
