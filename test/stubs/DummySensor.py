@@ -6,7 +6,6 @@ class DummySensor(object):
         self.NumSamples = len(samples)
         self.Index = 0
         
-    
     def Read(self):
         sample = self.Samples[self.Index]
         self.Index = self.Index + 1

@@ -1,18 +1,22 @@
 from micropython import const
+from machine import Pin, ADC
+
 
 class Battery(object):
     
     LIPO_VOLT_TO_PERCENT_CURVE = (4.4, 3.9, 3.75, 3.7, 3.65, 3)
     LIPO_VOLT_TO_PERCENT_STEP = const(25)
     
-    def __init__(self, num_cells, volt_sensor_obj):
+    def __init__(self, num_cells, volt_pin_nr):
         self.NumCells = num_cells
-        self.VoltSensor = volt_sensor_obj
+        self.BatVoltageAdc = ADC(Pin(volt_pin_nr))
+        self.BatVoltageAdc.atten(ADC.ATTN_11DB)
+        self.BatVoltageAdc.width(ADC.WIDTH_10BIT)
         self.Level = 100
     
     def LevelRead(self):
         # Read the current battery voltage and convert it to a percentage.
-        volt = Battery.VoltSensor.Read()
+        volt = Battery.BatVoltageAdc.read()
         Battery.Level = Battery.VoltageToPercent(volt)
         return Battery.Level
        

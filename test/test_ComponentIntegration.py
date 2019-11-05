@@ -87,9 +87,6 @@ class test_SensorToBroker(unittest.TestCase):
     MqttClient = None
     MsgEx = None
     Time = None
-    RecvTopic = None
-    RecvMsg = None
-    RecvMsgCount = 0
     UrlFields = {MessageSpecification.URL_FIELD_DEVICE_ID: ID,
                  MessageSpecification.URL_FIELD_PRODUCT_NAME: PRODUCT_NAME}
 
@@ -99,6 +96,10 @@ class test_SensorToBroker(unittest.TestCase):
     SamplesPerMessage   = const(3)
     MsgExInterval       = const(10)
     SensorReadInterval  = const(3)
+
+    RecvTopic = None
+    RecvMsg = None
+    RecvMsgCount = 0
 
     def setUp(self):
         # Configure the URL fields.
@@ -124,6 +125,7 @@ class test_SensorToBroker(unittest.TestCase):
                                      self.MqttClient,
                                      self.ID,
                                      self.RETRIES)
+        self.MsgEp = Endpoint()
         self.Scheduler = ServiceScheduler()
 
         # Set service dependencies.
@@ -144,11 +146,10 @@ class test_SensorToBroker(unittest.TestCase):
         self.MoistMsgSpec = SensorReportMoist()
         self.LogMsgSpec = LogMessage()
 
-        # Create a Messaging Endpoint and a MessageFormatAdapter.
-        self.Ep = Endpoint()
-        self.TempAdapt = MessageFormatAdapter(self.Ep, MessageFormatAdapter.SEND_ON_COMPLETE, self.TempMsgSpec)
-        self.MoistAdapt = MessageFormatAdapter(self.Ep, MessageFormatAdapter.SEND_ON_COMPLETE, self.MoistMsgSpec)
-        self.LogAdapt = MessageFormatAdapter(self.Ep, MessageFormatAdapter.SEND_ON_COMPLETE, self.LogMsgSpec)
+        # Create a Messaging Endpoint and MessageFormatAdapters.
+        self.TempAdapt = MessageFormatAdapter(self.MsgEp, MessageFormatAdapter.SEND_ON_COMPLETE, self.TempMsgSpec)
+        self.MoistAdapt = MessageFormatAdapter(self.MsgEp, MessageFormatAdapter.SEND_ON_COMPLETE, self.MoistMsgSpec)
+        self.LogAdapt = MessageFormatAdapter(self.MsgEp, MessageFormatAdapter.SEND_ON_COMPLETE, self.LogMsgSpec)
 
         # Register message specs.
         self.MsgEx.RegisterMessageType(self.TempMsgSpec)

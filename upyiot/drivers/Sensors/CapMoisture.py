@@ -1,15 +1,16 @@
+from drivesr.Sensors.SensorBase import SensorBase
 from machine import Pin
 import time
 
 
-class CapMoisture:
+class CapMoisture(SensorBase):
 
     PulseCount = 0
 
-    def __init__(self, pulse_pin_obj, pwr_pin_obj):
-        self.FreqCounterPin = pulse_pin_obj
-        self.FreqCounterPin.irq(trigger=Pin.IRQ_FALLING, handler=self._IrqHandlerPinPulse)
-        self.PowerPin = pwr_pin_obj
+    def __init__(self, pulse_pin_nr, pwr_pin_nr):
+        self.FreqCounterPin = Pin(pulse_pin_nr, mode=Pin.OUT)
+        self.FreqCounterPin.irq(trigger=Pin.IRQ_FALLING, handler=self._IrqHandlerFreqCounterPin, hard=True)
+        self.PowerPin = Pin(pwr_pin_nr, Pin.OUT)
         return
 
     def Read(self):
@@ -20,7 +21,7 @@ class CapMoisture:
         return PulseCount
 
     @staticmethod
-    def _IrqHandlerPinPulse(pin):
+    def _IrqHandlerFreqCounterPin(pin_obj):
         global PulseCount
 
         PulseCount += 1

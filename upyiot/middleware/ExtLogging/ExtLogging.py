@@ -22,7 +22,6 @@ _level_dict = {
 
 _stream = sys.stderr
 
-
 class Logger:
 
     level = NOTSET
@@ -73,34 +72,6 @@ class Logger:
         self.exc(sys.exc_info()[1], msg, *args)
 
 
-_level = INFO
-_loggers = {}
-
-
-def getLogger(name):
-    if name in _loggers:
-        return _loggers[name]
-    l = Logger(name)
-    _loggers[name] = l
-    return l
-
-
-def info(msg, *args):
-    getLogger(None).info(msg, *args)
-
-
-def debug(msg, *args):
-    getLogger(None).debug(msg, *args)
-
-
-def basicConfig(level=INFO, stream=None):
-    global _level, _stream
-    _level = level
-    if stream:
-        _stream = stream
-    print("[Logger] Configured.")
-
-
 class LoggerStream(object):
 
     def __init__(self, stream, file):
@@ -137,6 +108,8 @@ class ExtLogger(Logger):
         super().__init__(name)
 
 
+_level = INFO
+_loggers = {}
 _Stream = None
 _File = None
 
@@ -156,6 +129,14 @@ def _FileCreate(file):
             raise
 
 
+def _basicConfig(level=INFO, stream=None):
+    global _level, _stream
+    _level = level
+    if stream:
+        _stream = stream
+    print("[Logger] Configured.")
+
+
 def ConfigGlobal(level=INFO, stream=None, file=None):
     global _Stream
     global _File
@@ -165,7 +146,7 @@ def ConfigGlobal(level=INFO, stream=None, file=None):
         _FileCreate(file)
     if stream is not None:
         _Stream = LoggerStream(stream, file)
-    basicConfig(level=level, stream=_Stream)
+    _basicConfig(level=level, stream=_Stream)
 
 
 def LoggerGet(name):
@@ -183,3 +164,12 @@ def Clear():
         _FileCreate(_File)
     except OSError:
         print("[ExtLogging]  Failed to clear log file")
+
+
+def info(msg, *args):
+    LoggerGet(None).info(msg, *args)
+
+
+def debug(msg, *args):
+    LoggerGet(None).debug(msg, *args)
+

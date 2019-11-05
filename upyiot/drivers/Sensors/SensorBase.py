@@ -2,4 +2,4 @@
 class SensorBase:
 
     def Read(self):
-        pass
+        raise NotImplementedError

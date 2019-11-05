@@ -5,12 +5,12 @@ class Led(object):
     PWM_DUTY_MAX = 1023
     PWM_DUTY_MIN = 0
     
-    def __init__(self, pin, pwm=False):
+    def __init__(self, pin_nr, pwm=False):
         self.Pwm = pwm
         self.IsOn = False
-        self.Pin = Pin(pin, Pin.OUT)
+        self.Pin = Pin(pin_nr, Pin.OUT)
         
-        if(pwm == True):
+        if pwm is True:
             self.Pin = PWM(self.Pin, freq=self.PWM_FREQ, duty=0)
         else:
             self.Off()
