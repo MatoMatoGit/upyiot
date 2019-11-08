@@ -1,12 +1,12 @@
 import sys
 
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
 
 # Unit Under Test
-from module.SystemTime.SystemTime import SystemTime
+from upyiot.module.SystemTime.SystemTime import SystemTime
 
 
 class test_SystemTime(unittest.TestCase):

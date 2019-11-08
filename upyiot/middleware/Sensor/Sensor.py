@@ -1,8 +1,8 @@
-from middleware.AvgFilter import AvgFilter
-from middleware.SubjectObserver.SubjectObserver import Subject
-from middleware.NvQueue import NvQueue
-from module.Service.Service import Service
-from module.Service.Service import ServiceException
+from upyiot.middleware.AvgFilter import AvgFilter
+from upyiot.middleware.SubjectObserver.SubjectObserver import Subject
+from upyiot.middleware.NvQueue import NvQueue
+from upyiot.module.Service.Service import Service
+from upyiot.module.Service.Service import ServiceException
 from micropython import const
 
 

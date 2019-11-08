@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
@@ -8,15 +8,15 @@ from stubs import DummySensor
 from stubs.network import WLAN
 
 # Unit(s) Under Test
-from comm.NetCon.NetCon import NetCon
-from middleware.Sensor import Sensor
-from module.SystemTime.SystemTime import SystemTime
-from module.Service.ServiceScheduler import ServiceScheduler
-from module.Messaging.MessageExchange import MessageExchange
-from module.Messaging.MessageExchange import Endpoint
-from module.Messaging.MessageFormatAdapter import MessageFormatAdapter
-from module.Messaging.MessageSpecification import MessageSpecification
-from middleware.ExtLogging import ExtLogging
+from upyiot.comm.NetCon.NetCon import NetCon
+from upyiot.middleware.Sensor import Sensor
+from upyiot.module.SystemTime.SystemTime import SystemTime
+from upyiot.module.Service.ServiceScheduler import ServiceScheduler
+from upyiot.module.Messaging.MessageExchange import MessageExchange
+from upyiot.module.Messaging.MessageExchange import Endpoint
+from upyiot.module.Messaging.MessageFormatAdapter import MessageFormatAdapter
+from upyiot.module.Messaging.MessageSpecification import MessageSpecification
+from upyiot.middleware.ExtLogging import ExtLogging
 
 # Other
 from umqtt.simple import MQTTClient

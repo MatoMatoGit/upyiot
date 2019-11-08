@@ -8,12 +8,13 @@ except:
     
 import uerrno as errno
 from micropython import const
-from drivers.Battery import Battery
-from middleware.StructFile import StructFile
-from middleware.SubjectObserver.SubjectObserver import Subject
-from middleware.Singleton import Singleton
+from upyiot.drivers.Battery import Battery
+from upyiot.middleware.StructFile import StructFile
+from upyiot.middleware.SubjectObserver.SubjectObserver import Subject
+from upyiot.middleware.Singleton import Singleton
 
 SLEEP_TIME_MAX_SEC = const(86400)
+
 
 class PowerSupply(object):
     

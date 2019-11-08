@@ -1,5 +1,5 @@
 from micropython import const
-from middleware.SubjectObserver.SubjectObserver import Observer
+from upyiot.middleware.SubjectObserver.SubjectObserver import Observer
 
 
 class MessagePartSource:

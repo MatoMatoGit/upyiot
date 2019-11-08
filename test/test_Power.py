@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
@@ -9,9 +9,9 @@ from stubs.TestBattery import TestBattery
 from stubs import machine
 
 # Unit Under Test
-from module.Power.Power import PowerManager
-from module.Power.Power import PowerSupply
-from module.Power.Power import ServicePowerManager
+from upyiot.module.Power.Power import PowerManager
+from upyiot.module.Power.Power import PowerSupply
+from upyiot.module.Power.Power import ServicePowerManager
 
 # Other 
 

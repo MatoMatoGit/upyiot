@@ -1,4 +1,4 @@
-from drivesr.Sensors.SensorBase import SensorBase
+from upyiot.drivers.Sensors.SensorBase import SensorBase
 from machine import Pin, ADC
 
 

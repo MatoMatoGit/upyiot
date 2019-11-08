@@ -1,19 +1,19 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from module.Messaging.MessageExchange import MessageExchange
-from module.Messaging.MessageExchange import Endpoint
-from module.Messaging.MessageFormatAdapter import MessageFormatAdapter
-from module.Messaging.MessageSpecification import MessageSpecification
-from middleware.ExtLogging import ExtLogging
+from upyiot.module.Messaging.MessageExchange import MessageExchange
+from upyiot.module.Messaging.MessageExchange import Endpoint
+from upyiot.module.Messaging.MessageFormatAdapter import MessageFormatAdapter
+from upyiot.module.Messaging.MessageSpecification import MessageSpecification
+from upyiot.middleware.ExtLogging import ExtLogging
 
 # Other
-from module.SystemTime.SystemTime import SystemTime
+from upyiot.module.SystemTime.SystemTime import SystemTime
 from umqtt.simple import MQTTClient
 import utime
 from micropython import const

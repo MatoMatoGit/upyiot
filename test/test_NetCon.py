@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
@@ -7,13 +7,13 @@ from TestUtil import TestUtil
 from stubs.network import WLAN
 
 # Unit Under Test
-from comm.NetCon.NetCon import NetCon
-from comm.NetCon.NetCon import NetConService
-from comm.NetCon.NetCon import NetConExceptionNoStationSettings
+from upyiot.comm.NetCon.NetCon import NetCon
+from upyiot.comm.NetCon.NetCon import NetConService
+from upyiot.comm.NetCon.NetCon import NetConExceptionNoStationSettings
 
 # Other
-from module.Service.Service import Service
-from module.Service.Service import ServiceExceptionSuspend
+from upyiot.module.Service.Service import Service
+from upyiot.module.Service.Service import ServiceExceptionSuspend
 
 
 class test_NetCon(unittest.TestCase):

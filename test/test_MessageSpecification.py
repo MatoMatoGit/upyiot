@@ -1,15 +1,16 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from module.Messaging.MessageSpecification import MessageSpecification
+from upyiot.module.Messaging.MessageSpecification import MessageSpecification
 
 # Other
 from micropython import const
+
 
 class test_MessageSpecification(unittest.TestCase):
 

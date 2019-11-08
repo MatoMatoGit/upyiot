@@ -1,4 +1,4 @@
-from middleware.StructFile import StructFile
+from upyiot.middleware.StructFile import StructFile
 from micropython import const
 
 

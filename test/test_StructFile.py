@@ -1,12 +1,12 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from middleware.StructFile import StructFile
+from upyiot.middleware.StructFile import StructFile
 
 # Other
 import uos as os

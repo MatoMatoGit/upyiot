@@ -1,4 +1,5 @@
-from middleware.NvQueue import NvQueue
+from upyiot.middleware.NvQueue import NvQueue
+
 
 class MessageBuffer:
 

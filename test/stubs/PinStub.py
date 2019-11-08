@@ -1,5 +1,6 @@
 from micropython import const
 
+
 class Pin(object):
     IRQ_FALLING = const(0)
     IRQ_RISING  = const(1)

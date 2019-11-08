@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
@@ -7,12 +7,12 @@ from StubFunction import StubFunction
 from TestUtil import TestUtil
 
 # Unit Under Test
-from module.Service.ServiceScheduler import ServiceScheduler
+from upyiot.module.Service.ServiceScheduler import ServiceScheduler
 
 # Other
-from module.Service.Service import Service
-from module.Service.Service import ServiceException
-from module.Service.Service import ServiceExceptionSuspend
+from upyiot.module.Service.Service import Service
+from upyiot.module.Service.Service import ServiceException
+from upyiot.module.Service.Service import ServiceExceptionSuspend
 
 
 class TestService(Service):

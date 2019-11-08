@@ -1,11 +1,11 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
 
 # Unit Under Test
-from middleware.Singleton import Singleton
+from upyiot.middleware.Singleton import Singleton
 
 # Other
 

@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
@@ -7,15 +7,16 @@ from TestUtil import TestUtil
 from stubs.MqttClientStub import MQTTClient
 
 # Unit Under Test
-from module.Messaging.MessageExchange import MessageExchange
-from module.Messaging.MessageExchange import Endpoint
-from module.Messaging.MessageSpecification import MessageSpecification
+from upyiot.module.Messaging.MessageExchange import MessageExchange
+from upyiot.module.Messaging.MessageExchange import Endpoint
+from upyiot.module.Messaging.MessageSpecification import MessageSpecification
 
 # Other
-from module.Messaging.Message import Message
-from module.Messaging.MessageBuffer import MessageBuffer
-from module.SystemTime.SystemTime import SystemTime
-from module.Service.Service import Service
+from upyiot.module.Messaging.Message import Message
+from upyiot.module.Messaging.MessageBuffer import MessageBuffer
+from upyiot.module.SystemTime.SystemTime import SystemTime
+from upyiot.module.Service.Service import Service
+
 
 class test_MessageExchange(unittest.TestCase):
 

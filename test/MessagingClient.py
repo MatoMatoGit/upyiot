@@ -1,7 +1,7 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
-from module.Messaging.MessageSpecification import MessageSpecification
+from upyiot.module.Messaging.MessageSpecification import MessageSpecification
 from umqtt.simple import MQTTClient
 
 try:

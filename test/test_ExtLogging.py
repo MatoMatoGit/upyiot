@@ -1,14 +1,15 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from middleware.ExtLogging import ExtLogging
+from upyiot.middleware.ExtLogging import ExtLogging
 
 # Other
+
 
 class TestStream:
 

@@ -1,12 +1,12 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from middleware.NvQueue import NvQueue
+from upyiot.middleware.NvQueue import NvQueue
 
 # Other
 import uos as os

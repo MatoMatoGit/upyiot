@@ -1,12 +1,12 @@
 import sys
-sys.path.append('../upyiot/')
+sys.path.append('../')
 
 # Test libraries
 import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from module.Messaging.MessageBuffer import MessageBuffer
+from upyiot.module.Messaging.MessageBuffer import MessageBuffer
 
 # Other
 
