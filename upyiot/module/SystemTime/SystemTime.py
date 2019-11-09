@@ -61,11 +61,11 @@ class SystemTime(SystemTimeService):
         return SystemTime._Instance
 
     def Now(self):
-        datetime = SystemTime._Rtc.now()
+        datetime = SystemTime._Rtc.datetime()
         return datetime
 
     def DateTime(self):
-        datetime = SystemTime._Rtc.now()
+        datetime = SystemTime._Rtc.datetime()
         # Format the datetime tuple as such: YYYY-MM-DDThh:mm:ss
         datetime_str = str(datetime[SystemTime.RTC_DATETIME_YEAR]) + \
                        '-' + str(datetime[SystemTime.RTC_DATETIME_MONTH]) + \
