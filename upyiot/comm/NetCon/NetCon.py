@@ -27,14 +27,17 @@ class NetCon(NetConService):
     MODE_STATION        = const(0)
     MODE_ACCESS_POINT   = const(1)
 
-    def __init__(self, net_con_dir, ap_cfg, mode, wlan_if_obj):
+    def __init__(self, net_con_dir, ap_cfg, mode=MODE_STATION, wlan_if_obj=None):
         # Initialize the NetConService class.
         super().__init__()
-
+        self.WlanMode = mode
+        self.NetIf = wlan_if_obj
         self.RootDir = net_con_dir
         self.ApSsid = ap_cfg["ssid"]
         self.ApPwd = ap_cfg["pwd"]
         self.ApIp = ap_cfg["ip"]
+
+    def WlanInterface(self, wlan_if_obj, mode):
         self.NetIf = wlan_if_obj
         self.WlanMode = mode
 
@@ -51,14 +54,17 @@ class NetCon(NetConService):
             self.StationStop()
 
     def AccessPointStart(self):
+        if self.NetIf is None:
+            return -1
         print("[NetCon] Starting AP mode. SSID: {}, IP: {}".format(self.ApSsid, self.ApIp))
         self.NetIf.ifconfig((self.ApIp, '255.255.255.0', '192.168.0.1', '192.168.0.1'))
         self.NetIf.active(True)
         self.NetIf.config(essid=self.ApSsid, password=self.ApPwd)
 
     def AccessPointStop(self):
+        if self.NetIf is None:
+            return -1
         print("[NetCon] Stopping AP mode.")
-        self.NetIf.disconnect()
         self.NetIf.active(False)
 
     def StationSettingsStore(self, ssid, pwd):
