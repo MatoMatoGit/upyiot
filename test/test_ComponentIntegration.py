@@ -74,7 +74,7 @@ class LogMessage(MessageSpecification):
                          LogMessage.DIRECTION_LOG_MSG)
 
 
-class test_SensorToBroker(unittest.TestCase):
+class test_ComponentIntegration(unittest.TestCase):
 
     PRODUCT_NAME = "smartsensor"
     DIR = "./"
@@ -188,9 +188,9 @@ class test_SensorToBroker(unittest.TestCase):
 
     @staticmethod
     def MqttMsgRecvCallback(topic, msg):
-        test_SensorToBroker.RecvTopic = topic
-        test_SensorToBroker.RecvMsg = msg
-        test_SensorToBroker.RecvMsgCount = test_SensorToBroker.RecvMsgCount + 1
+        test_ComponentIntegration.RecvTopic = topic
+        test_ComponentIntegration.RecvMsg = msg
+        test_ComponentIntegration.RecvMsgCount = test_ComponentIntegration.RecvMsgCount + 1
 
     def test_RunComponentIntegration(self):
 
