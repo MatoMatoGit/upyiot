@@ -6,13 +6,13 @@ import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from upyiot.module.Messaging.MessageExchange import MessageExchange
-from upyiot.module.Messaging.MessageExchange import Endpoint
-from upyiot.module.Messaging.MessageSpecification import MessageSpecification
+from upyiot.comm.Messaging.MessageExchange import MessageExchange
+from upyiot.comm.Messaging.MessageExchange import Endpoint
+from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
 
 # Other
-from upyiot.module.Messaging.Message import Message
-from upyiot.module.SystemTime.SystemTime import SystemTime
+from upyiot.comm.Messaging.Message import Message
+from upyiot.system.SystemTime.SystemTime import SystemTime
 from umqtt.simple import MQTTClient
 import utime
 

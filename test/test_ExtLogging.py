@@ -6,7 +6,7 @@ import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from upyiot.middleware.ExtLogging import ExtLogging
+from upyiot.system.ExtLogging import ExtLogging
 
 # Other
 

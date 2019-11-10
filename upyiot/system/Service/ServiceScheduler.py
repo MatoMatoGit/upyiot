@@ -1,6 +1,6 @@
-from upyiot.module.Service.Service import Service
-from upyiot.module.Service.Service import ServiceExceptionSuspend
-from upyiot.module.Service.Service import ServiceException
+from upyiot.system.Service.Service import Service
+from upyiot.system.Service.Service import ServiceExceptionSuspend
+from upyiot.system.Service.Service import ServiceException
 import utime
 from micropython import const
 

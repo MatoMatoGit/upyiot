@@ -8,15 +8,15 @@ from stubs import DummySensor
 from stubs.network import WLAN
 
 # Unit(s) Under Test
-from upyiot.comm.NetCon.NetCon import NetCon
+from upyiot.system.SystemTime.SystemTime import SystemTime
+from upyiot.system.Service.ServiceScheduler import ServiceScheduler
+from upyiot.system.ExtLogging import ExtLogging
 from upyiot.middleware.Sensor import Sensor
-from upyiot.module.SystemTime.SystemTime import SystemTime
-from upyiot.module.Service.ServiceScheduler import ServiceScheduler
-from upyiot.module.Messaging.MessageExchange import MessageExchange
-from upyiot.module.Messaging.MessageExchange import Endpoint
-from upyiot.module.Messaging.MessageFormatAdapter import MessageFormatAdapter
-from upyiot.module.Messaging.MessageSpecification import MessageSpecification
-from upyiot.middleware.ExtLogging import ExtLogging
+from upyiot.comm.NetCon.NetCon import NetCon
+from upyiot.comm.Messaging.MessageExchange import MessageExchange
+from upyiot.comm.Messaging.MessageExchange import Endpoint
+from upyiot.comm.Messaging.MessageFormatAdapter import MessageFormatAdapter
+from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
 
 # Other
 from umqtt.simple import MQTTClient

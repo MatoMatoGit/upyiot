@@ -6,7 +6,7 @@ import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from upyiot.module.Messaging.MessageSpecification import MessageSpecification
+from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
 
 # Other
 from micropython import const

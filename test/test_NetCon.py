@@ -12,8 +12,8 @@ from upyiot.comm.NetCon.NetCon import NetConService
 from upyiot.comm.NetCon.NetCon import NetConExceptionNoStationSettings
 
 # Other
-from upyiot.module.Service.Service import Service
-from upyiot.module.Service.Service import ServiceExceptionSuspend
+from upyiot.system.Service.Service import Service
+from upyiot.system.Service.Service import ServiceExceptionSuspend
 
 
 class test_NetCon(unittest.TestCase):

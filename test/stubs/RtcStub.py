@@ -7,7 +7,7 @@ class RTC(object):
         self.DateTime = 0
         return 
 
-    def datetime(self, date_time):
+    def datetime(self, date_time=None):
         if date_time is None:
             return self.DateTime
         self.DateTime = date_time

@@ -1,8 +1,8 @@
 from upyiot.middleware.AvgFilter import AvgFilter
 from upyiot.middleware.SubjectObserver.SubjectObserver import Subject
 from upyiot.middleware.NvQueue import NvQueue
-from upyiot.module.Service.Service import Service
-from upyiot.module.Service.Service import ServiceException
+from upyiot.system.Service.Service import Service
+from upyiot.system.Service.Service import ServiceException
 from micropython import const
 
 

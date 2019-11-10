@@ -6,7 +6,7 @@ import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from upyiot.module.Messaging.MessageFormatAdapter import MessageFormatAdapter
+from upyiot.comm.Messaging.MessageFormatAdapter import MessageFormatAdapter
 
 # Other
 from ExampleMessage import ExampleMessage

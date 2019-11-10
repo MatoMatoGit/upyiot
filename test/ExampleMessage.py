@@ -1,5 +1,5 @@
 from micropython import const
-from upyiot.module.Messaging.MessageSpecification import MessageSpecification
+from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
 
 
 class ExampleMessage(MessageSpecification):

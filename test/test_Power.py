@@ -9,9 +9,9 @@ from stubs.TestBattery import TestBattery
 from stubs import machine
 
 # Unit Under Test
-from upyiot.module.Power.Power import PowerManager
-from upyiot.module.Power.Power import PowerSupply
-from upyiot.module.Power.Power import ServicePowerManager
+from upyiot.system.Power.Power import PowerManager
+from upyiot.system.Power.Power import PowerSupply
+from upyiot.system.Power.Power import ServicePowerManager
 
 # Other 
 

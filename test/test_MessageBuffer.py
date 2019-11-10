@@ -6,7 +6,7 @@ import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from upyiot.module.Messaging.MessageBuffer import MessageBuffer
+from upyiot.comm.Messaging.MessageBuffer import MessageBuffer
 
 # Other
 

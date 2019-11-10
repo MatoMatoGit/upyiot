@@ -1,8 +1,8 @@
 import uos as os
 import utime
 from micropython import const
-from upyiot.module.Service.Service import Service
-from upyiot.module.Service.Service import ServiceException
+from upyiot.system.Service.Service import Service
+from upyiot.system.Service.Service import ServiceException
 
 
 class NetConExceptionNoStationSettings(ServiceException):

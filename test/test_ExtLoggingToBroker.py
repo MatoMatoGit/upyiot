@@ -6,14 +6,14 @@ import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from upyiot.module.Messaging.MessageExchange import MessageExchange
-from upyiot.module.Messaging.MessageExchange import Endpoint
-from upyiot.module.Messaging.MessageFormatAdapter import MessageFormatAdapter
-from upyiot.module.Messaging.MessageSpecification import MessageSpecification
-from upyiot.middleware.ExtLogging import ExtLogging
+from upyiot.comm.Messaging.MessageExchange import MessageExchange
+from upyiot.comm.Messaging.MessageExchange import Endpoint
+from upyiot.comm.Messaging.MessageFormatAdapter import MessageFormatAdapter
+from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
+from upyiot.system.ExtLogging import ExtLogging
 
 # Other
-from upyiot.module.SystemTime.SystemTime import SystemTime
+from upyiot.system.SystemTime.SystemTime import SystemTime
 from umqtt.simple import MQTTClient
 import utime
 from micropython import const

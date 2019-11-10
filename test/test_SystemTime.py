@@ -6,7 +6,7 @@ sys.path.append('../')
 import unittest
 
 # Unit Under Test
-from upyiot.module.SystemTime.SystemTime import SystemTime
+from upyiot.system.SystemTime.SystemTime import SystemTime
 
 
 class test_SystemTime(unittest.TestCase):

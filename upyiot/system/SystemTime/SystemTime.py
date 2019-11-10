@@ -14,7 +14,7 @@ except:
 import utime
 from micropython import const
 
-from upyiot.module.Service.Service import Service
+from upyiot.system.Service.Service import Service
 
 
 class SystemTimeService(Service):

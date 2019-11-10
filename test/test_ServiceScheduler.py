@@ -7,12 +7,12 @@ from StubFunction import StubFunction
 from TestUtil import TestUtil
 
 # Unit Under Test
-from upyiot.module.Service.ServiceScheduler import ServiceScheduler
+from upyiot.system.Service.ServiceScheduler import ServiceScheduler
 
 # Other
-from upyiot.module.Service.Service import Service
-from upyiot.module.Service.Service import ServiceException
-from upyiot.module.Service.Service import ServiceExceptionSuspend
+from upyiot.system.Service.Service import Service
+from upyiot.system.Service.Service import ServiceException
+from upyiot.system.Service.Service import ServiceExceptionSuspend
 
 
 class TestService(Service):

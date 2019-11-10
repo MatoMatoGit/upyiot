@@ -1,12 +1,12 @@
 from micropython import const
 
-from upyiot.module.Messaging.MessageSpecification import MessageSpecification
-from upyiot.module.Messaging.Message import Message
-from upyiot.module.Messaging.MessageBuffer import MessageBuffer
-from upyiot.module.SystemTime.SystemTime import SystemTime
-from upyiot.module.Service.Service import Service
-from upyiot.module.Service.Service import ServiceException
-from upyiot.middleware.ExtLogging import ExtLogging
+from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
+from upyiot.comm.Messaging.Message import Message
+from upyiot.comm.Messaging.MessageBuffer import MessageBuffer
+from upyiot.system.SystemTime.SystemTime import SystemTime
+from upyiot.system.Service.Service import Service
+from upyiot.system.Service.Service import ServiceException
+from upyiot.system.ExtLogging import ExtLogging
 
 import utime
 

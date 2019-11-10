@@ -7,7 +7,7 @@ import unittest
 from TestUtil import TestUtil
 
 # Unit Under Test
-from upyiot.module.Messaging.Message import Message
+from upyiot.comm.Messaging.Message import Message
 
 # Other
 import uio
