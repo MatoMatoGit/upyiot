@@ -4,7 +4,7 @@ sys.path.append('../')
 # Test libraries
 import unittest
 from StubFunction import StubFunction
-from TestUtil import TestUtil
+from stubs import machine
 
 # Unit Under Test
 from upyiot.system.Service.ServiceScheduler import ServiceScheduler
@@ -13,12 +13,22 @@ from upyiot.system.Service.ServiceScheduler import ServiceScheduler
 from upyiot.system.Service.Service import Service
 from upyiot.system.Service.Service import ServiceException
 from upyiot.system.Service.Service import ServiceExceptionSuspend
+from upyiot.drivers.Sleep.DeepSleep import DeepSleepExceptionInitiated
+
+import utime
 
 
 class TestService(Service):
+    TEST_SERVICE_DURATION = 1
 
-    def __init__(self, mode, service_deps, interval=0, run_func=None):
-        super().__init__(mode, service_deps, interval)
+    InstanceCount = 0
+
+    def __init__(self, mode, service_deps, interval=0, run_func=None, name=None):
+        if name is None:
+            name = "tstsvc_" + str(self.InstanceCount)
+        super().__init__(name,
+                         mode, service_deps, interval)
+        TestService.InstanceCount += 1
 
         # Create  methods
         self.SvcInit = StubFunction()
@@ -33,6 +43,7 @@ class test_ServiceScheduler(unittest.TestCase):
         return
 
     def tearDown(self):
+        self.Scheduler.Memory.Sfile.Delete()
         return
 
     def test_ServiceRegisterSuccessful(self):
@@ -85,6 +96,7 @@ class test_ServiceScheduler(unittest.TestCase):
     @staticmethod
     def OneShotServiceRun(stub_func_obj):
         print("[OneShotService] Called")
+        utime.sleep(TestService.TEST_SERVICE_DURATION)
 
     def test_RunServicePeriodic(self):
         run_count = 2
@@ -92,7 +104,7 @@ class test_ServiceScheduler(unittest.TestCase):
         svc = TestService(Service.MODE_RUN_PERIODIC, (), interval, test_ServiceScheduler.PeriodicServiceRun)
         self.Scheduler.ServiceRegister(svc)
 
-        self.Scheduler.Run(interval * run_count)
+        self.Scheduler.Run(run_count * 2)
 
         self.assertEqual(svc.SvcRun.CallCount, run_count)
 
@@ -101,7 +113,7 @@ class test_ServiceScheduler(unittest.TestCase):
         self.Scheduler.ServiceRegister(svc)
 
         svc.SvcActivate()
-        self.Scheduler.Run(2)
+        self.Scheduler.Run(1)
 
         self.assertEqual(svc.SvcRun.CallCount, 1)
 
@@ -112,7 +124,7 @@ class test_ServiceScheduler(unittest.TestCase):
         self.Scheduler.ServiceRegister(svc_periodic)
         self.Scheduler.ServiceRegister(svc_once)
         svc_once.SvcActivate()
-        self.Scheduler.Run(3)
+        self.Scheduler.Run(2)
 
         self.assertEqual(svc_once.SvcRun.CallCount, 1)
         self.assertEqual(svc_periodic.SvcRun.CallCount, 1)
@@ -124,7 +136,7 @@ class test_ServiceScheduler(unittest.TestCase):
 
         self.Scheduler.ServiceRegister(svc_periodic)
         self.Scheduler.ServiceRegister(svc_once)
-        self.Scheduler.Run(3)
+        self.Scheduler.Run(2)
 
         self.assertEqual(svc_once.SvcRun.CallCount, 1)
         self.assertEqual(svc_periodic.SvcRun.CallCount, 1)
@@ -149,3 +161,67 @@ class test_ServiceScheduler(unittest.TestCase):
         self.Scheduler.Run(3)
 
         self.assertEqual(svc.SvcStateGet(), Service.STATE_SUSPENDED)
+
+    def test_RunServiceLongDuration(self):
+        svc = TestService(Service.MODE_RUN_ONCE, (), run_func=test_ServiceScheduler.OneShotServiceRun)
+
+        self.Scheduler.ServiceRegister(svc)
+
+        svc.SvcActivate()
+        self.Scheduler.Run(1)
+
+        self.assertEqual(svc.SvcRun.CallCount, 1)
+        self.assertEqual(self.Scheduler.RunTimeSec, TestService.TEST_SERVICE_DURATION)
+
+    def test_RunServiceAndDeepSleep(self):
+        svc = TestService(Service.MODE_RUN_PERIODIC, (), 20, test_ServiceScheduler.PeriodicServiceRun)
+
+        self.Scheduler.ServiceRegister(svc)
+
+        svc.SvcActivate()
+
+        exc_occurred = False
+        try:
+            self.Scheduler.Run()
+        except DeepSleepExceptionInitiated:
+            exc_occurred = True
+
+        self.assertTrue(exc_occurred)
+        self.assertEqual(svc.SvcRun.CallCount, 1)
+        self.assertEqual(svc.SvcInterval, machine.asleep_for())
+
+    def test_WakeFromDeepSleepAndRunService(self):
+        svc = TestService(Service.MODE_RUN_PERIODIC, (), 20, test_ServiceScheduler.PeriodicServiceRun)
+        svc_name = svc.SvcName
+
+        self.Scheduler.ServiceRegister(svc)
+
+        svc.SvcActivate()
+
+        exc_occurred = False
+        try:
+            self.Scheduler.Run()
+        except DeepSleepExceptionInitiated:
+            exc_occurred = True
+
+        self.assertTrue(exc_occurred)
+        self.assertTrue(machine.is_asleep())
+
+        new_svc = TestService(Service.MODE_RUN_PERIODIC, (), 20,
+                              test_ServiceScheduler.PeriodicServiceRun,
+                              svc_name)
+
+        new_sched = ServiceScheduler()
+
+        new_sched.ServiceRegister(new_svc)
+
+        exc_occurred = False
+        try:
+            new_sched.Run()
+        except DeepSleepExceptionInitiated:
+            exc_occurred = True
+
+        self.assertTrue(exc_occurred)
+
+        self.assertEqual(new_svc.SvcRun.CallCount, 1)
+        self.assertTrue(machine.is_asleep())
