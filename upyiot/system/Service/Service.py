@@ -23,7 +23,8 @@ class Service:
     STATE_SUSPENDED     = const(0)
     STATE_READY         = const(1)
 
-    def __init__(self, mode, service_deps, interval=0):
+    def __init__(self, name, mode, service_deps, interval=0):
+        self.SvcName = name
         self.SvcMode = mode
         self.SvcDeps = service_deps
         self.SvcInterval = interval
@@ -32,7 +33,7 @@ class Service:
         self.SvcActive = False
         print("[Service] Dependencies: {}".format(self.SvcDeps))
 
-# #### Service base interface ####
+# #### Service base API ####
 
     def SvcInit(self):
         pass
@@ -43,7 +44,10 @@ class Service:
     def SvcRun(self):
         pass
 
-# #### Service core interface ####
+# #### Service core API ####
+
+    def SvcNameSet(self, name):
+        self.SvcName = name
 
     def SvcDependencies(self, svc_deps):
         self.SvcDeps = svc_deps
@@ -73,11 +77,21 @@ class Service:
     def SvcSuspend(self):
         raise ServiceExceptionSuspend
 
-# #### Service scheduler only ####
+    def SvcStateString(self, state):
+        if state is self.STATE_DISABLED:
+            return "Disabled"
+        elif state is self.STATE_UNINITIALIZED:
+            return "Uninitialized"
+        elif state is self.STATE_SUSPENDED:
+            return "Suspended"
+        else:
+            return "Ready"
+
+# #### Service Scheduler only ####
 
     def SvcStateSet(self, state):
         self.SvcState = state
-        print("[Service] New state: {}".format(self.SvcState))
+        print("[Service] New state: {}".format(self.SvcStateString(self.SvcState)))
 
     def SvcLastRunSet(self, t):
         self.SvcLastRun = t
