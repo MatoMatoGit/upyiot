@@ -1,22 +1,27 @@
 from micropython import const
 from machine import Pin, ADC
+from upyiot.drivers.Sensors.SensorBase import SensorBase
+import utime
 
-
-class Battery(object):
+class Battery(SensorBase):
     
     LIPO_VOLT_TO_PERCENT_CURVE = (4.4, 3.9, 3.75, 3.7, 3.65, 3)
     LIPO_VOLT_TO_PERCENT_STEP = const(25)
     
-    def __init__(self, num_cells, volt_pin_nr):
+    def __init__(self, num_cells, volt_pin_nr, en_pin_nr):
         self.NumCells = num_cells
+        self.BatVoltageEnable = Pin(en_pin_nr, Pin.OUT)
         self.BatVoltageAdc = ADC(Pin(volt_pin_nr))
         self.BatVoltageAdc.atten(ADC.ATTN_11DB)
         self.BatVoltageAdc.width(ADC.WIDTH_10BIT)
         self.Level = 100
     
-    def LevelRead(self):
+    def Read(self):
+        self.BatVoltageEnable.on()
+        utime.sleep_ms(500)
         # Read the current battery voltage and convert it to a percentage.
         volt = Battery.BatVoltageAdc.read()
+        self.BatVoltageEnable.off()
         Battery.Level = Battery.VoltageToPercent(volt)
         return Battery.Level
        
