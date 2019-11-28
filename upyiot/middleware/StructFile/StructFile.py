@@ -214,6 +214,7 @@ class StructFile(object):
             return None
 
     def WriteMeta(self, *meta):
+        print("[StructFile] Writing user meta: {}".format(meta))
         meta_struct = ustruct.pack(self.UserMetaFmt, *meta)
         self._FileWriteUserMetaStruct(meta_struct)
         return 0

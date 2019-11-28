@@ -15,7 +15,7 @@ class MessageExchangeService(Service):
     MSG_EX_SERVICE_MODE = Service.MODE_RUN_PERIODIC
 
     def __init__(self):
-        super().__init__(self.MSG_EX_SERVICE_MODE, ())
+        super().__init__("MsgEx", self.MSG_EX_SERVICE_MODE, ())
 
 
 class MessageExchange(MessageExchangeService):
@@ -53,25 +53,11 @@ class MessageExchange(MessageExchangeService):
         print("[MsgEx] Device ID: {}".format(Message.DeviceId()))
         MessageExchange._Instance = self
 
-    def RegisterMessageType(self, msg_spec_obj):
-        # If this message can be received
-        if msg_spec_obj.Direction is not MessageSpecification.MSG_DIRECTION_SEND:
-            # Create receive buffer for the messages of this type.
-            recv_buffer = MessageBuffer('recv', msg_spec_obj.Type, msg_spec_obj.Subtype,
-                                        MessageExchange.RECV_BUFFER_SIZE)
-        else:
-            recv_buffer = None
-        print("[MsgEx] Registering message specification: {}".format(msg_spec_obj))
-        # Add the new mapping to the set of mappings.
-        self.MessageMappings.add((msg_spec_obj.Type, msg_spec_obj.Subtype,
-                                  msg_spec_obj.Url, recv_buffer))
+    @staticmethod
+    def InstanceGet():
+        return MessageExchange._Instance
 
-    def Reset(self):
-        self.SendMessageBuffer.Delete()
-        for msg_map in self.MessageMappings:
-            msg_buf = msg_map[MessageExchange.MSG_MAP_RECV_BUFFER]
-            if msg_buf is not None:
-                msg_buf.Delete()
+# #### Service API ####
 
     def SvcInit(self):
         self._MqttSetup()
@@ -103,6 +89,28 @@ class MessageExchange(MessageExchangeService):
                 break
             self.NewMessage = False
 
+# ########
+
+    def RegisterMessageType(self, msg_spec_obj):
+        # If this message can be received
+        if msg_spec_obj.Direction is not MessageSpecification.MSG_DIRECTION_SEND:
+            # Create receive buffer for the messages of this type.
+            recv_buffer = MessageBuffer('recv', msg_spec_obj.Type, msg_spec_obj.Subtype,
+                                        MessageExchange.RECV_BUFFER_SIZE)
+        else:
+            recv_buffer = None
+        print("[MsgEx] Registering message specification: {}".format(msg_spec_obj))
+        # Add the new mapping to the set of mappings.
+        self.MessageMappings.add((msg_spec_obj.Type, msg_spec_obj.Subtype,
+                                  msg_spec_obj.Url, recv_buffer))
+
+    def Reset(self):
+        self.SendMessageBuffer.Delete()
+        for msg_map in self.MessageMappings:
+            msg_buf = msg_map[MessageExchange.MSG_MAP_RECV_BUFFER]
+            if msg_buf is not None:
+                msg_buf.Delete()
+
     def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
         print("[MsgEx] Serializing message: {}".format(msg_data_dict))
         Message.Serialize(self.Time.DateTime(), msg_data_dict, msg_type, msg_subtype)
@@ -129,10 +137,6 @@ class MessageExchange(MessageExchangeService):
         else:
             print("[MsgEx] Error: No message mapping for message type %d.%d" % (msg_type, msg_subtype))
         return -1
-
-    @staticmethod
-    def InstanceGet():
-        return MessageExchange._Instance
 
     def MessageMapFromType(self, msg_type, msg_subtype):
         for msg_map in self.MessageMappings:

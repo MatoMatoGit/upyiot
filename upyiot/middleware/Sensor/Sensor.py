@@ -15,8 +15,8 @@ class SensorException(ServiceException):
 class SensorService(Service):
     SENSOR_SERVICE_MODE = Service.MODE_RUN_PERIODIC
 
-    def __init__(self):
-        super().__init__(self.SENSOR_SERVICE_MODE, ())
+    def __init__(self, name):
+        super().__init__("Sns_" + name, self.SENSOR_SERVICE_MODE, ())
 
 
 class Sensor(SensorService):
@@ -25,7 +25,7 @@ class Sensor(SensorService):
       
     def __init__(self, directory, name, filter_depth, sensor_abs):
         # Initialize the SensorService class
-        super().__init__()
+        super().__init__(name)
 
         self.SensorAbstraction = sensor_abs
         self.Filter = AvgFilter.AvgFilter(filter_depth)
