@@ -1,6 +1,7 @@
 from micropython import const
 
 DEEPSLEEP_RESET = const(0)
+RTC_WAKE = const(1)
 
 Asleep = False
 SleepDuration = 0
@@ -8,6 +9,8 @@ SleepDuration = 0
 def reset_cause():
     return DEEPSLEEP_RESET
 
+def wake_reason():
+    return RTC_WAKE
 
 def deepsleep(t=None):
     global Asleep
