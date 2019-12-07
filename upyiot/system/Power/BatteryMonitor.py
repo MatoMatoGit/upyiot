@@ -5,10 +5,10 @@ from upyiot.middleware.SubjectObserver.SubjectObserver import Observer
 
 class BatteryMonitor(Observer):
 
-    def __init__(self, directory, battery_level_threshold):
+    def __init__(self, directory, battery_level_sensor, battery_level_threshold):
         super().__init__()
         self.BatteryLevel = 100
-        self.BatteryLevelSensor = Sensor(directory, 'batlvl', 20, BatteryLevel(1, 1, 1))
+        self.BatteryLevelSensor = Sensor(directory, 'batlvl', 20, battery_level_sensor)
         self.BatteryLevelSensor.ObserverAttachNewSample(self)
         self.BatteryLevelThreshold = battery_level_threshold
         # Create a set for all LowBattery callbacks.
