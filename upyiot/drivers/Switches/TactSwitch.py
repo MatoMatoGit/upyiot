@@ -1,5 +1,7 @@
 from machine import Pin, Timer
 import machine
+import micropython
+import esp32
 
 
 class TactSwitch:
@@ -15,7 +17,7 @@ class TactSwitch:
     HoldTimerCallback = None
 
     def __init__(self, tact_sw_pin, callbacks, hold_time, wake_on_press=False):
-        if len(callbacks < TactSwitch.NUM_CALLBACKS):
+        if len(callbacks) < TactSwitch.NUM_CALLBACKS:
             raise ValueError
         TactSwitch.UserCallbacks = callbacks
 
@@ -31,7 +33,8 @@ class TactSwitch:
         self.TactSwPin = Pin(tact_sw_pin, mode=Pin.IN)
         self.TactSwPin.irq(trigger=(Pin.IRQ_RISING | Pin.IRQ_FALLING),
                            handler=self._IrqHandlerTactSwPin,
-                           wake=wake_param, hard=True)
+                           wake=wake_param)
+        esp32.wake_on_ext0(pin=self.TactSwPin, level=esp32.WAKEUP_ALL_LOW)
 
     @staticmethod
     def _IrqHandlerTactSwPin(pin_obj):
@@ -49,7 +52,7 @@ class TactSwitch:
     @staticmethod
     def _ScheduleCallback(callback_type):
         if TactSwitch.UserCallbacks[callback_type] is not None:
-            micropython.schedule(TactSwitch.UserCallbacks[callback_type])
+            micropython.schedule(TactSwitch.UserCallbacks[callback_type], None)
 
     @staticmethod
     def _HoldTimerStart():
