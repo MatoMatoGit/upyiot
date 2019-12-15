@@ -50,3 +50,14 @@ class DeepSleep:
     def _NotifyBeforeDeepSleep(self):
         for cb in self.CbsBeforeSleep:
             cb()
+
+    @staticmethod
+    def WakeReasonToString(wake_reason):
+        if wake_reason is DeepSleep.WAKE_REASON_RESET:
+            return "Reset"
+        elif wake_reason is DeepSleep.WAKE_REASON_RTC:
+            return "RTC"
+        elif wake_reason is DeepSleep.WAKE_REASON_PIN:
+            return "Pin"
+        else:
+            return "Unkown"
