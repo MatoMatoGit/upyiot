@@ -8,9 +8,9 @@ class BatteryLevel(SensorBase):
     
     LIPO_VOLT_TO_PERCENT_CURVE = (4.4, 3.9, 3.75, 3.7, 3.65, 3)
     LIPO_VOLT_TO_PERCENT_STEP = const(25)
-    ADC_REF_VOLTAGE = const(3.3)
+    ADC_REF_VOLTAGE = 3.3
     ADC_RES_BITS = const(10)
-    BAT_VOLT_MULTIPLIER = const(2) # Multiplier is due to the on-board 10K/10K voltage divider.
+    BAT_VOLT_MULTIPLIER = const(2)  # Multiplier is due to the on-board 10K/10K voltage divider.
     
     def __init__(self, num_cells, volt_pin_nr, en_pin_nr):
         self.NumCells = num_cells
