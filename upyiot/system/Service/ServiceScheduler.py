@@ -288,7 +288,7 @@ class ServiceScheduler:
         # Save the scheduler run time, and last-run time of all services.
         self.Memory.Save()
         # Deep sleep, this function call does not return (if successful).
-        self.DeepSleep.DeepSleep(t_sec)
+        self.DeepSleep.DeepSleep(t_sec * 1000)
         # Raise an exception to stop the scheduler if deep sleep fails.
         print("[Scheduler] Error: Deep sleep failed.")
         raise SchedulerExceptionDeepSleepFailed
