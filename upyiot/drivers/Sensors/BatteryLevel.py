@@ -3,10 +3,14 @@ from machine import Pin, ADC
 from upyiot.drivers.Sensors.SensorBase import SensorBase
 import utime
 
+
 class BatteryLevel(SensorBase):
     
     LIPO_VOLT_TO_PERCENT_CURVE = (4.4, 3.9, 3.75, 3.7, 3.65, 3)
     LIPO_VOLT_TO_PERCENT_STEP = const(25)
+    ADC_REF_VOLTAGE = const(3.3)
+    ADC_RES_BITS = const(10)
+    BAT_VOLT_MULTIPLIER = const(2) # Multiplier is due to the on-board 10K/10K voltage divider.
     
     def __init__(self, num_cells, volt_pin_nr, en_pin_nr):
         self.NumCells = num_cells
@@ -14,16 +18,29 @@ class BatteryLevel(SensorBase):
         self.BatVoltageAdc = ADC(Pin(volt_pin_nr))
         self.BatVoltageAdc.atten(ADC.ATTN_11DB)
         self.BatVoltageAdc.width(ADC.WIDTH_10BIT)
-        self.Level = 100
+        self.Level = 0
     
     def Read(self):
         self.BatVoltageEnable.on()
         utime.sleep_ms(500)
         # Read the current battery voltage and convert it to a percentage.
-        volt = self.BatVoltageAdc.read()
+        raw = self.BatVoltageAdc.read()
         self.BatVoltageEnable.off()
+        print("Battery raw adc: {}".format(raw))
+
+        volt = BatteryLevel.RawAdcValueToVoltage(self.ADC_REF_VOLTAGE, self.ADC_RES_BITS,
+                                                 self.BAT_VOLT_MULTIPLIER, raw)
+        print("Battery voltage: {}V".format(volt))
+
         self.Level = self.VoltageToPercent(volt)
+        print("Battery level: {}%".format(self.Level))
         return self.Level
+
+    @staticmethod
+    def RawAdcValueToVoltage(ref_volt, adc_res_bits, mult, val):
+        val = val * mult
+        val = val * (ref_volt / pow(2, adc_res_bits))
+        return val
 
     @staticmethod
     def VoltageToPercent(volt):
