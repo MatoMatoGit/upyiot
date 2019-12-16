@@ -31,6 +31,7 @@ def MqttMsgRecvCallback(topic, message):
     print("[MsgClient] Received message {} on topic {}".format(message, topic))
     for spec in MessageSpecs:
         if spec.Url == topic:
+            # TODO: Replace ID in file path with actual ID, extract from topic.
             file_path = ComposePath(OUTPUT_DIR, spec.Type, spec.Subtype) + "/3f7e12c9_" + str(MsgCount)
             print("[MsgClient] Writing message to file {}".format(file_path))
             f = open(file_path, "w")
@@ -46,6 +47,7 @@ def main(msg_spec_file):
     BROKER = '192.168.0.103'
     PORT = 1883
 
+    # TODO: Loop through files in a folder. Create message specs from each one.
     msg_spec = MessageSpecification.CreateFromFile(msg_spec_file)
     print(msg_spec)
     MessageSpecs.add(msg_spec)
