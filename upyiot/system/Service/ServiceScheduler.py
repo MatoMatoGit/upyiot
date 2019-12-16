@@ -207,7 +207,7 @@ class ServiceScheduler:
                 # Runs a service until none are ready.
                 self.Index = 0
                 while True:
-                    svc_ran = False
+                    svc_activated = False
 
                     if self.Index >= len(self.Services):
                         print("[Scheduler] No services registered")
@@ -220,28 +220,34 @@ class ServiceScheduler:
                         # Check if all services that this service is dependent on
                         # ran at least once. If this is the case the service is ready
                         # to run.
-                        if service.SvcIsActive() and self._CheckServiceDependencies(service) is True:
-                            print("[Scheduler] Ready: {}".format(service.SvcName))
-                            service.SvcStateSet(Service.STATE_READY)
+                        if service.SvcIsActive() is True:
+                            if self._CheckServiceDependencies(service) is False:
+                                # If the service depdencency check returns false, it means
+                                # there is at least one service that has been activated.
+                                svc_activated = True
+                            else:
+                                print("[Scheduler] Ready: {}".format(service.SvcName))
+                                service.SvcStateSet(Service.STATE_READY)
 
-                        # If the service is ready to run, call its Run method.
+                        # If the service is ready to run, run it.
                         if service.SvcIsReady() is True:
                             print("[Scheduler] Running: {}".format(service.SvcName))
-                            svc_ran = True
+                            svc_activated = True
                             self._ServiceRun(service)
                     else:
                         print("[Scheduler] Disabled: {}".format(service.SvcName))
 
                     print("[Scheduler] Selecting next service")
-                    if self._IndexAdvance(svc_ran) is False:
+                    if self._IndexAdvance(svc_activated) is False:
                         print("[Scheduler] No more services to run")
                         break
+
                     print("[Scheduler] Next index: {}".format(self.Index))
 
                 # The statements below run after the scheduler finishes executing
                 # the services that are ready.
 
-                # Save the end time.
+                # Calculate the amount of time that passed while running services.
                 t_end = utime.ticks_ms()
                 t_ran = utime.ticks_diff(t_end, t_start)
                 t_ran_sec = int(round((t_ran / 1000)))
@@ -256,6 +262,7 @@ class ServiceScheduler:
                 # Add the amount time that passed since the last update.
                 self.RunTimeSec += t_ran_sec
 
+                # Decrease the amount of scheduler cycles left (if applicable).
                 self._CyclesDec()
 
                 # If the sleep time is 0 there are no services sleeping.
@@ -318,6 +325,8 @@ class ServiceScheduler:
                 if self.RunTimeSec >= svc.SvcInterval + svc.SvcLastRun:
                     print("[Scheduler] Activating periodic service: {}".format(svc))
                     svc.SvcActivate()
+                # Otherwise calculate the sleep time based on the interval and last run
+                # timestamp.
                 else:
                     sleep_time = svc.SvcInterval - (self.RunTimeSec - svc.SvcLastRun)
 
@@ -333,8 +342,8 @@ class ServiceScheduler:
         print("[Scheduler] Dependencies ran: {}".format(ready))
         return ready
 
-    def _IndexAdvance(self, svc_ran):
-        print("[Scheduler] Service ran: {}".format(svc_ran))
+    def _IndexAdvance(self, svc_activated):
+        print("[Scheduler] Service activated: {}".format(svc_activated))
         # Increment the service list index.
         # Wrap around if the end if reached.
         self.Index += 1
@@ -342,8 +351,8 @@ class ServiceScheduler:
         if self.Index >= len(self.Services):
             self.Index = 0
             # A minimum of one service must
-            # have ran.
-            return svc_ran
+            # have been activated.
+            return svc_activated
 
         return True
 
