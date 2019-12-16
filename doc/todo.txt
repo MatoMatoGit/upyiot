@@ -1,0 +1,12 @@
+TODO
+
+- Move detailed view of available modules to docs.
+- Add more tests for MessageMapFromType / Url
+- Add tests for multiple sensors
+- Integrate logger
+- Dependencies for service init
+- Service result, dont execute dependencies if not successfully executed.
+- Use stream for JSON parsing, load directly from open file.
+- Test Sensor service
+- Configure how many samples to read in sensor service
+- Service LastRun can be changed to NextRun -> No calculation needed on every _UpdatePeriodicServices call.

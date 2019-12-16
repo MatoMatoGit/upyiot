@@ -1,0 +1,66 @@
+
+Service
+
+
+- mode: once, periodic
+- if periodic: interval
+- name for id.
+- dependencies on other services. Must have run once, or must always run before etc.
+- scheduling of services
+- Run method
+- Init method
+- Deinit method
+
+
+Inherit from base
+Define upfront, leave methods pass
+Use and define methods in specific class.
+
+E.g.
+
+Class ServiceBase
+
+    def Run:
+        pass
+
+Class ServiceMessageExchange(ServiceBase):
+
+    MODE, INTERVAL, NAME, DEPS, ETC.
+
+    def __init__(self):
+        return super().__init__(MODE, INTERVAL, NAME,
+                                DEPS)
+
+
+Class MessageExchange(ServiceMessageExchange)
+
+    def Run:
+        # Define and do stuff here
+
+    etc.
+
+
+Composer
+
+- Import dependencies
+- Create object instances
+- Inject dependencies
+- Link objects using standardized interfaces
+
+Not all code has to be imported if certain services will not run.
+
+Importing/creating/injecting/linking must be done in small steps, the order is not pre-defined.
+
+E.g.
+
+1. create-inject(start)
+2. create-inject(1)
+3. dep on ext component (opt: pass args)
+    1. configure(opt: args)
+    2. create(opt: args)
+    3. return obj
+4. create-inject(3.3)
+
+
+Class Component
+

@@ -1,0 +1,20 @@
+ 2016  inst libffi-dev
+ 2017  inst pkg-config
+ 2018  inst build-essential
+ 2024  git submodule update --init
+ 2026  cd micropython/
+ 2027  make deplibs
+ 2028  cd ports/unix
+ 2029  make deplibs
+ 2039  cd mpy-cross/
+ 2040  make
+ 2041  cd ..
+ 2042  cd ports/unix/
+ 2043  make
+
+cd ../../..
+mkdir build
+cp micropython/ports/unix/micropython ./build
+./build/micropython -m upip install unittest
+
+
