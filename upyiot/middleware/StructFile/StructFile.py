@@ -5,7 +5,8 @@ from micropython import const
 
 def _FileCloseOnException(f, ex, raise_ex=True):
     try:
-        f.close()
+        if f is not None:
+            f.close()
     except OSError:
         print("Critical file system error")
         if raise_ex is True:
@@ -29,7 +30,7 @@ class StructFileIterator(object):
         try:
             self.File = open(self.StructFile.FilePath, 'r')
             self.File.seek(self.StructFile.IndexToOffset(index_start))
-            print("[Iterator] Offset: {}".format(self.File.tell()))
+            print("[Iterator] Start offset: {}".format(self.File.tell()))
         except OSError as ferr:
             print("Could not access Struct file: {}".format(ferr))
             self.File = None
@@ -45,6 +46,7 @@ class StructFileIterator(object):
             if self.Count <= self.NumEntries:
                 # Read the struct with of size DataSize from the file.
                 print("[Iterator] Offset: {}".format(self.File.tell()))
+                print("[Iterator] Reading {} bytes.".format(self.StructFile.DataSize))
                 struct = self.File.read(self.StructFile.DataSize)
 
                 # Save the current index for the user to request it.
@@ -58,8 +60,9 @@ class StructFileIterator(object):
                 if self.Index > self.IndexEnd:
                     print("[Iterator] Index reset")
                     self.Index = 0
-                    # Go to the new position in the file.
-                    self.File.seek(self.StructFile.IndexToOffset(self.Index))
+
+                # Go to the new position in the file.
+                self.File.seek(self.StructFile.IndexToOffset(self.Index))
 
                 return ustruct.unpack(self.StructFile.DataFmt, struct)
         except OSError as ferr:
@@ -182,6 +185,7 @@ class StructFile(object):
         
     def WriteData(self, index, *data):
         print("[StructFile] Format: {}".format(self.DataFmt))
+        print("[StructFile] Data: {}".format(data))
         struct = ustruct.pack(self.DataFmt, *data)
         # print("[StructFile] Packed data: {}".format(struct))
         self._FileWriteStruct(struct, index)
@@ -334,6 +338,7 @@ class StructFile(object):
             print("Failed to remove Struct file.")
 
     def _FileInit(self):
+        f = None
         try:
             f = open(self.FilePath, 'r+') 
             if self._FileReadMeta(f) is -1:
