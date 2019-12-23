@@ -46,29 +46,45 @@ class test_ServiceScheduler(unittest.TestCase):
         self.Scheduler.Memory.Sfile.Delete()
         return
 
-    def test_ServiceRegisterSuccessful(self):
-        svc = TestService(Service.MODE_RUN_ONCE, ())
+    # def test_ServiceRegisterAndInitializeSuccessful(self):
+    #     svc = TestService(Service.MODE_RUN_ONCE, {})
+    #
+    #     res = self.Scheduler.ServiceRegister(svc)
+    #
+    #     self.assertEqual(res, 0)
+    #     self.assertEqual(svc.SvcInit.CallCount, 1)
+    #     self.assertEqual(svc.SvcStateGet(), Service.STATE_SUSPENDED)
+    #     self.assertEqual(len(self.Scheduler.Services), 1)
+    #
+    # def test_ServiceRegisterNoInitDueToDependency(self):
+    #     svc_dep = TestService(Service.MODE_RUN_ONCE, {})
+    #     svc = TestService(Service.MODE_RUN_ONCE, {svc_dep: Service.DEP_TYPE_RUN_ONCE_BEFORE_INIT})
+    #
+    #     res = self.Scheduler.ServiceRegister(svc_dep)
+    #     self.assertEqual(res, 0)
+    #
+    #     res = self.Scheduler.ServiceRegister(svc)
+    #
+    #     self.assertEqual(res, 0)
+    #     self.assertEqual(svc.SvcInit.CallCount, 0)
+    #     self.assertEqual(svc.SvcStateGet(), Service.STATE_UNINITIALIZED)
+    #     self.assertEqual(svc_dep.SvcStateGet(), Service.STATE_SUSPENDED)
+    #     self.assertEqual(len(self.Scheduler.Services), 2)
 
-        res = self.Scheduler.ServiceRegister(svc)
-
-        self.assertEqual(res, 0)
-        self.assertEqual(svc.SvcInit.CallCount, 1)
-        self.assertEqual(svc.SvcStateGet(), Service.STATE_SUSPENDED)
-        self.assertEqual(len(self.Scheduler.Services), 1)
-
-    def test_ServiceRegisterException(self):
-        svc = TestService(Service.MODE_RUN_ONCE, ())
-        svc.SvcInit.RaiseExcSet()
-
-        res = self.Scheduler.ServiceRegister(svc)
-
-        self.assertEqual(res, -1)
-        self.assertEqual(svc.SvcStateGet(), Service.STATE_DISABLED)
+    # def test_ServiceRegisterException(self):
+    #     svc = TestService(Service.MODE_RUN_ONCE, {})
+    #     svc.SvcInit.RaiseExcSet()
+    #
+    #     res = self.Scheduler.ServiceRegister(svc)
+    #
+    #     self.assertEqual(res, -1)
+    #     self.assertEqual(svc.SvcStateGet(), Service.STATE_DISABLED)
 
     def test_ServiceDeregisterSuccessful(self):
-        svc = TestService(Service.MODE_RUN_ONCE, ())
+        svc = TestService(Service.MODE_RUN_ONCE, {})
 
         self.Scheduler.ServiceRegister(svc)
+        svc.SvcStateSet(Service.STATE_SUSPENDED)
         res = self.Scheduler.ServiceDeregister(svc)
 
         self.assertEqual(res, 0)
@@ -77,10 +93,11 @@ class test_ServiceScheduler(unittest.TestCase):
         self.assertEqual(len(self.Scheduler.Services), 0)
 
     def test_ServiceDeregisterException(self):
-        svc = TestService(Service.MODE_RUN_ONCE, ())
+        svc = TestService(Service.MODE_RUN_ONCE, {})
 
         self.Scheduler.ServiceRegister(svc)
         svc.SvcDeinit.RaiseExcSet()
+        svc.SvcStateSet(Service.STATE_SUSPENDED)
         res = self.Scheduler.ServiceDeregister(svc)
 
         self.assertEqual(res, -1)
@@ -101,15 +118,15 @@ class test_ServiceScheduler(unittest.TestCase):
     def test_RunServicePeriodic(self):
         run_count = 2
         interval = 2
-        svc = TestService(Service.MODE_RUN_PERIODIC, (), interval, test_ServiceScheduler.PeriodicServiceRun)
+        svc = TestService(Service.MODE_RUN_PERIODIC, {}, interval, test_ServiceScheduler.PeriodicServiceRun)
         self.Scheduler.ServiceRegister(svc)
 
-        self.Scheduler.Run(run_count * 2)
+        self.Scheduler.Run(run_count + 1)
 
         self.assertEqual(svc.SvcRun.CallCount, run_count)
 
     def test_RunServiceOnce(self):
-        svc = TestService(Service.MODE_RUN_ONCE, (), run_func=test_ServiceScheduler.PeriodicServiceRun)
+        svc = TestService(Service.MODE_RUN_ONCE, {}, run_func=test_ServiceScheduler.PeriodicServiceRun)
         self.Scheduler.ServiceRegister(svc)
 
         svc.SvcActivate()
@@ -118,8 +135,8 @@ class test_ServiceScheduler(unittest.TestCase):
         self.assertEqual(svc.SvcRun.CallCount, 1)
 
     def test_RunServiceMixed(self):
-        svc_periodic = TestService(Service.MODE_RUN_PERIODIC, (), 2, test_ServiceScheduler.PeriodicServiceRun)
-        svc_once = TestService(Service.MODE_RUN_ONCE, (), run_func=test_ServiceScheduler.OneShotServiceRun)
+        svc_periodic = TestService(Service.MODE_RUN_PERIODIC, {}, 2, test_ServiceScheduler.PeriodicServiceRun)
+        svc_once = TestService(Service.MODE_RUN_ONCE, {}, run_func=test_ServiceScheduler.OneShotServiceRun)
 
         self.Scheduler.ServiceRegister(svc_periodic)
         self.Scheduler.ServiceRegister(svc_once)
@@ -129,9 +146,9 @@ class test_ServiceScheduler(unittest.TestCase):
         self.assertEqual(svc_once.SvcRun.CallCount, 1)
         self.assertEqual(svc_periodic.SvcRun.CallCount, 1)
 
-    def test_RunServiceFromDependency(self):
-        svc_once = TestService(Service.MODE_RUN_ONCE, (), run_func=test_ServiceScheduler.OneShotServiceRun)
-        svc_deps = (svc_once, )
+    def test_RunServiceFromRunDependency(self):
+        svc_once = TestService(Service.MODE_RUN_ONCE, {}, run_func=test_ServiceScheduler.OneShotServiceRun)
+        svc_deps = {svc_once: Service.DEP_TYPE_RUN_ALWAYS_BEFORE_RUN}
         svc_periodic = TestService(Service.MODE_RUN_PERIODIC, svc_deps, 2, test_ServiceScheduler.PeriodicServiceRun)
 
         self.Scheduler.ServiceRegister(svc_periodic)
@@ -141,8 +158,24 @@ class test_ServiceScheduler(unittest.TestCase):
         self.assertEqual(svc_once.SvcRun.CallCount, 1)
         self.assertEqual(svc_periodic.SvcRun.CallCount, 1)
 
+    def test_RunServiceFromInitDependency(self):
+        svc_once = TestService(Service.MODE_RUN_ONCE, {}, run_func=test_ServiceScheduler.OneShotServiceRun)
+        svc_deps = {svc_once: Service.DEP_TYPE_RUN_ALWAYS_BEFORE_INIT}
+        svc_periodic = TestService(Service.MODE_RUN_PERIODIC, svc_deps, 2, test_ServiceScheduler.PeriodicServiceRun)
+
+        self.Scheduler.ServiceRegister(svc_periodic)
+        self.Scheduler.ServiceRegister(svc_once)
+
+        self.assertFalse(svc_periodic.SvcIsInitialized())
+
+        self.Scheduler.Run(2)
+
+        self.assertEqual(svc_once.SvcRun.CallCount, 1)
+        self.assertEqual(svc_periodic.SvcRun.CallCount, 1)
+        self.assertTrue(svc_periodic.SvcIsInitialized())
+
     def test_RunDisableServiceOnException(self):
-        svc = TestService(Service.MODE_RUN_PERIODIC, (), 2, test_ServiceScheduler.PeriodicServiceRun)
+        svc = TestService(Service.MODE_RUN_PERIODIC, {}, 2, test_ServiceScheduler.PeriodicServiceRun)
         self.Scheduler.ServiceRegister(svc)
         print(svc)
 
@@ -152,7 +185,7 @@ class test_ServiceScheduler(unittest.TestCase):
         self.assertEqual(svc.SvcStateGet(), Service.STATE_DISABLED)
 
     def test_RunServiceSuspend(self):
-        svc = TestService(Service.MODE_RUN_PERIODIC, (), 2, test_ServiceScheduler.PeriodicServiceRun)
+        svc = TestService(Service.MODE_RUN_PERIODIC, {}, 2, test_ServiceScheduler.PeriodicServiceRun)
         self.Scheduler.ServiceRegister(svc)
         print(svc)
 
@@ -163,7 +196,7 @@ class test_ServiceScheduler(unittest.TestCase):
         self.assertEqual(svc.SvcStateGet(), Service.STATE_SUSPENDED)
 
     def test_RunServiceLongDuration(self):
-        svc = TestService(Service.MODE_RUN_ONCE, (), run_func=test_ServiceScheduler.OneShotServiceRun)
+        svc = TestService(Service.MODE_RUN_ONCE, {}, run_func=test_ServiceScheduler.OneShotServiceRun)
 
         self.Scheduler.ServiceRegister(svc)
 
@@ -174,7 +207,7 @@ class test_ServiceScheduler(unittest.TestCase):
         self.assertEqual(self.Scheduler.RunTimeSec, TestService.TEST_SERVICE_DURATION)
 
     def test_RunServiceAndDeepSleep(self):
-        svc = TestService(Service.MODE_RUN_PERIODIC, (), 20, test_ServiceScheduler.PeriodicServiceRun)
+        svc = TestService(Service.MODE_RUN_PERIODIC, {}, 20, test_ServiceScheduler.PeriodicServiceRun)
 
         self.Scheduler.ServiceRegister(svc)
 
@@ -188,10 +221,10 @@ class test_ServiceScheduler(unittest.TestCase):
 
         self.assertTrue(exc_occurred)
         self.assertEqual(svc.SvcRun.CallCount, 1)
-        self.assertEqual(svc.SvcInterval, machine.asleep_for())
+        self.assertEqual(svc.SvcInterval * 1000, machine.asleep_for())
 
     def test_WakeFromDeepSleepAndRunService(self):
-        svc = TestService(Service.MODE_RUN_PERIODIC, (), 20, test_ServiceScheduler.PeriodicServiceRun)
+        svc = TestService(Service.MODE_RUN_PERIODIC, {}, 20, test_ServiceScheduler.PeriodicServiceRun)
         svc_name = svc.SvcName
 
         self.Scheduler.ServiceRegister(svc)
@@ -207,7 +240,7 @@ class test_ServiceScheduler(unittest.TestCase):
         self.assertTrue(exc_occurred)
         self.assertTrue(machine.is_asleep())
 
-        new_svc = TestService(Service.MODE_RUN_PERIODIC, (), 20,
+        new_svc = TestService(Service.MODE_RUN_PERIODIC, {}, 20,
                               test_ServiceScheduler.PeriodicServiceRun,
                               svc_name)
 
