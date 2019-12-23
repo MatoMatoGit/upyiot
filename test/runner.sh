@@ -11,10 +11,10 @@ for f in $FILES
 do
   echo "Running test: ${f%.*} ..."
 
-  ../build/micropython ./main.py ${f%.*}
+  ../bin/micropython ./main.py ${f%.*}
 done
 else
 echo "Running test: $TEST ..."
-../build/micropython ./main.py ${TEST%.*}
+../bin/micropython ./main.py ${TEST%.*}
 fi
 
