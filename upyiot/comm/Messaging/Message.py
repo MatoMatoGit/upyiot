@@ -46,6 +46,10 @@ class Message:
 
     @staticmethod
     def Serialize(datetime, msg_data_dict, msg_type, msg_subtype):
+        print("[Msg] Serializing message with datetime: {} | data: {} | type: {} | subtype: {}".format(datetime,
+                                                                                                       msg_data_dict,
+                                                                                                       msg_type,
+                                                                                                       msg_subtype))
         Message.Msg[Message.MSG_SECTION_DATA] = ""
         if Message._StreamBuffer is not None:
             Message._StreamBuffer.close()
@@ -63,7 +67,7 @@ class Message:
         try:
             Message.Msg = ujson.loads(msg_str)
         except ValueError:
-            print("[MsgBuf] Invalid JSON string: {}".format(msg_str))
+            print("[Msg] Invalid JSON string: {}".format(msg_str))
         return Message.Msg
 
     @staticmethod
