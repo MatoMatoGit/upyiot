@@ -25,10 +25,10 @@ All available libraries can be found in the list below.
 
 * drivers
    * Led
-      ** Led: Simple LED driver with PWM support.
-      ** RgbLed: Simple RGB LED driver with PWM support.
+      * Led: Simple LED driver with PWM support.
+      * RgbLed: Simple RGB LED driver with PWM support.
    * Adc
-      ** AdcADS101x: TI ADS101x ADC driver. 4 Channel ADC IC with I2C interface. [Datasheet](http://www.ti.com/lit/ds/symlink          /ads1015.pdf)
+      * AdcADS101x: TI ADS101x ADC driver. 4 Channel ADC IC with I2C interface. [Datasheet](http://www.ti.com/lit/ds/symlink          /ads1015.pdf)
    * Sensors
       * SensorBase: Sensor base class.
       * BatteryLevel: LIPO battery volage sensor.
