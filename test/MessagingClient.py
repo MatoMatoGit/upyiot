@@ -32,7 +32,7 @@ def MqttMsgRecvCallback(topic, message):
     for spec in MessageSpecs:
         if spec.Url == topic:
             # TODO: Replace ID in file path with actual ID, extract from topic.
-            file_path = ComposePath(OUTPUT_DIR, spec.Type, spec.Subtype) + "/3f7e12c9_" + str(MsgCount)
+            file_path = ComposePath(OUTPUT_DIR, spec.Type, spec.Subtype) + "/a4cf127d8b2c_" + str(MsgCount) + ".json"
             print("[MsgClient] Writing message to file {}".format(file_path))
             f = open(file_path, "w")
             f.write(message)
@@ -71,4 +71,4 @@ def main(msg_spec_file):
 
 
 if __name__ == '__main__':
-    main("./ExampleMessage.json")
+    main("./SensorReportMoist.json")
