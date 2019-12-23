@@ -15,7 +15,7 @@ class MessageExchangeService(Service):
     MSG_EX_SERVICE_MODE = Service.MODE_RUN_PERIODIC
 
     def __init__(self):
-        super().__init__("MsgEx", self.MSG_EX_SERVICE_MODE, ())
+        super().__init__("MsgEx", self.MSG_EX_SERVICE_MODE, {})
 
 
 class MessageExchange(MessageExchangeService):
@@ -113,6 +113,9 @@ class MessageExchange(MessageExchangeService):
 
     def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
         print("[MsgEx] Serializing message: {}".format(msg_data_dict))
+        print("[MsgEx] Time instance: {}".format(self.Time))
+        dt = self.Time.DateTime()
+        print("[MsgEx] Got date-time: {}".format(dt))
         Message.Serialize(self.Time.DateTime(), msg_data_dict, msg_type, msg_subtype)
         print("[MsgEx] Serialized length: {}".format(len(Message.Stream().getvalue()))) #.decode('utf-8')
         return self.SendMessageBuffer.MessagePutWithType(msg_type, msg_subtype,

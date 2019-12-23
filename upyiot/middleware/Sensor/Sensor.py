@@ -16,7 +16,7 @@ class SensorService(Service):
     SENSOR_SERVICE_MODE = Service.MODE_RUN_PERIODIC
 
     def __init__(self, name):
-        super().__init__("Sns_" + name, self.SENSOR_SERVICE_MODE, ())
+        super().__init__("Sns_" + name, self.SENSOR_SERVICE_MODE, {})
 
 
 class Sensor(SensorService):

@@ -15,7 +15,7 @@ class NetConService(Service):
     NET_CON_SERVICE_MODE = Service.MODE_RUN_ONCE
 
     def __init__(self):
-        super().__init__("NetCon", self.NET_CON_SERVICE_MODE, ())
+        super().__init__("NetCon", self.NET_CON_SERVICE_MODE, {})
 
 
 class NetCon(NetConService):

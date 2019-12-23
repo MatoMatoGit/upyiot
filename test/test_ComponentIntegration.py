@@ -9,6 +9,7 @@ from stubs.network import WLAN
 
 # Unit(s) Under Test
 from upyiot.system.SystemTime.SystemTime import SystemTime
+from upyiot.system.Service.Service import Service
 from upyiot.system.Service.ServiceScheduler import ServiceScheduler
 from upyiot.system.ExtLogging import ExtLogging
 from upyiot.middleware.Sensor import Sensor
@@ -17,6 +18,7 @@ from upyiot.comm.Messaging.MessageExchange import MessageExchange
 from upyiot.comm.Messaging.MessageExchange import Endpoint
 from upyiot.comm.Messaging.MessageFormatAdapter import MessageFormatAdapter
 from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
+from upyiot.drivers.Sleep.DeepSleep import DeepSleepExceptionInitiated
 
 # Other
 from umqtt.simple import MQTTClient
@@ -93,9 +95,9 @@ class test_ComponentIntegration(unittest.TestCase):
     TempSamples = [20, 21, 25, 30, 35, 35, 20, 12, 10, 40]
     MoistSamples = [200, 300, 350, 360, 290, 500, 250, 300, 240, 320]
 
-    SamplesPerMessage   = const(3)
-    MsgExInterval       = const(10)
-    SensorReadInterval  = const(3)
+    SamplesPerMessage   = const(1)
+    MsgExInterval       = const(20)
+    SensorReadInterval  = const(10)
 
     RecvTopic = None
     RecvMsg = None
@@ -129,10 +131,11 @@ class test_ComponentIntegration(unittest.TestCase):
         self.Scheduler = ServiceScheduler()
 
         # Set service dependencies.
-        self.Time.SvcDependencies((self.NetCon, ))
-        self.MsgEx.SvcDependencies((self.Time, self.NetCon))
-        self.TempSensor.SvcDependencies((self.Time, ))
-        self.MoistSensor.SvcDependencies((self.Time,))
+        self.Time.SvcDependencies({self.NetCon: Service.DEP_TYPE_RUN_ALWAYS_BEFORE_RUN})
+        self.MsgEx.SvcDependencies({self.Time: Service.DEP_TYPE_RUN_ONCE_BEFORE_RUN,
+                                    self.NetCon: Service.DEP_TYPE_RUN_ALWAYS_BEFORE_INIT})
+        self.TempSensor.SvcDependencies({self.Time: Service.DEP_TYPE_RUN_ONCE_BEFORE_RUN})
+        self.MoistSensor.SvcDependencies({self.Time: Service.DEP_TYPE_RUN_ONCE_BEFORE_RUN})
 
         # Register all services to the scheduler.
         self.Scheduler.ServiceRegister(self.Time)
@@ -185,6 +188,7 @@ class test_ComponentIntegration(unittest.TestCase):
         self.TempSensor.SamplesDelete()
         self.MoistSensor.SamplesDelete()
         self.NetCon.StationSettingsReset()
+        self.Scheduler.Memory.Delete()
 
     @staticmethod
     def MqttMsgRecvCallback(topic, msg):
@@ -198,12 +202,24 @@ class test_ComponentIntegration(unittest.TestCase):
         self.MoistSensor.SvcIntervalSet(self.SensorReadInterval)
         self.TempSensor.SvcIntervalSet(self.SensorReadInterval)
 
-        self.Scheduler.Run(20)
+        n_deepsleep = 0
+        deepsleep = True
+        n = 10
+        while deepsleep is True:
+            deepsleep = False
+            try:
+                self.Scheduler.Run(n)
+            except DeepSleepExceptionInitiated:
+                n = self.Scheduler.Cycles
+                deepsleep = True
+                n_deepsleep += 1
 
-        self.assertNotEqual(self.MsgEx.SvcLastRun, 0)
-        self.assertNotEqual(self.NetCon.SvcLastRun, 0)
-        self.assertNotEqual(self.Time.SvcLastRun, 0)
-        self.assertNotEqual(self.TempSensor.SvcLastRun, 0)
-        self.assertNotEqual(self.MoistSensor.SvcLastRun, 0)
+        self.assertNotEqual(self.MsgEx.SvcLastRun, -1)
+        self.assertNotEqual(self.NetCon.SvcLastRun, -1)
+        self.assertNotEqual(self.Time.SvcLastRun, -1)
+        self.assertNotEqual(self.TempSensor.SvcLastRun, -1)
+        self.assertNotEqual(self.MoistSensor.SvcLastRun, -1)
+
+        self.assertNotEqual(n_deepsleep, 0)
 
 

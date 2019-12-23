@@ -19,7 +19,7 @@ class WebserverService(Service):
     WEBSERVER_SERVICE_MODE = Service.MODE_RUN_PERIODIC
 
     def __init__(self):
-        super().__init__("WebSrv", self.WEBSERVER_SERVICE_MODE, ())
+        super().__init__("WebSrv", self.WEBSERVER_SERVICE_MODE, {})
 
 
 class Webserver(WebserverService):
