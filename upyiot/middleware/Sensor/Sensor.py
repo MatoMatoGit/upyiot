@@ -23,11 +23,12 @@ class Sensor(SensorService):
     FILE_SAMPLES_MAX        = const(9999)
     SAMPLE_FMT              = "<i"
       
-    def __init__(self, directory, name, filter_depth, sensor_abs):
+    def __init__(self, directory, name, filter_depth, sensor_driver_obj, samples_per_read=1):
         # Initialize the SensorService class
         super().__init__(name)
 
-        self.SensorAbstraction = sensor_abs
+        self.SensorDriver = sensor_driver_obj
+        self.SamplesPerRead = samples_per_read
         self.Filter = AvgFilter.AvgFilter(filter_depth)
         self.SampleQueue = NvQueue.NvQueue(directory + '/' + name, Sensor.SAMPLE_FMT, Sensor.FILE_SAMPLES_MAX)
         self.NewSample = Subject()
@@ -35,7 +36,7 @@ class Sensor(SensorService):
     def SvcRun(self):
         self.Read()
 
-    @property  
+    @property
     def ValueAverage(self):
         return self.NewSample.State
     
@@ -57,7 +58,8 @@ class Sensor(SensorService):
         self.Filter.Reset()
         
     def Read(self):
-        self._SampleProcess(self.SensorAbstraction.Read())
+        for i in range(0, self.SamplesPerRead):
+            self._SampleProcess(self.SensorDriver.Read())
         return self.NewSample.State
     
     def ObserverAttachNewSample(self, observer):
