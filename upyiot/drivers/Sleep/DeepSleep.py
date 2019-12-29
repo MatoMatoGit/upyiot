@@ -60,4 +60,4 @@ class DeepSleep:
         elif wake_reason is DeepSleep.WAKE_REASON_PIN:
             return "Pin"
         else:
-            return "Unkown"
+            return "Unknown"
