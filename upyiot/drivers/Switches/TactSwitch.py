@@ -11,7 +11,7 @@ class TactSwitch:
     CALLBACK_RELEASED   = const(1)
     NUM_CALLBACKS       = const(2)
 
-    DEBOUNCE_TIME_MS    = const(100)
+    DEBOUNCE_TIME_MS    = const(50)
 
     PIN_VALUE_PRESSED   = const(0)
 
@@ -22,6 +22,8 @@ class TactSwitch:
     HoldIndex = 0
     DebounceTimer = None
     DebounceTimerCallback = None
+    Enabled = False
+    TactSwPin = None
 
     def __init__(self, tact_sw_pin_nr, callbacks, hold_times, wake_on_press=False):
         """
@@ -39,37 +41,38 @@ class TactSwitch:
 
         if hold_times[0] > 0:
             TactSwitch.HoldTimer = Timer(-1)
-            TactSwitch.HoldTimerCallback = self._HoldTimerCallback
+            TactSwitch.HoldTimerCallback = TactSwitch._HoldTimerCallback
             TactSwitch.HoldTimes = hold_times
 
         TactSwitch.DebounceTimer = Timer(-1)
-        TactSwitch.DebounceTimerCallback = self._DebounceTimerCallback
+        TactSwitch.DebounceTimerCallback = TactSwitch._DebounceTimerCallback
 
         if wake_on_press is False:
             wake_param = None
         else:
             wake_param = machine.DEEPSLEEP
 
-        self.TactSwPin = Pin(tact_sw_pin_nr, mode=Pin.IN)
-        self.TactSwPin.irq(trigger=(Pin.IRQ_RISING | Pin.IRQ_FALLING),
-                           handler=self._IrqHandlerTactSwPin,
-                           wake=wake_param)
+        TactSwitch.TactSwPin = Pin(tact_sw_pin_nr, mode=Pin.IN)
+        TactSwitch.TactSwPin.irq(trigger=(Pin.IRQ_RISING | Pin.IRQ_FALLING),
+                                 handler=self._IrqHandlerTactSwPin,
+                                 wake=wake_param)
         esp32.wake_on_ext0(pin=self.TactSwPin, level=esp32.WAKEUP_ALL_LOW)
 
-        self.Enabled = False
+        TactSwitch.Enabled = False
 
     def Enable(self):
-        self.Enabled = True
+        TactSwitch.Enabled = True
 
     def Disable(self):
-        self.Enabled = False
+        TactSwitch.Enabled = False
 
     @staticmethod
     def _IrqHandlerTactSwPin(pin_obj):
         if TactSwitch.Enabled is True:
             TactSwitch._DebounceTimerStart()
 
-    def _HoldTimerCallback(self, timer):
+    @staticmethod
+    def _HoldTimerCallback(timer):
         TactSwitch.HoldIndex += 1
         if (TactSwitch.HoldIndex + 1) < len(TactSwitch.HoldTimes):
             TactSwitch._HoldTimerStart(TactSwitch.HoldTimes[TactSwitch.HoldIndex + 1])
@@ -82,7 +85,7 @@ class TactSwitch:
 
     @staticmethod
     def _HoldTimerStart(time_ms):
-        TactSwitch.HoldTimer.init(period=TactSwitch.HoldTimes[time_ms],
+        TactSwitch.HoldTimer.init(period=time_ms,
                                   mode=Timer.ONE_SHOT,
                                   callback=TactSwitch.HoldTimerCallback)
     @staticmethod
@@ -100,14 +103,17 @@ class TactSwitch:
         except:
             print("[TactSw] No debounce timer running.")
 
+        print("[TactSw] Debounce start.")
         TactSwitch.DebounceTimer.init(period=TactSwitch.DEBOUNCE_TIME_MS,
                                       mode=Timer.ONE_SHOT,
-                                      callback=TactSwitch._DebounceTimerCallback)
+                                      callback=TactSwitch.DebounceTimerCallback)
 
-    def _DebounceTimerCallback(self, timer):
-        if self.TactSwPin.value() is self.PIN_VALUE_PRESSED:
+    @staticmethod
+    def _DebounceTimerCallback(timer):
+        print("[TactSw] Debounced")
+        if TactSwitch.TactSwPin.value() is TactSwitch.PIN_VALUE_PRESSED:
             TactSwitch.HoldIndex = -1
-            TactSwitch._HoldTimerStart(TactSwitch.HoldTimes[0])
+            # TactSwitch._HoldTimerStart(TactSwitch.HoldTimes[0])
             TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_PRESSED)
         else:
             TactSwitch._HoldTimerStop()
