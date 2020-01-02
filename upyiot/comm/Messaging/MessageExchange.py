@@ -38,19 +38,22 @@ class MessageExchange(MessageExchangeService):
         # Initialize the MessageExchangeService class.
         super().__init__()
 
+        # Configure the MessageBuffer and Message classes.
         MessageBuffer.Configure(directory, Message.MSG_SIZE_MAX)
+        Message.DeviceId(client_id)
+
+        # Create a generic send buffer for all outgoing messages.
         self.SendMessageBuffer = MessageBuffer('send', -1, -1,
                                                MessageExchange.SEND_BUFFER_SIZE)
         self.MessageMappings = set()
         self.MqttClient = mqtt_client_obj
         self.MqttRetries = mqtt_retries
         self.ServiceInit = False
-        self.NewMessage = False
+        self.NewMessage = False  # Set to True by the MQTT receive callback on a received message.
 
         self.Log = ExtLogging.LoggerGet("MsgEx")
         self.Time = SystemTime.InstanceGet()
-        Message.DeviceId(client_id)
-        print("[MsgEx] Device ID: {}".format(Message.DeviceId()))
+
         MessageExchange._Instance = self
 
     @staticmethod
@@ -63,15 +66,24 @@ class MessageExchange(MessageExchangeService):
         self._MqttSetup()
 
     def SvcRun(self):
-        # TODO: REMOVE
-        self.Log.info("PUB")
+        self.Log.info("PUB")  # TODO: TEST LOGGING, REMOVE
+
+        # Get the amount of messages queued for transmission.
         msg_count = self.SendMessageBuffer.MessageCount()
         print("[MsgEx] Messages in send-buffer: {}".format(msg_count))
+
+        # Iterator through all queued messages once.
         for i in range(0, msg_count):
+
+            # Get the message tuple, and extract the mapping.
             msg_tup = self.SendMessageBuffer.MessageGet()
             msg_map = self.MessageMapFromType(msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
                                               msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE])
+
+            # If a valid mapping was found, transmit the message.
             if msg_map is not None:
+
+                # Get the topic and message length.
                 print("[MsgEx] Found message map: {}".format(msg_map))
                 topic = msg_map[MessageExchange.MSG_MAP_URL]
                 msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
@@ -112,23 +124,31 @@ class MessageExchange(MessageExchangeService):
                 msg_buf.Delete()
 
     def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
+        # Get the current date-time.
         print("[MsgEx] Serializing message: {}".format(msg_data_dict))
         print("[MsgEx] Time instance: {}".format(self.Time))
         dt = self.Time.DateTime()
         print("[MsgEx] Got date-time: {}".format(dt))
+        # Serialize the message.
         Message.Serialize(self.Time.DateTime(), msg_data_dict, msg_type, msg_subtype)
-        print("[MsgEx] Serialized length: {}".format(len(Message.Stream().getvalue()))) #.decode('utf-8')
+        print("[MsgEx] Serialized length: {}".format(len(Message.Stream().getvalue())))
+
+        # Put the message in the send buffer, return the result value.
         return self.SendMessageBuffer.MessagePutWithType(msg_type, msg_subtype,
-                                                         Message.Stream().getvalue()) #.decode('utf-8')
+                                                         Message.Stream().getvalue())
 
     def MessageGet(self, msg_type, msg_subtype):
+        # Get the message map for the requested type.
         msg_map = self.MessageMapFromType(msg_type, msg_subtype)
         print("[MsgEx] Found message map: {}".format(msg_map))
         if msg_map is not None:
+            # Check if the requested type has a receive buffer.
             msg_buf = msg_map[MessageExchange.MSG_MAP_RECV_BUFFER]
             if msg_buf is not None:
+                # Get the message from the receive buffer.
                 msg_tup = msg_buf.MessageGet()
                 if msg_tup is not None:
+                    # Deserialize the message data and return it to the user.
                     msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
                     return Message.Deserialize(msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len])
                 else:
@@ -160,15 +180,16 @@ class MessageExchange(MessageExchangeService):
     def _MqttMsgRecvCallback(topic, msg):
         topic = topic.decode('utf-8')
         data_ex = MessageExchange.InstanceGet()
+        data_ex.NewMessage = True
 
+        print("[MsgEx] Message received on topic %s" % topic)
         # Get the message mapping from the topic
         msg_map = data_ex.MessageMapFromUrl(topic)
         if msg_map is not None:
-            # Put the message string in the corresponding buffer.
+            # Put the message string in the corresponding receive buffer.
             msg_buf = msg_map[MessageExchange.MSG_MAP_RECV_BUFFER]
             if msg_buf is not None:
                 msg_buf.MessagePut(msg)
-                data_ex.NewMessage = True
         else:
             print("[MsgEx] Warning: No message mapping defined for topic %s" % topic)
 
@@ -177,7 +198,7 @@ class MessageExchange(MessageExchangeService):
         connected = False
         retries = 0
         # Try to connect to the MQTT broker, if it fails retry after the specified
-        # interval.
+        # interval an exception is raised.
         while connected is False and retries < self.MqttRetries:
             try:
                 self.MqttClient.connect()
@@ -198,7 +219,11 @@ class MessageExchange(MessageExchangeService):
         # on a topic.
         self.MqttClient.set_callback(MessageExchange._MqttMsgRecvCallback)
 
-        # TODO: Move this to the SvcRun. Must be done periodically.
+        # Subscribe to all receive topics.
+        self._SubscribeReceiveTopics()  # TODO: Also to this in SvcRun. Must be done periodically.
+
+    def _SubscribeReceiveTopics(self):
+        # TODO: Check what happens if subscribed twice, possible to check if already subscribed?
         # Iterate through the available message mappings.
         for msg_map in self.MessageMappings:
             print("[MsgEx] Found message map: {}".format(msg_map))
