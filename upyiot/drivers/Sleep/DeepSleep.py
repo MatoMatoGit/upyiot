@@ -35,11 +35,11 @@ class DeepSleep:
     def RegisterCallbackBeforeDeepSleep(self, callback):
         self.CbsBeforeSleep.add(callback)
 
-    def DeepSleep(self, seconds):
-        print("[DeepSleep] Going to sleep for {} sec.".format(seconds))
+    def DeepSleep(self, msec):
+        print("[DeepSleep] Going to sleep for {} msec.".format(msec))
         # Notify all registered callbacks
         self._NotifyBeforeDeepSleep()
-        machine.deepsleep(seconds)
+        machine.deepsleep(msec)
         raise DeepSleepExceptionInitiated
 
     def DeepSleepForever(self):
