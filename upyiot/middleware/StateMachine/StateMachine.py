@@ -4,15 +4,25 @@ from upyiot.system.Service.Service import Service
 
 class StateMachineService(Service):
 
+    SENSOR_SERVICE_MODE = Service.MODE_RUN_ONCE
+
     def __init__(self):
-        return
+        super().__init__("statemachine", self.SENSOR_SERVICE_MODE, {})
 
 
-class StateMachine:
+class StateMachine(StateMachineService):
 
     def __init__(self, states):
+        super().__init__()
+
         self.States = states.copy()
         return
+
+    def SvcInit(self):
+        return
+
+    def SvcRun(self):
+
 
     def RegisterState(self, state):
         self.States[state] = state

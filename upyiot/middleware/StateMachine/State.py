@@ -17,3 +17,12 @@ class State:
         self.Transitions = transitions
         return
 
+    def Enter(self):
+        pass
+
+    def Execute(self):
+        pass
+
+    def Exit(self):
+        pass
+
