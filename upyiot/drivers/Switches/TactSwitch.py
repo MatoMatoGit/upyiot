@@ -21,6 +21,7 @@ class TactSwitch:
     HoldTimerCallback = None
     HoldIndex = 0
     DebounceTimer = None
+    DebouceTimerRunning = False
     DebounceTimerCallback = None
     Enabled = False
     TactSwPin = None
@@ -63,8 +64,12 @@ class TactSwitch:
     def Enable(self):
         TactSwitch.Enabled = True
 
+
     def Disable(self):
         TactSwitch.Enabled = False
+
+    def IsPressed(self):
+        return TactSwitch.TactSwPin.value() is 1
 
     @staticmethod
     def _IrqHandlerTactSwPin(pin_obj):
@@ -98,6 +103,7 @@ class TactSwitch:
 
     @staticmethod
     def _DebounceTimerStart():
+        TactSwitch.DebounceTimerRunning = True
         try:
             TactSwitch.DebounceTimer.deinit()
         except:
