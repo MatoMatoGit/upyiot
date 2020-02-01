@@ -254,14 +254,18 @@ class ServiceScheduler:
                         print("[Scheduler] Disabled: {}".format(service.SvcName))
 
                     print("[Scheduler] Selecting next service")
-                    if self._IndexAdvance(svc_activated) is False:
+                    # if self._IndexAdvance(svc_activated) is False:
+                    #     print("[Scheduler] No more services to run")
+                    #     break
+                    self._IndexAdvance(svc_activated)
+                    if self._CheckServiceActive() is False and svc_activated is False:
                         print("[Scheduler] No more services to run")
                         break
 
                     print("[Scheduler] Next index: {}".format(self.Index))
 
-                # The statements below run after the scheduler finishes executing
-                # the services that are ready.
+                # The statements below run after the scheduler finishes checking
+                # the services that are ready / have been activated.
 
                 # Calculate the amount of time that passed while running services.
                 t_end = utime.ticks_ms()
@@ -437,3 +441,9 @@ class ServiceScheduler:
             print("[Scheduler] Cycles left: {}.".format(self.Cycles))
             if self.Cycles is 0:
                 raise SchedulerExceptionStopped
+
+    def _CheckServiceActive(self):
+        for svc in self.Services:
+            if svc.SvcIsActive():
+                return True
+        return False
