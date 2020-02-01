@@ -59,17 +59,16 @@ class Sensor(SensorService):
         
     def Read(self):
         for i in range(0, self.SamplesPerRead):
-            self._SampleProcess(self.SensorDriver.Read())
+            self.Filter.Input(self.SensorDriver.Read())
+        self._SampleProcess(self.Filter.Output())
         return self.NewSample.State
     
     def ObserverAttachNewSample(self, observer):
         self.NewSample.Attach(observer)
 
     def _SampleProcess(self, sample):
-        self.Filter.Input(sample)
-        avg_sample = self.Filter.Output()
-        self._SampleStore(avg_sample)
-        self.NewSample.State = avg_sample
+        self._SampleStore(sample)
+        self.NewSample.State = sample
 
     def _SampleStore(self, sample):
         self.SampleQueue.Push(sample)
