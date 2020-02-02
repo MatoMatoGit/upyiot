@@ -7,45 +7,69 @@ import esp32
 
 class TactSwitch:
 
+    TIMER_DEBOUNCE      = const(0)
+    TIMER_HOLD_REST     = const(1)
+    NUM_TIMERS          = const(2)
+
     CALLBACK_PRESSED    = const(0)
     CALLBACK_RELEASED   = const(1)
-    NUM_CALLBACKS       = const(2)
+    CALLBACK_REST       = const(2)
+
+    NUM_CALLBACKS       = const(3)
+
 
     DEBOUNCE_TIME_MS    = const(50)
 
     PIN_VALUE_PRESSED   = const(0)
 
     UserCallbacks = None
-    HoldTimer = None
+    PressTimer = None
+    PressCount = 0
+
     HoldTimes = 0
-    HoldTimerCallback = None
+    HoldTime = 0
+    HoldCallback = None
     HoldIndex = 0
+
+    RestCallback = None
+    RestTime = 500
     DebounceTimer = None
     DebouceTimerRunning = False
     DebounceTimerCallback = None
+
     Enabled = False
     TactSwPin = None
 
-    def __init__(self, tact_sw_pin_nr, callbacks, hold_times, wake_on_press=False):
+    def __init__(self, tact_sw_pin_nr, timer_nrs, callbacks, hold_times_ms, rest_time_ms, wake_on_press=False):
         """
 
         :param tact_sw_pin_nr: Tactile switch pin number.
+        :param timer_nrs: Timer numbers used for debounce and hold/rest respectively.
         :param callbacks: Callbacks tuple, must contain 2 callbacks.
-        :param hold_times: Hold times tuple. If no hold times are used
+        :param hold_times_ms: Hold times (ms) tuple. If no hold times are used
         pass (0, ).
+        :param rest_time_ms: Time it takes to reset the press count in ms.
         :param wake_on_press: The tactile switch is configured as a wake-up source if True.
         Default is False.
         """
+
+        if len(timer_nrs) < TactSwitch.NUM_TIMERS:
+            raise ValueError
+
         if len(callbacks) < TactSwitch.NUM_CALLBACKS:
             raise ValueError
+
         TactSwitch.UserCallbacks = callbacks
 
-        if hold_times[0] > 0:
-            TactSwitch.HoldTimer = Timer(-1)
-            TactSwitch.HoldTimerCallback = TactSwitch._HoldTimerCallback
-            TactSwitch.HoldTimes = hold_times
+        TactSwitch.PressTimer = Timer(timer_nrs[TactSwitch.TIMER_HOLD_REST])
 
-        TactSwitch.DebounceTimer = Timer(-1)
+        if hold_times_ms[0] > 0:
+            TactSwitch.HoldCallback = TactSwitch._HoldCallback
+            TactSwitch.HoldTimes = hold_times_ms
+
+        TactSwitch.RestCallback = TactSwitch._RestCallback
+        TactSwitch.RestTime = rest_time_ms
+        TactSwitch.DebounceTimer = Timer(timer_nrs[TactSwitch.TIMER_DEBOUNCE])
         TactSwitch.DebounceTimerCallback = TactSwitch._DebounceTimerCallback
 
         if wake_on_press is False:
@@ -77,38 +101,75 @@ class TactSwitch:
             TactSwitch._DebounceTimerStart()
 
     @staticmethod
-    def _HoldTimerCallback(timer):
-        TactSwitch.HoldIndex += 1
-        if (TactSwitch.HoldIndex + 1) < len(TactSwitch.HoldTimes):
-            TactSwitch._HoldTimerStart(TactSwitch.HoldTimes[TactSwitch.HoldIndex + 1])
-
-    @staticmethod
-    def _ScheduleCallback(callback_type):
+    def _ScheduleCallback(callback_type, arg):
         if TactSwitch.UserCallbacks[callback_type] is not None:
-            micropython.schedule(TactSwitch.UserCallbacks[callback_type], TactSwitch.HoldIndex)
+            micropython.schedule(TactSwitch.UserCallbacks[callback_type], arg)
             TactSwitch.HoldIndex = -1
 
     @staticmethod
+    def _HoldCallback(timer):
+        TactSwitch.HoldIndex += 1
+        TactSwitch.HoldTime += TactSwitch.HoldTimes[TactSwitch.HoldIndex] - TactSwitch.HoldTime
+        print("[TactSw] Hold index: {}".format(TactSwitch.HoldIndex))
+        print("[TactSw] Hold time: {}".format(TactSwitch.HoldTime))
+
+        if (TactSwitch.HoldIndex + 1) < len(TactSwitch.HoldTimes):
+            hold_time = TactSwitch.HoldTimes[TactSwitch.HoldIndex + 1] - TactSwitch.HoldTime
+            TactSwitch._HoldTimerStart(hold_time)
+
+    @staticmethod
     def _HoldTimerStart(time_ms):
-        TactSwitch.HoldTimer.init(period=time_ms,
-                                  mode=Timer.ONE_SHOT,
-                                  callback=TactSwitch.HoldTimerCallback)
+        if time_ms is 0:
+            return
+
+        print("[TactSw] Starting hold timer: {}ms".format(time_ms))
+        try:
+            TactSwitch.PressTimer.init(period=time_ms,
+                                      mode=Timer.ONE_SHOT,
+                                      callback=TactSwitch.HoldCallback)
+        except OSError:
+            print("[TactSw] Failed to start hold timer.")
+
     @staticmethod
     def _HoldTimerStop():
         try:
-            TactSwitch.HoldTimer.deinit()
-        except:
+            TactSwitch.PressTimer.deinit()
+        except OSError:
             print("[TactSw] No hold timer running.")
 
 
     @staticmethod
+    def _RestCallback(timer):
+        TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_REST, TactSwitch.PressCount)
+        TactSwitch.PressCount = 0
+
+    @staticmethod
+    def _RestTimerStart():
+        print("[TactSw] Starting rest timer: {}ms".format(TactSwitch.RestTime))
+        try:
+            TactSwitch.PressTimer.init(period=TactSwitch.RestTime,
+                                      mode=Timer.ONE_SHOT,
+                                      callback=TactSwitch.RestCallback)
+        except OSError:
+            print("[TactSw] Failed to start rest timer.")
+
+    @staticmethod
+    def _RestTimerStop():
+        try:
+            TactSwitch.PressTimer.deinit()
+        except OSError:
+            print("[TactSw] No reset timer running.")
+
+
+    @staticmethod
     def _DebounceTimerStart():
-        TactSwitch.DebounceTimerRunning = True
         try:
             TactSwitch.DebounceTimer.deinit()
-        except:
+        except OSError:
             print("[TactSw] No debounce timer running.")
 
+        print("---------------------")
+        print("[TactSw] Press count: {}".format(TactSwitch.PressCount))
         print("[TactSw] Debounce start.")
         TactSwitch.DebounceTimer.init(period=TactSwitch.DEBOUNCE_TIME_MS,
                                       mode=Timer.ONE_SHOT,
@@ -117,10 +178,15 @@ class TactSwitch:
     @staticmethod
     def _DebounceTimerCallback(timer):
         print("[TactSw] Debounced")
+        print("[TactSw] State: {}".format(TactSwitch.TactSwPin.value()))
         if TactSwitch.TactSwPin.value() is TactSwitch.PIN_VALUE_PRESSED:
+            TactSwitch._RestTimerStop()
+            TactSwitch.HoldTime = 0
             TactSwitch.HoldIndex = -1
-            # TactSwitch._HoldTimerStart(TactSwitch.HoldTimes[0])
-            TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_PRESSED)
+            TactSwitch._HoldTimerStart(TactSwitch.HoldTimes[0])
+            TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_PRESSED, TactSwitch.PressCount)
         else:
             TactSwitch._HoldTimerStop()
-            TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_RELEASED)
+            TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_RELEASED, TactSwitch.HoldIndex)
+            TactSwitch.PressCount += 1
+            TactSwitch._RestTimerStart()
