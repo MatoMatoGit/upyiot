@@ -20,9 +20,6 @@ class State:
     def Enter(self):
         pass
 
-    def Execute(self):
-        pass
-
     def Exit(self):
         pass
 
