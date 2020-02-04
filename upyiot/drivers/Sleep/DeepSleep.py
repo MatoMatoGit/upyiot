@@ -13,24 +13,9 @@ class DeepSleepExceptionInitiated(Exception):
 
 class DeepSleep:
 
-    WAKE_REASON_RESET = const(0)
-    WAKE_REASON_PIN   = const(1)
-    WAKE_REASON_RTC   = const(2)
-
     def __init__(self):
         # Create a set for all BeforeSleep callbacks.
         self.CbsBeforeSleep = set()
-
-    def WakeReason(self):
-        # Check the wake-reason to determine if the device was
-        # woken from sleep.
-        if machine.reset_cause() is machine.DEEPSLEEP_RESET:
-            if machine.wake_reason() is machine.PIN_WAKE:
-                return DeepSleep.WAKE_REASON_PIN
-            else:
-                return DeepSleep.WAKE_REASON_RTC
-        else:
-            return DeepSleep.WAKE_REASON_RESET
 
     def RegisterCallbackBeforeDeepSleep(self, callback):
         self.CbsBeforeSleep.add(callback)
@@ -51,13 +36,3 @@ class DeepSleep:
         for cb in self.CbsBeforeSleep:
             cb()
 
-    @staticmethod
-    def WakeReasonToString(wake_reason):
-        if wake_reason is DeepSleep.WAKE_REASON_RESET:
-            return "Reset"
-        elif wake_reason is DeepSleep.WAKE_REASON_RTC:
-            return "RTC"
-        elif wake_reason is DeepSleep.WAKE_REASON_PIN:
-            return "Pin"
-        else:
-            return "Unknown"
