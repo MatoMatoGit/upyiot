@@ -21,10 +21,12 @@ class TactSwitch:
     DEBOUNCE_TIME_MS    = const(50)
 
     PIN_VALUE_PRESSED   = const(0)
+    PIN_VALUE_RELEASED = const(1)
 
     UserCallbacks = None
     PressTimer = None
     PressCount = 0
+    State = PIN_VALUE_RELEASED
 
     HoldTimes = 0
     HoldTime = 0
@@ -87,13 +89,15 @@ class TactSwitch:
 
     def Enable(self):
         TactSwitch.Enabled = True
+        if self.IsPressed() and TactSwitch.State is self.PIN_VALUE_RELEASED:
+            TactSwitch._IrqHandlerTactSwPin()
 
 
     def Disable(self):
         TactSwitch.Enabled = False
 
     def IsPressed(self):
-        return TactSwitch.TactSwPin.value() is 1
+        return TactSwitch.TactSwPin.value() is self.PIN_VALUE_PRESSED
 
     @staticmethod
     def _IrqHandlerTactSwPin(pin_obj):
@@ -180,13 +184,23 @@ class TactSwitch:
         print("[TactSw] Debounced")
         print("[TactSw] State: {}".format(TactSwitch.TactSwPin.value()))
         if TactSwitch.TactSwPin.value() is TactSwitch.PIN_VALUE_PRESSED:
-            TactSwitch._RestTimerStop()
-            TactSwitch.HoldTime = 0
-            TactSwitch.HoldIndex = -1
-            TactSwitch._HoldTimerStart(TactSwitch.HoldTimes[0])
-            TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_PRESSED, TactSwitch.PressCount)
+            TactSwitch._HandlePress()
         else:
-            TactSwitch._HoldTimerStop()
-            TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_RELEASED, TactSwitch.HoldIndex)
-            TactSwitch.PressCount += 1
-            TactSwitch._RestTimerStart()
+            TactSwitch._HandleRelease()
+
+    @staticmethod
+    def _HandlePress():
+        TactSwitch.State = TactSwitch.PIN_VALUE_PRESSED
+        TactSwitch._RestTimerStop()
+        TactSwitch.HoldTime = 0
+        TactSwitch.HoldIndex = -1
+        TactSwitch._HoldTimerStart(TactSwitch.HoldTimes[0])
+        TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_PRESSED, TactSwitch.PressCount)
+
+    @staticmethod
+    def _HandleRelease():
+        TactSwitch.State = TactSwitch.PIN_VALUE_RELEASED
+        TactSwitch._HoldTimerStop()
+        TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_RELEASED, TactSwitch.HoldIndex)
+        TactSwitch.PressCount += 1
+        TactSwitch._RestTimerStart()
