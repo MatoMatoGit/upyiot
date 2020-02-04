@@ -1,10 +1,13 @@
 from upyiot.drivers.Sensors.SensorBase import SensorBase
 from machine import Pin
+from micropython import const
 import time
 
 
 class CapMoisture(SensorBase):
 
+    STABILIZE_TIME_MS = const(100)
+    MEASURE_TIME_MS = const(200)
     PulseCount = 0
 
     def __init__(self, pulse_pin_nr, pwr_pin_nr):
@@ -15,8 +18,9 @@ class CapMoisture(SensorBase):
 
     def Read(self):
         CapMoisture.PulseCount = 0
+        time.sleep_ms(self.STABILIZE_TIME_MS)
         self.PowerPin.on()
-        time.sleep(1)
+        time.sleep_ms(self.MEASURE_TIME_MS)
         self.PowerPin.off()
         return CapMoisture.PulseCount
 
