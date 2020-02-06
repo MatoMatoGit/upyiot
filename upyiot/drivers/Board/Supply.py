@@ -1,4 +1,4 @@
-import Pin, Signal
+from machine import Pin, Signal
 import utime
 from micropython import const
 
@@ -13,7 +13,7 @@ class Supply:
         else:
             self.EnCount = 0
 
-        self.EnPin = Signal(Pin(en_pin_nr, mode=Pin.OUT), inverse_pol)
+        self.EnPin = Signal(en_pin_nr, mode=Pin.OUT, invert=inverse_pol)
         self.SettleTime = settle_time_ms
 
     def Enable(self):
