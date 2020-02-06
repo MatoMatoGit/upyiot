@@ -58,8 +58,10 @@ class Sensor(SensorService):
         self.Filter.Reset()
         
     def Read(self):
+        self.SensorDriver.Enable()
         for i in range(0, self.SamplesPerRead):
             self.Filter.Input(self.SensorDriver.Read())
+        self.SensorDriver.Disable()
         self._SampleProcess(self.Filter.Output())
         return self.NewSample.State
     
