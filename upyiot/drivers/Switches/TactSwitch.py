@@ -13,10 +13,11 @@ class TactSwitch:
 
     CALLBACK_PRESSED    = const(0)
     CALLBACK_RELEASED   = const(1)
-    CALLBACK_REST       = const(2)
 
-    NUM_CALLBACKS       = const(3)
+    NUM_CALLBACKS       = const(2)
 
+    CALLBACK_ARG_PRESS_COUNT = const(0)
+    CALLBACK_ARG_HOLD_INDEX  = const(1)
 
     DEBOUNCE_TIME_MS    = const(50)
 
@@ -90,7 +91,7 @@ class TactSwitch:
     def Enable(self):
         TactSwitch.Enabled = True
         if self.IsPressed() and TactSwitch.State is self.PIN_VALUE_RELEASED:
-            TactSwitch._IrqHandlerTactSwPin()
+            TactSwitch._IrqHandlerTactSwPin(self.TactSwPin)
 
 
     def Disable(self):
@@ -105,9 +106,10 @@ class TactSwitch:
             TactSwitch._DebounceTimerStart()
 
     @staticmethod
-    def _ScheduleCallback(callback_type, arg):
+    def _ScheduleCallback(callback_type, *args):
         if TactSwitch.UserCallbacks[callback_type] is not None:
-            micropython.schedule(TactSwitch.UserCallbacks[callback_type], arg)
+            micropython.schedule(TactSwitch.UserCallbacks[callback_type], (args[TactSwitch.CALLBACK_ARG_PRESS_COUNT],
+                                                                           args[TactSwitch.CALLBACK_ARG_HOLD_INDEX]))
             TactSwitch.HoldIndex = -1
 
     @staticmethod
@@ -129,8 +131,8 @@ class TactSwitch:
         print("[TactSw] Starting hold timer: {}ms".format(time_ms))
         try:
             TactSwitch.PressTimer.init(period=time_ms,
-                                      mode=Timer.ONE_SHOT,
-                                      callback=TactSwitch.HoldCallback)
+                                       mode=Timer.ONE_SHOT,
+                                       callback=TactSwitch.HoldCallback)
         except OSError:
             print("[TactSw] Failed to start hold timer.")
 
@@ -144,7 +146,8 @@ class TactSwitch:
 
     @staticmethod
     def _RestCallback(timer):
-        TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_REST, TactSwitch.PressCount)
+        TactSwitch.State = TactSwitch.PIN_VALUE_RELEASED
+        TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_RELEASED, TactSwitch.PressCount, TactSwitch.HoldIndex)
         TactSwitch.PressCount = 0
 
     @staticmethod
@@ -195,12 +198,10 @@ class TactSwitch:
         TactSwitch.HoldTime = 0
         TactSwitch.HoldIndex = -1
         TactSwitch._HoldTimerStart(TactSwitch.HoldTimes[0])
-        TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_PRESSED, TactSwitch.PressCount)
+        TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_PRESSED, TactSwitch.PressCount, TactSwitch.HoldIndex)
 
     @staticmethod
     def _HandleRelease():
-        TactSwitch.State = TactSwitch.PIN_VALUE_RELEASED
         TactSwitch._HoldTimerStop()
-        TactSwitch._ScheduleCallback(TactSwitch.CALLBACK_RELEASED, TactSwitch.HoldIndex)
         TactSwitch.PressCount += 1
         TactSwitch._RestTimerStart()
