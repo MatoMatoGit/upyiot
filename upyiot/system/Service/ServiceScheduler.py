@@ -148,6 +148,11 @@ class ServiceScheduler:
     SCHEDULER_RESULT_ERR    = const(-1)
     MIN_DEEPSLEEP_TIME      = const(10)
 
+    SCHED_STATE_STOPPED = const(0)
+    SCHED_STATE_IDLE    = const(1)
+    SCHED_STATE_RUNNING = const(2)
+
+
     def __init__(self, deepsleep_threshold_sec=MIN_DEEPSLEEP_TIME, directory="./"):
         self.Services = list()
         self.RunTimeSec = 0
@@ -156,7 +161,9 @@ class ServiceScheduler:
         self.DeepSleepThresholdSec = deepsleep_threshold_sec
         self.DeepSleep = DeepSleep()
         self.SleepTime = 0
+        self.SleepTimeRequested = -1
         self.Memory = SchedulerMemory(directory, self)
+        self.State = self.SCHED_STATE_STOPPED
 
         return
 
@@ -181,6 +188,7 @@ class ServiceScheduler:
         return res
 
     def Run(self, cycles=None):
+        self.State = self.SCHED_STATE_RUNNING
 
         # Load the scheduler run time, and last-run time of all services.
         self.Memory.Load()
@@ -193,21 +201,25 @@ class ServiceScheduler:
             while True:
                 print("\n[Scheduler] ##### Cycles left: {} #####\n".format(self.Cycles))
                 # Add the amount time spend sleeping or idling.
-                self.RunTimeSec += self.SleepTime
+                self._UpdateRuntime(self.SleepTime)
 
                 print("[Scheduler] Run time (s): {}".format(self.RunTimeSec))
-
-                # Save the start time before executing the loop.
-                t_start = utime.ticks_ms()
 
                 # Service run loop.
                 # Runs a service until none are ready or have been activated.
                 self.Index = 0
                 while True:
+                    # Save the start time before executing the loop.
+                    t_start = utime.ticks_ms()
+
                     svc_activated = False
 
                     if self.Index >= len(self.Services):
                         print("[Scheduler] No services registered")
+                        t_ran_sec = self._CalculateRuntime(t_start)
+                        self._UpdateRuntime(t_ran_sec)
+                        # Decrease the amount of scheduler cycles left (if applicable).
+                        self._CyclesDec()
                         break
 
                     # Update all periodic services.
@@ -253,6 +265,12 @@ class ServiceScheduler:
                     else:
                         print("[Scheduler] Disabled: {}".format(service.SvcName))
 
+                    t_ran_sec = self._CalculateRuntime(t_start)
+                    self._UpdateRuntime(t_ran_sec)
+
+                    # Decrease the amount of scheduler cycles left (if applicable).
+                    self._CyclesDec()
+
                     print("[Scheduler] Selecting next service")
                     # if self._IndexAdvance(svc_activated) is False:
                     #     print("[Scheduler] No more services to run")
@@ -267,23 +285,9 @@ class ServiceScheduler:
                 # The statements below run after the scheduler finishes checking
                 # the services that are ready / have been activated.
 
-                # Calculate the amount of time that passed while running services.
-                t_end = utime.ticks_ms()
-                t_ran = utime.ticks_diff(t_end, t_start)
-                t_ran_sec = int(round((t_ran / 1000)))
-
-                print("[Scheduler] t start: {}  |"
-                      "t_end: {} | t_ran (ms): {} | "
-                      "t ran (s): {}".format(t_start,
-                                             t_end,
-                                             t_ran,
-                                             t_ran_sec))
-
-                # Add the amount time that passed since the last update.
-                self.RunTimeSec += t_ran_sec
-
-                # Decrease the amount of scheduler cycles left (if applicable).
-                self._CyclesDec()
+                if self.SleepTimeRequested is not -1:
+                    print("[Scheduler] Initiating deep sleep for {} seconds".format(self.SleepTimeRequested))
+                    self._InitiateDeepSleep(self.SleepTimeRequested)
 
                 # If the sleep time is 0 there are no services sleeping.
                 if self.SleepTime is 0:
@@ -301,6 +305,7 @@ class ServiceScheduler:
                     print("[Scheduler] Idling for {} seconds".format(self.SleepTime))
                     # No services are ready at this moment.
                     utime.sleep(self.SleepTime)
+                    self.State = self.SCHED_STATE_IDLE
 
                 # If the shortest sleep time is sufficient for a deepsleep,
                 # initiate it.
@@ -309,7 +314,34 @@ class ServiceScheduler:
                     self._InitiateDeepSleep(self.SleepTime)
 
         except SchedulerExceptionStopped:
+            self.State = self.SCHED_STATE_STOPPED
             print("[Scheduler] Stopped.")
+
+    def RequestDeepSleep(self, t_sec):
+        if self.State is self.SCHED_STATE_STOPPED:
+            self._InitiateDeepSleep(t_sec)
+        else:
+            self.SleepTimeRequested = t_sec
+            return 0
+
+    def _CalculateRuntime(self, t_start):
+        # Calculate the amount of time that passed while running services.
+        t_end = utime.ticks_ms()
+        t_ran = utime.ticks_diff(t_end, t_start)
+        t_ran_sec = int(round((t_ran / 1000)))
+
+        print("[Scheduler] t start: {}  |"
+              "t_end: {} | t_ran (ms): {} | "
+              "t ran (s): {}".format(t_start,
+                                     t_end,
+                                     t_ran,
+                                     t_ran_sec))
+
+        return t_ran_sec
+
+    def _UpdateRuntime(self, t_sec):
+        # Add the amount time that passed since the last update.
+        self.RunTimeSec += t_sec
 
     def _InitiateDeepSleep(self, t_sec):
         # Save the scheduler run time, and last-run time of all services.
@@ -354,7 +386,7 @@ class ServiceScheduler:
         sleep_time = 0
         # Activate periodic services.
         for svc in self.Services:
-            if svc.SvcMode is Service.MODE_RUN_PERIODIC:
+            if svc.SvcMode is Service.MODE_RUN_PERIODIC and svc.SvcState is not Service.STATE_DISABLED:
                 if svc.SvcLastRun is -1:
                     last_run = 0
                 else:
