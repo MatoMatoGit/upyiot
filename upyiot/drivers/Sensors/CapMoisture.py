@@ -6,23 +6,27 @@ import time
 
 class CapMoisture(SensorBase):
 
-    STABILIZE_TIME_MS = const(100)
-    MEASURE_TIME_MS = const(200)
+    MEASURE_TIME_MS = const(50)
     PulseCount = 0
 
-    def __init__(self, pulse_pin_nr, pwr_pin_nr):
+    def __init__(self, pulse_pin_nr, en_supply_obj):
         self.FreqCounterPin = Pin(pulse_pin_nr, mode=Pin.IN)
         self.FreqCounterPin.irq(trigger=Pin.IRQ_FALLING, handler=CapMoisture._IrqHandlerFreqCounterPin)
-        self.PowerPin = Pin(pwr_pin_nr, Pin.OUT)
+        self.TimerEn = en_supply_obj
         return
 
     def Read(self):
         CapMoisture.PulseCount = 0
-        time.sleep_ms(self.STABILIZE_TIME_MS)
-        self.PowerPin.on()
+        self.TimerEn.Enable()
         time.sleep_ms(self.MEASURE_TIME_MS)
-        self.PowerPin.off()
+        self.TimerEn.Disable()
         return CapMoisture.PulseCount
+
+    def Enable(self):
+        self.TimerEn.Enable()
+
+    def Disable(self):
+        self.TimerEn.Disable()
 
     @staticmethod
     def _IrqHandlerFreqCounterPin(pin_obj):
