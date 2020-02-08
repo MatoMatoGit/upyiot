@@ -92,6 +92,9 @@ class Service:
     def SvcSuspend(self):
         raise ServiceExceptionSuspend
 
+    def SvcDisable(self):
+        self.SvcState = Service.STATE_DISABLED
+
     def SvcStateString(self, state):
         if state is self.STATE_DISABLED:
             return "Disabled"
