@@ -98,7 +98,7 @@ class SystemTime(SystemTimeService):
             msg = s.recv(SystemTime.NTP_BUF_SIZE)
             s.close()
             val = struct.unpack(SystemTime.NTP_FMT, msg[40:44])[0]
-        except OSError:
+        except:
             print("Failed to request NTP time.")
             return -1
         if val > 0:
