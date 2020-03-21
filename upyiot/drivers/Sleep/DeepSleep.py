@@ -22,7 +22,7 @@ class DeepSleep:
 
     def DeepSleep(self, msec):
         print("[DeepSleep] Going to sleep for {} msec.".format(msec))
-        if msec is 0:
+        if msec is not 0:
             # Notify all registered callbacks
             self._NotifyBeforeDeepSleep()
             machine.deepsleep(msec)
