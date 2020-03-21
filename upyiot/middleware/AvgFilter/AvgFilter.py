@@ -4,8 +4,9 @@ class AvgFilter:
     # Constructor
     # @param[in] depth Filter depth
     #
-    def __init__(self, depth):
+    def __init__(self, depth, dec_round=True):
         self.depth = depth
+        self.Round = dec_round
         self.filter_values = []
 
     ##
@@ -38,8 +39,11 @@ class AvgFilter:
         # samples.
         avg = filter_sum / len(self.filter_values)
         print("Average: {}".format(avg))
-        # Round the average to the nearest integer.
-        avg = round(avg)
+
+        if self.Round is True:
+            # Round the average to the nearest integer.
+            avg = round(avg)
+
         print("Output: {}".format(avg))
         return avg
 
