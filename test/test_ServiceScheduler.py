@@ -121,7 +121,7 @@ class test_ServiceScheduler(unittest.TestCase):
         svc = TestService(Service.MODE_RUN_PERIODIC, {}, interval, test_ServiceScheduler.PeriodicServiceRun)
         self.Scheduler.ServiceRegister(svc)
 
-        self.Scheduler.Run(run_count + 1)
+        self.Scheduler.Run(run_count * 2)
 
         self.assertEqual(svc.SvcRun.CallCount, run_count)
 
@@ -141,7 +141,7 @@ class test_ServiceScheduler(unittest.TestCase):
         self.Scheduler.ServiceRegister(svc_periodic)
         self.Scheduler.ServiceRegister(svc_once)
         svc_once.SvcActivate()
-        self.Scheduler.Run(2)
+        self.Scheduler.Run(4)
 
         self.assertEqual(svc_once.SvcRun.CallCount, 1)
         self.assertEqual(svc_periodic.SvcRun.CallCount, 1)
@@ -153,7 +153,7 @@ class test_ServiceScheduler(unittest.TestCase):
 
         self.Scheduler.ServiceRegister(svc_periodic)
         self.Scheduler.ServiceRegister(svc_once)
-        self.Scheduler.Run(2)
+        self.Scheduler.Run(4)
 
         self.assertEqual(svc_once.SvcRun.CallCount, 1)
         self.assertEqual(svc_periodic.SvcRun.CallCount, 1)
@@ -168,7 +168,7 @@ class test_ServiceScheduler(unittest.TestCase):
 
         self.assertFalse(svc_periodic.SvcIsInitialized())
 
-        self.Scheduler.Run(2)
+        self.Scheduler.Run(4)
 
         self.assertEqual(svc_once.SvcRun.CallCount, 1)
         self.assertEqual(svc_periodic.SvcRun.CallCount, 1)
