@@ -2,6 +2,7 @@ from machine import Pin, Signal
 import utime
 from micropython import const
 
+
 class Supply:
 
     SUPPLY_STATE_DISABLED = const(0)

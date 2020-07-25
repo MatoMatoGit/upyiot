@@ -47,7 +47,7 @@ class Service:
         self.SvcRunCount = 0
         print("[Service] Dependencies: {}".format(self.SvcDeps))
 
-# #### Service base API ####
+# #### Base service API ####
 
     def SvcInit(self):
         pass
@@ -58,7 +58,7 @@ class Service:
     def SvcRun(self):
         pass
 
-# #### Service core API ####
+# #### Extended service API ####
 
     def SvcNameSet(self, name):
         self.SvcName = name

@@ -23,7 +23,8 @@ class Sensor(SensorService):
     FILE_SAMPLES_MAX        = const(9999)
     SAMPLE_FMT              = "<i"
       
-    def __init__(self, directory, name, filter_depth, sensor_driver_obj, samples_per_read=1, dec_round=True, store_data=True):
+    def __init__(self, directory, name, filter_depth, sensor_driver_obj,
+                 samples_per_read=1, dec_round=True, store_data=True):
         # Initialize the SensorService class
         super().__init__(name)
 
