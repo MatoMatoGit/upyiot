@@ -4,7 +4,6 @@ import micropython
 import esp32
 
 
-
 class TactSwitch:
 
     TIMER_DEBOUNCE      = const(0)
