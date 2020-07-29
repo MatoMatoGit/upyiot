@@ -27,25 +27,29 @@ class Webserver(WebserverService):
     QUERY_SEPARATORS = ('&', '/')
     QUERY_VALUE      = '='
 
-    def __init__(self, web_page_html):
+    def __init__(self, web_page_html, timeout_sec):
         # Initialize the WebserverService class.
         super().__init__()
 
         self.Socket = None
         self.Html = web_page_html
         self.Queries = {}
+        self.TimeoutSec = timeout_sec
         print(self.Html)
         return
 
-    def RegisterQueryHandle(self, query, handle):
-        self.Queries[query] = handle
+    def UpdatePage(self, html):
+        self.Html = html
+
+    def RegisterQueryHandle(self, query, handle, context):
+        self.Queries[query] = (handle, context)
 
     def SvcInit(self):
         addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
         print(addr)
         self.Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.Socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.Socket.settimeout(10)
+        self.Socket.settimeout(self.TimeoutSec)
         self.Socket.bind(addr)
         print(self.Socket)
         # try:
@@ -127,5 +131,5 @@ class Webserver(WebserverService):
                     # Splice the query from start until the end of the query.
                     value = query[pos_start:]
                 # Call the registered handler with the query-value.
-                self.Queries[q](q, value)
+                self.Queries[q][0](self.Queries[q][1], q, value)
 
