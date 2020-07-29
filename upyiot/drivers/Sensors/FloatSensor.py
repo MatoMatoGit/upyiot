@@ -1,4 +1,4 @@
-from micropython import Pin
+from machine import Pin
 from upyiot.drivers.Sensors.SensorBase import SensorBase
 
 
@@ -14,6 +14,13 @@ class FloatSensor(SensorBase):
     def Read(self):
         return FloatSensor.FloatState
 
+    def Enable(self):
+        FloatSensor.FloatState = self.FloatPin.value()
+        return
+
+    def Disable(self):
+        return
+
     @staticmethod
     def _IrqHandlerFloatSensor(pin_obj):
-        FloatSensor.FloatState = FloatSensor.FloatPin.value()
+        FloatSensor.FloatState = pin_obj.value()
