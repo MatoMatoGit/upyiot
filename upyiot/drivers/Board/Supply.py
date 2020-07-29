@@ -9,13 +9,14 @@ class Supply:
     SUPPLY_STATE_ENABLED = const(1)
 
     def __init__(self, en_pin_nr, settle_time_ms, inverse_pol=False, default_state=SUPPLY_STATE_DISABLED):
+        self.EnPin = Signal(en_pin_nr, mode=Pin.OUT, invert=inverse_pol)
+
         if default_state is self.SUPPLY_STATE_ENABLED:
             self.Enable()
         else:
             self.EnCount = 0
             self.EnPin.off()
 
-        self.EnPin = Signal(en_pin_nr, mode=Pin.OUT, invert=inverse_pol)
         self.SettleTime = settle_time_ms
 
     def Enable(self):
