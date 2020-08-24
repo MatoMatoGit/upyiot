@@ -3,7 +3,6 @@ from micropython import const
 from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
 from upyiot.comm.Messaging.Message import Message
 from upyiot.comm.Messaging.MessageBuffer import MessageBuffer
-from upyiot.system.SystemTime.SystemTime import SystemTime
 from upyiot.system.Service.Service import Service
 from upyiot.system.Service.Service import ServiceException
 from upyiot.system.ExtLogging import ExtLogging
@@ -25,16 +24,16 @@ class MessageExchange(MessageExchangeService):
     # Buffer sizes (number of messages).
     SEND_BUFFER_SIZE = const(1000)
     RECV_BUFFER_SIZE = const(100)
-    
+
     MSG_MAP_TYPE        = const(0)
     MSG_MAP_SUBTYPE     = const(1)
-    MSG_MAP_URL         = const(2)
+    MSG_MAP_ROUTING     = const(2)
     MSG_MAP_RECV_BUFFER = const(3)
     MSG_MAP_SUBSCRIBED  = const(4)
 
     _Instance = None
 
-    def __init__(self, directory, mqtt_client_obj, client_id, mqtt_retries):
+    def __init__(self, directory, proto_obj, client_id, send_retries):
         # Initialize the MessageExchangeService class.
         super().__init__()
 
@@ -46,14 +45,12 @@ class MessageExchange(MessageExchangeService):
         self.SendMessageBuffer = MessageBuffer('send', -1, -1,
                                                MessageExchange.SEND_BUFFER_SIZE)
         self.MessageMappings = set()
-        self.MqttClient = mqtt_client_obj
-        self.MqttRetries = mqtt_retries
+        self.Protocol = proto_obj
+        self.SendRetries = send_retries
         self.ServiceInit = False
-        self.NewMessage = False  # Set to True by the MQTT receive callback on a received message.
+        self.NewMessage = False  # Set to True by the receive callback on a received message.
 
         self.Log = ExtLogging.LoggerGet("MsgEx")
-        self.Time = SystemTime.InstanceGet()
-
         MessageExchange._Instance = self
 
     @staticmethod
@@ -63,7 +60,7 @@ class MessageExchange(MessageExchangeService):
 # #### Service API ####
 
     def SvcInit(self):
-        self._MqttSetup()
+        self._ProtocolSetup()
 
     def SvcRun(self):
         self.Log.info("PUB")  # TODO: TEST LOGGING, REMOVE
@@ -83,20 +80,21 @@ class MessageExchange(MessageExchangeService):
             # If a valid mapping was found, transmit the message.
             if msg_map is not None:
 
-                # Get the topic and message length.
+                # Get the message length and call the protocol send function.
                 print("[MsgEx] Found message map: {}".format(msg_map))
-                topic = msg_map[MessageExchange.MSG_MAP_URL]
                 msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
-                print("[MsgEx] Publishing message on topic {}".format(topic))
-                self.MqttClient.publish(topic, msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len])
+                                print("[MsgEx] Publishing message on topic {}".format(topic))
+
+                self.Protocol.Send(msg_map, msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len], msg_len)
+
             else:
-                print("[MsgEx] Warning: No topic defined for message type %d.%d" %
+                print("[MsgEx] Warning: No map defined for message type %d.%d" %
                       (msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
                        msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE]))
         while True:
-            # Check for any received MQTT messages. The 'message received'-callback is called if a message
+            # Check for any received messages. The 'message received'-callback is called if a message
             # was received.
-            self.MqttClient.check_msg()
+            self.Protocol.Receive()
             if self.NewMessage is False:
                 break
             self.NewMessage = False
@@ -126,11 +124,8 @@ class MessageExchange(MessageExchangeService):
     def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
         # Get the current date-time.
         print("[MsgEx] Serializing message: {}".format(msg_data_dict))
-        print("[MsgEx] Time instance: {}".format(self.Time))
-        dt = self.Time.DateTime()
-        print("[MsgEx] Got date-time: {}".format(dt))
         # Serialize the message.
-        Message.Serialize(self.Time.DateTime(), msg_data_dict, msg_type, msg_subtype)
+        Message.Serialize(msg_data_dict, msg_type, msg_subtype)
         print("[MsgEx] Serialized length: {}".format(len(Message.Stream().getvalue())))
 
         # Put the message in the send buffer, return the result value.
@@ -168,81 +163,52 @@ class MessageExchange(MessageExchangeService):
                 return msg_map
         return None
 
-    def MessageMapFromUrl(self, url):
+    def MessageMapFromRoute(self, route:
         for msg_map in self.MessageMappings:
-            if msg_map[MessageExchange.MSG_MAP_URL] == url:
+            if msg_map[MessageExchange.MSG_MAP_ROUTING] == route:
                 return msg_map
         return None
 
 # #### Private methods ####
 
     @staticmethod
-    def _MqttMsgRecvCallback(topic, msg):
-        topic = topic.decode('utf-8')
+    def _MsgRecvCallback(route, msg):
+        route = route.decode('utf-8')
         data_ex = MessageExchange.InstanceGet()
         data_ex.NewMessage = True
 
-        print("[MsgEx] Message received on topic %s" % topic)
-        # Get the message mapping from the topic
-        msg_map = data_ex.MessageMapFromUrl(topic)
+        print("[MsgEx] Message received with route %s" % route)
+        # Get the message mapping from the route
+        msg_map = data_ex.MessageMapFromRoute(route)
         if msg_map is not None:
             # Put the message string in the corresponding receive buffer.
             msg_buf = msg_map[MessageExchange.MSG_MAP_RECV_BUFFER]
             if msg_buf is not None:
                 msg_buf.MessagePut(msg)
         else:
-            print("[MsgEx] Warning: No message mapping defined for topic %s" % topic)
+            print("[MsgEx] Warning: No message mapping defined for route %s" % route)
 
-    def _MqttSetup(self):
-        print("[MsgEx] Connecting to broker.")
+    def _ProtocolSetup(self):
+        print("[MsgEx] Connecting to server.")
         connected = False
         retries = 0
-        # Try to connect to the MQTT broker, if it fails retry after the specified
-        # interval an exception is raised.
-        while connected is False and retries < self.MqttRetries:
+
+        self.Protocol.Setup(self._MsgRecvCallback)
+
+        # Try to connect to the server, if it fails retry after the specified
+        # amount of retries an exception is raised.
+        while connected is False and retries < self.SendRetries:
             try:
-                self.MqttClient.connect()
+                self.Protocol.Connect()
                 connected = True
                 print("[MsgEx] Connected.")
             except OSError:
                 retries = retries + 1
-                print("[MsgEx] Failed to connect to broker. Retries left %d"
-                      % (self.MqttRetries - retries))
+                print("[MsgEx] Failed to connect to server. Retries left %d"
+                      % (self.SendRetries - retries))
                 utime.sleep(MessageExchange.CONNECT_RETRY_INTERVAL_SEC)
                 continue
 
         if connected is False:
             # TODO: Raise ServiceException
             return
-
-        # Set the MQTT message receive callback which is called when a message is received
-        # on a topic.
-        self.MqttClient.set_callback(MessageExchange._MqttMsgRecvCallback)
-
-        # Subscribe to all receive topics.
-        self._SubscribeReceiveTopics()  # TODO: Also to this in SvcRun. Must be done periodically.
-
-    def _SubscribeReceiveTopics(self):
-        # TODO: Check what happens if subscribed twice, possible to check if already subscribed?
-        # Iterate through the available message mappings.
-        for msg_map in self.MessageMappings:
-            print("[MsgEx] Found message map: {}".format(msg_map))
-            # If the message mapping contains a receive buffer the message can be
-            # received and must be subscribed to.
-            if msg_map[MessageExchange.MSG_MAP_RECV_BUFFER] is not None:
-                print("[MsgEx] Subscribing to topic {}".format(msg_map[MessageExchange.MSG_MAP_URL]))
-                # Subscribe to the message topic.
-                self.MqttClient.subscribe(msg_map[MessageExchange.MSG_MAP_URL])
-
-
-class Endpoint(object):
-
-    def __init__(self):
-        self.MsgEx = MessageExchange.InstanceGet()
-
-    def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
-        return self.MsgEx.MessagePut(msg_data_dict, msg_type, msg_subtype)
-
-    def MessageGet(self, msg_type, msg_subtype):
-        return self.MsgEx.MessageGet(msg_type, msg_subtype)
-
