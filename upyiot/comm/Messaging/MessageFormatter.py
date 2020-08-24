@@ -1,4 +1,5 @@
 from micropython import const
+from upyiot.comm.Messaging.MessageExchange import MessageExchange
 from upyiot.middleware.SubjectObserver.SubjectObserver import Observer
 
 
@@ -42,11 +43,11 @@ class MessagePartStream(MessagePartSource):
         self.MessagePart(data)
 
 
-class MessageFormatAdapter:
+class MessageFormatter:
     SEND_ON_CHANGE      = const(0)
     SEND_ON_COMPLETE    = const(1)
 
-    def __init__(self, endpoint, mode, msg_spec_obj):
+    def __init__(self, mode, msg_spec_obj):
         self.MsgDef = msg_spec_obj.DataDef.copy()
         print("[MsgFmtAdapt] Definition: {}".format(self.MsgDef))
         self.Mode = mode
@@ -54,7 +55,7 @@ class MessageFormatAdapter:
         self.MsgType = msg_spec_obj.Type
         self.MsgSubtype = msg_spec_obj.Subtype
         self.PartCount = 0
-        self.Endpoint = endpoint
+        self.MsgEx = MessageExchange.InstanceGet()
 
     def CreateObserver(self, key, count=1):
         if key not in self.MsgDef:
@@ -92,11 +93,11 @@ class MessageFormatAdapter:
     def _MessageHandover(self):
         # If all parts of the message have been updated, or
         # the message must be sent on any change,
-        # hand over the message to the Messaging Endpoint.
+        # hand over the message to the Messaging Exchange class.
         if self.PartCount is len(self.MsgDef) or \
                 self.Mode is MessageFormatAdapter.SEND_ON_CHANGE:
-            print("[MsgFmtAdapt] Handover to endpoint: {}".format(self.MsgDef))
-            res = self.Endpoint.MessagePut(self.MsgDef, self.MsgType,
+            print("[MsgAsm] Handover to MsgEx: {}".format(self.MsgDef))
+            res = self.MsgEx.MessagePut(self.MsgDef, self.MsgType,
                                            self.MsgSubtype)
 
             if res is -1:
