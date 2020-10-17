@@ -2,6 +2,7 @@ from micropython import const
 
 from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
 from upyiot.comm.Messaging.Message import Message
+from upyiot.comm.Messaging.MessageTemplate import MessageTemplate
 from upyiot.comm.Messaging.MessageBuffer import MessageBuffer
 from upyiot.system.Service.Service import Service
 from upyiot.system.Service.Service import ServiceException
@@ -33,13 +34,12 @@ class MessageExchange(MessageExchangeService):
 
     _Instance = None
 
-    def __init__(self, directory, proto_obj, client_id, send_retries):
+    def __init__(self, directory, proto_obj, send_retries):
         # Initialize the MessageExchangeService class.
         super().__init__()
 
         # Configure the MessageBuffer and Message classes.
-        MessageBuffer.Configure(directory, Message.MSG_SIZE_MAX)
-        Message.DeviceId(client_id)
+        MessageBuffer.Configure(directory, MessageTemplate.MSG_SIZE_MAX)
 
         # Create a generic send buffer for all outgoing messages.
         self.SendMessageBuffer = MessageBuffer('send', -1, -1,
@@ -69,7 +69,7 @@ class MessageExchange(MessageExchangeService):
         msg_count = self.SendMessageBuffer.MessageCount()
         print("[MsgEx] Messages in send-buffer: {}".format(msg_count))
 
-        # Iterator through all queued messages once.
+        # Iterate through all queued messages once.
         for i in range(0, msg_count):
 
             # Get the message tuple, and extract the mapping.
@@ -83,14 +83,16 @@ class MessageExchange(MessageExchangeService):
                 # Get the message length and call the protocol send function.
                 print("[MsgEx] Found message map: {}".format(msg_map))
                 msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
-                                print("[MsgEx] Publishing message on topic {}".format(topic))
 
+                print("[MsgEx] Sending message of length {}".format(msg_len))
                 self.Protocol.Send(msg_map, msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len], msg_len)
 
             else:
                 print("[MsgEx] Warning: No map defined for message type %d.%d" %
                       (msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
                        msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE]))
+
+        print("[MsgEx] Checking for received messages.")
         while True:
             # Check for any received messages. The 'message received'-callback is called if a message
             # was received.
@@ -121,11 +123,11 @@ class MessageExchange(MessageExchangeService):
             if msg_buf is not None:
                 msg_buf.Delete()
 
-    def MessagePut(self, msg_data_dict, msg_type, msg_subtype):
+    def MessagePut(self, msg_data_dict, msg_type, msg_subtype, msg_meta_dict=None):
         # Get the current date-time.
         print("[MsgEx] Serializing message: {}".format(msg_data_dict))
         # Serialize the message.
-        Message.Serialize(msg_data_dict, msg_type, msg_subtype)
+        Message.Serialize(msg_data_dict, msg_meta_dict)
         print("[MsgEx] Serialized length: {}".format(len(Message.Stream().getvalue())))
 
         # Put the message in the send buffer, return the result value.
@@ -163,7 +165,7 @@ class MessageExchange(MessageExchangeService):
                 return msg_map
         return None
 
-    def MessageMapFromRoute(self, route:
+    def MessageMapFromRoute(self, route):
         for msg_map in self.MessageMappings:
             if msg_map[MessageExchange.MSG_MAP_ROUTING] == route:
                 return msg_map
@@ -193,7 +195,7 @@ class MessageExchange(MessageExchangeService):
         connected = False
         retries = 0
 
-        self.Protocol.Setup(self._MsgRecvCallback)
+        self.Protocol.Setup(MessageExchange._MsgRecvCallback, self.MessageMappings)
 
         # Try to connect to the server, if it fails retry after the specified
         # amount of retries an exception is raised.
