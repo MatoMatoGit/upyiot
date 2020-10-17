@@ -1,5 +1,4 @@
 from micropython import const
-from upyiot.comm.Messaging.MessageExchange import MessageExchange
 from upyiot.middleware.SubjectObserver.SubjectObserver import Observer
 
 
@@ -47,15 +46,19 @@ class MessageFormatter:
     SEND_ON_CHANGE      = const(0)
     SEND_ON_COMPLETE    = const(1)
 
-    def __init__(self, mode, msg_spec_obj):
+    def __init__(self, msg_ex_obj, mode, msg_spec_obj, msg_meta_dict=None):
         self.MsgDef = msg_spec_obj.DataDef.copy()
-        print("[MsgFmtAdapt] Definition: {}".format(self.MsgDef))
+        print("[MsgFmt] Definition: {}".format(self.MsgDef))
         self.Mode = mode
         self.Inputs = set()
         self.MsgType = msg_spec_obj.Type
         self.MsgSubtype = msg_spec_obj.Subtype
+        self.MsgMeta = msg_meta_dict
         self.PartCount = 0
-        self.MsgEx = MessageExchange.InstanceGet()
+        self.MsgEx = msg_ex_obj
+
+    def GetInputs(self):
+        return self.Inputs
 
     def CreateObserver(self, key, count=1):
         if key not in self.MsgDef:
@@ -72,13 +75,18 @@ class MessageFormatter:
         return stream
 
     def MessagePartAdd(self, key, value):
+        print("[MsgFmt] Adding part: {}:{}".format(key, value))
         if type(self.MsgDef[key]) is list:
-            self.MsgDef[key].clear()
-            self.MsgDef[key].append(value)
+            if type(value) is list:
+                self.MsgDef[key] = value
+            else:
+                self.MsgDef[key].clear()
+                self.MsgDef[key].append(value)
         else:
             self.MsgDef[key] = value
 
     def MessagePartAppend(self, key, value):
+        print("[MsgFmt] Appending part: {}:{}".format(key, value))
         # If the message value is a string, append it.
         if type(value) is str:
             self.MsgDef[key] += value
@@ -95,11 +103,11 @@ class MessageFormatter:
         # the message must be sent on any change,
         # hand over the message to the Messaging Exchange class.
         if self.PartCount is len(self.MsgDef) or \
-                self.Mode is MessageFormatAdapter.SEND_ON_CHANGE:
-            print("[MsgAsm] Handover to MsgEx: {}".format(self.MsgDef))
+                self.Mode is MessageFormatter.SEND_ON_CHANGE:
+            print("[MsgFmt] Handover to MsgEx: {}".format(self.MsgDef))
             res = self.MsgEx.MessagePut(self.MsgDef, self.MsgType,
-                                           self.MsgSubtype)
+                                           self.MsgSubtype, self.MsgMeta)
 
             if res is -1:
-                print("[MsgFmtAdapt] Error: message handover failed.")
+                print("[MsgFmt] Error: message handover failed.")
             self.PartCount = 0
