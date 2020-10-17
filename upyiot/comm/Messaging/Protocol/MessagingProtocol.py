@@ -7,7 +7,7 @@ class MessagingProtocol:
         self.Client = client
         return
 
-    def Setup(self, recv_callback, msg_mappings)
+    def Setup(self, recv_callback, msg_mappings):
         self.RecvCallback = recv_callback
         self.MessageMappings = msg_mappings
         return
