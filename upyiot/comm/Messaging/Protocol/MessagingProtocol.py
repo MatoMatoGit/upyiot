@@ -5,6 +5,7 @@ class MessagingProtocol:
     def __init__(self, client):
         self.RecvCallback = None
         self.Client = client
+        self.MessageMappings = None
         return
 
     def Setup(self, recv_callback, msg_mappings):
