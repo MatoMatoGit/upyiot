@@ -25,20 +25,20 @@ class SystemTimeService(Service):
 
 
 class SystemTime(SystemTimeService):
-    
+
     # (date(2000, 1, 1) - date(1900, 1, 1)).days * 24*60*60
     NTP_DELTA       = 2208988800
     NTP_FMT         = "!I"
     NTP_HOST        = "pool.ntp.org"
     NTP_BUF_SIZE    = const(48)
-    
+
     RTC_DATETIME_YEAR   = const(0)
     RTC_DATETIME_MONTH  = const(1)
     RTC_DATETIME_DAY    = const(2)
     RTC_DATETIME_HOUR   = const(4)
     RTC_DATETIME_MINUTE = const(5)
     RTC_DATETIME_SECOND = const(6)
-       
+
     _Instance = None
     _Rtc = None
 
@@ -76,6 +76,10 @@ class SystemTime(SystemTimeService):
         datetime = SystemTime._Rtc.datetime()
         return datetime
 
+    def Epoch(self):
+        epoch = utime.time()
+        return int(epoch)
+
     def DateTime(self):
         datetime = SystemTime._Rtc.datetime()
         # Format the datetime tuple as such: YYYY-MM-DDThh:mm:ss
@@ -104,6 +108,5 @@ class SystemTime(SystemTimeService):
         if val > 0:
             return val - SystemTime.NTP_DELTA
         return -1
-
 
 
