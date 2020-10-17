@@ -9,7 +9,7 @@ class ExampleMessage(MessageSpecification):
     URL         = "<pn>/<id>/example"
     DATA_KEY_ARRAY  = "arr"
     DATA_KEY_N      = "n"
-    DATA_DEF    = {DATA_KEY_ARRAY: "", DATA_KEY_N: 0}
+    DATA_DEF    = {DATA_KEY_ARRAY: [], DATA_KEY_N: 0}
     DIRECTION   = MessageSpecification.MSG_DIRECTION_BOTH
 
     def __init__(self):
@@ -18,4 +18,3 @@ class ExampleMessage(MessageSpecification):
                          ExampleMessage.DATA_DEF,
                          ExampleMessage.URL,
                          ExampleMessage.DIRECTION)
-
