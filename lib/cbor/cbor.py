@@ -1,7 +1,6 @@
 #!python
 # -*- Python -*-
 
-#import math
 import math
 import utime
 import ure
