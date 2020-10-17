@@ -4,11 +4,11 @@ import cbor
 
 class CborParser(MessageParser):
 
-    def __init__():
+    def __init__(self):
         return
 
-    def Loads(string_obj):
+    def Loads(self, string_obj):
         return cbor.loads(string_obj)
 
-    def Dumps(dict_obj, stream_buf):
+    def Dumps(self, dict_obj, stream_buf):
         cbor.dump(dict_obj, stream_buf)
