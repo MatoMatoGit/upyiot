@@ -1,7 +1,7 @@
 [![Documentation Status](https://readthedocs.org/projects/upyiot/badge/?version=latest)](https://upyiot.readthedocs.io/en/latest/?badge=latest)
 
 # upyiot
-Micropython IoT SDK
+Micropython IoT framework
 
 This repository provides a set of packages and tools to ease development of IoT devices running Micropython.
 
