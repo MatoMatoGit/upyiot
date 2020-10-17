@@ -8,12 +8,14 @@ from stubs.MqttClientStub import MQTTClient
 
 # Unit Under Test
 from upyiot.comm.Messaging.MessageExchange import MessageExchange
-from upyiot.comm.Messaging.MessageExchange import Endpoint
 from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
 
 # Other
 from upyiot.comm.Messaging.Message import Message
+from upyiot.comm.Messaging.MessageTemplate import *
+from upyiot.comm.Messaging.Parser.JsonParser import JsonParser
 from upyiot.comm.Messaging.MessageBuffer import MessageBuffer
+from upyiot.comm.Messaging.Protocol.MqttProtocol import MqttProtocol
 from upyiot.system.SystemTime.SystemTime import SystemTime
 from upyiot.system.Service.Service import Service
 
@@ -23,6 +25,13 @@ class test_MessageExchange(unittest.TestCase):
     DIR = "./"
     ID = "32"
     RETRIES = 3
+    MSG_SECTION_META = "meta"
+    MSG_SECTION_DATA = "data"
+    MSG_META_DATETIME = "dt"
+    MSG_META_VERSION = "ver"
+    MSG_META_TYPE = "type"
+    MSG_META_SUBTYPE = "stype"
+    MSG_META_ID = "id"
 
     MqttClient = None
     MsgEx = None
@@ -31,15 +40,28 @@ class test_MessageExchange(unittest.TestCase):
     RecvMsg = None
     RecvMsgCount = 0
 
+    Metadata = {
+        MSG_META_DATETIME:  "07-09-2020T20:00:00",
+        MSG_META_VERSION:   1,
+        MSG_META_TYPE:      1,
+        MSG_META_SUBTYPE:   1,
+        MSG_META_ID:        123,
+    }
+
     Time.SvcRun()
 
     def setUp(arg):
+        MessageTemplate.SectionsSet(test_MessageExchange.MSG_SECTION_META, test_MessageExchange.MSG_SECTION_DATA)
+        MessageTemplate.MetadataTemplateSet(test_MessageExchange.Metadata)
+        Message.SetParser(JsonParser())
+
         test_MessageExchange.RecvMsgCount = 0
         test_MessageExchange.RecvTopic = None
         test_MessageExchange.RecvMsg = None
         test_MessageExchange.MqttClient = MQTTClient()
-        test_MessageExchange.MsgEx = MessageExchange(test_MessageExchange.DIR, test_MessageExchange.MqttClient,
-                                                     test_MessageExchange.ID, test_MessageExchange.RETRIES)
+        test_MessageExchange.MsgEx = MessageExchange(test_MessageExchange.DIR,
+                                                     MqttProtocol(test_MessageExchange.MqttClient),
+                                                     test_MessageExchange.RETRIES)
 
     def tearDown(arg):
         test_MessageExchange.MsgEx.Reset()
@@ -47,7 +69,6 @@ class test_MessageExchange(unittest.TestCase):
 
     def test_Constructor(self):
         self.assertIsNotNone(self.MsgEx.SendMessageBuffer)
-        self.assertEqual(Message.DeviceId(), test_MessageExchange.ID)
         self.assertTrue(self.MsgEx.SendMessageBuffer.IsConfigured())
         self.assertIsInstance(self.MsgEx, Service)
 
@@ -71,7 +92,7 @@ class test_MessageExchange(unittest.TestCase):
         print(msg_map)
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_TYPE], msg_type)
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_SUBTYPE], msg_subtype)
-        self.assertEqual(msg_map[MessageExchange.MSG_MAP_URL], msg_url)
+        self.assertEqual(msg_map[MessageExchange.MSG_MAP_ROUTING], msg_url)
         self.assertIsNone(msg_map[MessageExchange.MSG_MAP_RECV_BUFFER])
 
     def test_RegisterMessageTypeDirectionReceive(self):
@@ -88,7 +109,7 @@ class test_MessageExchange(unittest.TestCase):
 
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_TYPE], msg_type)
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_SUBTYPE], msg_subtype)
-        self.assertEqual(msg_map[MessageExchange.MSG_MAP_URL], msg_url)
+        self.assertEqual(msg_map[MessageExchange.MSG_MAP_ROUTING], msg_url)
         self.assertIsNotNone(msg_map[MessageExchange.MSG_MAP_RECV_BUFFER])
         self.assertIsInstance(msg_map[MessageExchange.MSG_MAP_RECV_BUFFER], MessageBuffer)
 
@@ -106,7 +127,7 @@ class test_MessageExchange(unittest.TestCase):
 
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_TYPE], msg_type)
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_SUBTYPE], msg_subtype)
-        self.assertEqual(msg_map[MessageExchange.MSG_MAP_URL], msg_url)
+        self.assertEqual(msg_map[MessageExchange.MSG_MAP_ROUTING], msg_url)
         self.assertIsNotNone(msg_map[MessageExchange.MSG_MAP_RECV_BUFFER])
         self.assertIsInstance(msg_map[MessageExchange.MSG_MAP_RECV_BUFFER], MessageBuffer)
 
@@ -124,7 +145,7 @@ class test_MessageExchange(unittest.TestCase):
 
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_TYPE], msg_type)
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_SUBTYPE], msg_subtype)
-        self.assertEqual(msg_map[MessageExchange.MSG_MAP_URL], msg_url)
+        self.assertEqual(msg_map[MessageExchange.MSG_MAP_ROUTING], msg_url)
 
     def test_MessageMapFromTypeEntryNotPresent(self):
         msg_type = 3
@@ -144,16 +165,16 @@ class test_MessageExchange(unittest.TestCase):
         msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
 
         self.MsgEx.RegisterMessageType(msg_spec)
-        msg_map = self.MsgEx.MessageMapFromUrl(msg_url)
+        msg_map = self.MsgEx.MessageMapFromRoute(msg_url)
 
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_TYPE], msg_type)
         self.assertEqual(msg_map[MessageExchange.MSG_MAP_SUBTYPE], msg_subtype)
-        self.assertEqual(msg_map[MessageExchange.MSG_MAP_URL], msg_url)
+        self.assertEqual(msg_map[MessageExchange.MSG_MAP_ROUTING], msg_url)
 
     def test_MessageMapFromUrlEntryNotPresent(self):
         msg_url = "/sensor/temp"
 
-        msg_map = self.MsgEx.MessageMapFromUrl(msg_url)
+        msg_map = self.MsgEx.MessageMapFromRoute(msg_url)
 
         self.assertIsNone(msg_map)
 
@@ -175,7 +196,7 @@ class test_MessageExchange(unittest.TestCase):
         self.assertEqual(msg_tuple[MessageBuffer.MSG_STRUCT_TYPE], msg_type)
         self.assertEqual(msg_tuple[MessageBuffer.MSG_STRUCT_SUBTYPE], msg_subtype)
         self.assertEqual(Message.Deserialize(
-            msg_tuple[MessageBuffer.MSG_STRUCT_DATA])[Message.MSG_SECTION_DATA], msg)
+            msg_tuple[MessageBuffer.MSG_STRUCT_DATA])[MessageTemplate.MSG_SECTION_DATA], msg)
 
     def test_MessageGetSuccessful(self):
         msg_type = 3
@@ -191,12 +212,12 @@ class test_MessageExchange(unittest.TestCase):
         msg_map = self.MsgEx.MessageMapFromType(msg_type, msg_subtype)
         buf = msg_map[MessageExchange.MSG_MAP_RECV_BUFFER]
 
-        Message.Serialize("2019-09-04T23:34:44", msg, msg_type, msg_subtype)
+        Message.Serialize(msg)
         buf.MessagePut(Message.Stream().getvalue().decode('utf-8'))
         recv_msg = self.MsgEx.MessageGet(msg_type, msg_subtype)
         print(recv_msg)
         print(type(recv_msg))
-        self.assertEqual(recv_msg[Message.MSG_SECTION_DATA], msg)
+        self.assertEqual(recv_msg[MessageTemplate.MSG_SECTION_DATA], msg)
 
     def test_MessageGetNoMessageReceived(self):
         msg_type = 3
@@ -262,24 +283,9 @@ class test_MessageExchange(unittest.TestCase):
         callback_set = self.MqttClient.has_callback()
 
         self.assertFalse(connected)
-        self.assertFalse(callback_set)
+        self.assertTrue(callback_set)
 
-    def test_ServiceInitSubscribe(self):
-        msg_type = 3
-        msg_subtype = 3
-        msg_url = "/sensor/temp"
-        msg_data = {}
-        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
-
-        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
-
-        self.MsgEx.RegisterMessageType(msg_spec)
-        self.MsgEx.SvcInit()
-        subscription = self.MqttClient.has_subscription(msg_url)
-
-        self.assertTrue(subscription)
-
-    def test_ServicePublishMessage(self):
+    def test_ServiceSendMessage(self):
         msg_type = 3
         msg_subtype = 3
         msg_url = "/sensor/temp"
@@ -301,15 +307,15 @@ class test_MessageExchange(unittest.TestCase):
         self.MsgEx.RegisterMessageType(msg_spec)
         self.MsgEx.MessagePut(msg, msg_type, msg_subtype)
 
-        # Run the Service again to publish the message
+        # Run the Service again to send the message
         self.MsgEx.SvcRun()
 
         recv_msg = Message.Deserialize(self.RecvMsg)
         self.assertEqual(self.RecvMsgCount, 1)
         print(recv_msg)
-        self.assertEqual(recv_msg[Message.MSG_SECTION_DATA], msg)
+        self.assertEqual(recv_msg[MessageTemplate.MSG_SECTION_DATA], msg)
 
-    def test_ServicePublishAndReceiveRoundTrip(self):
+    def test_ServiceSendAndReceiveRoundTrip(self):
         msg_type = 3
         msg_subtype = 3
         msg_url = "/sensor/temp"
@@ -325,72 +331,9 @@ class test_MessageExchange(unittest.TestCase):
         self.MsgEx.RegisterMessageType(msg_spec)
         self.MsgEx.MessagePut(msg, msg_type, msg_subtype)
 
-        # Run the Service again to publish and check for received messages.
+        # Run the Service again to send and check for received messages.
         self.MsgEx.SvcRun()
 
         recv_msg = self.MsgEx.MessageGet(msg_type, msg_subtype)
         print(recv_msg)
-        self.assertEqual(recv_msg[Message.MSG_SECTION_DATA], msg)
-
-
-class test_Endpoint(unittest.TestCase):
-
-    DIR = "./"
-    ID = "32"
-    RETRIES = 3
-
-    MqttClient = None
-    MsgEx = None
-    Ep = None
-
-    def setUp(arg):
-        test_Endpoint.MqttClient = MQTTClient()
-        test_Endpoint.MsgEx = MessageExchange(test_Endpoint.DIR, test_Endpoint.MqttClient,
-                                              test_Endpoint.ID, test_Endpoint.RETRIES)
-        test_Endpoint.Ep = Endpoint()
-
-    def tearDown(arg):
-        test_Endpoint.MsgEx.Reset()
-        return
-
-    def test_Constructor(self):
-        self.assertEqual(self.Ep.MsgEx, self.MsgEx)
-
-    def test_MultipleInstances(self):
-        ep = Endpoint()
-        self.assertEqual(self.Ep.MsgEx, self.MsgEx)
-        self.assertEqual(ep.MsgEx, self.MsgEx)
-
-    def test_MessagePut(self):
-        msg_type = 3
-        msg_subtype = 3
-        msg_url = "/sensor/temp"
-        msg = {"test": "msg"}
-        msg_data = {}
-        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
-
-        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
-
-        self.MsgEx.RegisterMessageType(msg_spec)
-        res = self.Ep.MessagePut(msg, msg_type, msg_subtype)
-
-        self.assertEqual(res, 1)
-
-    def test_MessageGet(self):
-        msg_type = 3
-        msg_subtype = 3
-        msg_url = "/sensor/temp"
-        msg = {"test": "msg"}
-        msg_data ={}
-        msg_dir = MessageSpecification.MSG_DIRECTION_BOTH
-
-        msg_spec = MessageSpecification(msg_type, msg_subtype, msg_data, msg_url, msg_dir)
-
-        self.MsgEx.RegisterMessageType(msg_spec)
-        msg_map = self.MsgEx.MessageMapFromType(msg_type, msg_subtype)
-        buf = msg_map[MessageExchange.MSG_MAP_RECV_BUFFER]
-
-        Message.Serialize("2019-09-04T23:34:44", msg, msg_type, msg_subtype)
-        buf.MessagePut(Message.Stream().getvalue().decode('utf-8'))
-        recv_msg = self.Ep.MessageGet(msg_type, msg_subtype)
-        self.assertEqual(recv_msg[Message.MSG_SECTION_DATA], msg)
+        self.assertEqual(recv_msg[MessageTemplate.MSG_SECTION_DATA], msg)
