@@ -1,51 +1,40 @@
 from micropython import const
 
 
-# JSON representation
-MSG_SECTION_META = "meta"
-MSG_SECTION_DATA = "data"
-MSG_META_DATETIME = "dt"
-MSG_META_VERSION = "ver"
-MSG_META_TYPE = "type"
-MSG_META_SUBTYPE = "stype"
-MSG_META_ID = "id"
-
-# CBOR representation
-MSG_SECTION_META = const(0)
-MSG_SECTION_DATA = const(1)
-MSG_META_DATETIME = const(10)
-MSG_META_VERSION = const(11)
-MSG_META_TYPE = const(12)
-MSG_META_SUBTYPE = const(13)
-MSG_META_ID = const(14)
-
-TimeInstance = None
-
-Metadata = {
-            MSG_META_DATETIME: TimeInstance.Epoch(),
-            MSG_META_VERSION:   1,
-            MSG_META_TYPE:      1,
-            MSG_META_SUBTYPE:   1,
-            MSG_META_ID:        0,
-        }
-
 class MessageTemplate:
+
+    # JSON representation
+    MSG_SECTION_META = ""
+    MSG_SECTION_DATA = ""
+    Metadata = None
+    MetadataFunctions = None
 
     MSG_SIZE_MAX = const(300)
 
-    Msg = dict()
+    @staticmethod
+    def SectionsSet(meta_section_key, data_section_key):
+        MessageTemplate.MSG_SECTION_META = meta_section_key
+        MessageTemplate.MSG_SECTION_DATA = data_section_key
+        print("[MsgTemp] Section keys: {}".format((MessageTemplate.MSG_SECTION_META,
+            MessageTemplate.MSG_SECTION_DATA)))
+
 
     @staticmethod
-    def SetMetadataTemplate(metadata_dict):
-        global Metadata
-
-        Metadata = metadata_dict
+    def MetadataTemplateSet(metadata_dict, metadata_funcs=None):
+        MessageTemplate.Metadata = metadata_dict
+        MessageTemplate.MetadataFunctions = metadata_funcs
+        print("[MsgTemp] Metadata set: {}".format(MessageTemplate.Metadata))
 
     def __init__(self):
+        if self.MetadataFunctions is not None:
+            for key in self.MetadataFunctions.keys():
+                if key in self.Metadata.keys():
+                    self.Metadata[key] = self.MetadataFunctions[key]()
 
         self.Msg = {
-            MSG_SECTION_META: MessageTemplate.Metadata,
-            MSG_SECTION_DATA: {
+            self.MSG_SECTION_META: self.Metadata,
+            self.MSG_SECTION_DATA: {
                 # Data section is added duration serialization.
-            }
+            },
         }
+        print("[MsgTemp]: {}".format(self.Msg))
