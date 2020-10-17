@@ -8,21 +8,22 @@ class LoraProtocol(MessagingProtocol):
     def __init__(self, lora_client):
         super().__init__(lora_client)
         LoraProtocol._Instance = self
+        self.FrameCounter = 0
         return
 
     def Setup(self, recv_callback, msg_mappings):
         MessagingProtocol.Setup(self, recv_callback, msg_mappings)
-        # Set the MQTT message receive callback which is called when a message is received
-        # on a topic.
-        #self.Client.set_callback(MqttProtocol._ReceiveCallback)
+        self.Client.on_receive(LoraProtocol._ReceiveCallback)
         return
 
     def Send(self, msg_map, payload, size):
-        self.Client.send_packet(payload)
+        self.Client.send_data(data=payload, data_length=size,
+                              frame_counter=self.FrameCounter)
+        self.FrameCounter += 1
         return
 
     def Receive(self):
-        self.Client.receive_packet()
+        self.Client.receive()
         return
 
     def Connect(self):
@@ -31,3 +32,10 @@ class LoraProtocol(MessagingProtocol):
     def Disconnect(self):
         self.Client.disconnect()
         return
+
+    @staticmethod
+    def _ReceiveCallback(lora, outgoing):
+        payload = lora.read_payload()
+        print("Received: {}".format(payload))
+        LoraProtocol._Instance.RecvCallback("none", payload)
+
