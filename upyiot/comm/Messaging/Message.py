@@ -1,5 +1,5 @@
 from micropython import const
-from upyiot.comm.Messaging.MessageTemplate import *
+from upyiot.comm.Messaging.MessageTemplate import MessageTemplate
 import uio
 
 
@@ -11,13 +11,8 @@ class Message:
 
     @staticmethod
     def SetParser(parser_obj):
-        _Parser = parser_obj
-
-    @staticmethod
-    def DeviceId(device_id=None):
-        if device_id is None:
-            return Message.Msg[Message.MSG_SECTION_META][Message.MSG_META_ID]
-        Message.Msg[Message.MSG_SECTION_META][Message.MSG_META_ID] = device_id
+        Message._Parser = parser_obj
+        print("[Msg] Parser set: {}".format(Message._Parser))
 
     @staticmethod
     def Message():
@@ -28,22 +23,31 @@ class Message:
         return Message._StreamBuffer
 
     @staticmethod
-    def Serialize(msg_data_dict, msg_type, msg_subtype):
-        Msg = MessageTemplate.MessageTemplate()
-        print("[Msg] Serializing message with metadata: {} | data: {}".format(Message.Msg[MSG_SECTION_META], msg_data_dict, msg_type, msg_subtype))
+    def Serialize(data_dict, meta_dict=None):
+        # Create a message from the template.
+        Message.Msg = MessageTemplate()
+        Message.Msg = Message.Msg.Msg
+        print("[Msg] Serializing message with metadata: {} | data: {}"
+            .format(meta_dict, data_dict))
+        # Close the previous stream if there is one.
         if Message._StreamBuffer is not None:
             Message._StreamBuffer.close()
-        Message._StreamBuffer = uio.BytesIO(Message.MSG_SIZE_MAX)
-        Message.Msg[Message.MSG_SECTION_META][Message.MSG_META_TYPE] = msg_type
-        Message.Msg[Message.MSG_SECTION_META][Message.MSG_META_SUBTYPE] = msg_subtype
-        Message.Msg[Message.MSG_SECTION_DATA] = msg_data_dict
-        _Parser.Dump(Message.Msg, Message._StreamBuffer)
+        Message._StreamBuffer = uio.BytesIO(MessageTemplate.MSG_SIZE_MAX)
+        # If metadata was given, check for matching keys and copy the values.
+        if meta_dict is not None:
+            for key in Message.Msg[MessageTemplate.MSG_SECTION_META].keys():
+                if key in meta_dict.keys():
+                    Message.Msg[MessageTemplate.MSG_SECTION_META][key] = meta_dict[key]
+        # Copy the data dictionary.
+        Message.Msg[MessageTemplate.MSG_SECTION_DATA] = data_dict
+        # Serialize the message using the parser.
+        Message._Parser.Dumps(Message.Msg, Message._StreamBuffer)
         return Message._StreamBuffer
 
     @staticmethod
     def Deserialize(msg_str):
         try:
-            Message.Msg = _Parser.Loads(msg_str)
+            Message.Msg = Message._Parser.Loads(msg_str)
         except ValueError:
             print("[Msg] Invalid format: {}".format(msg_str))
         return Message.Msg
