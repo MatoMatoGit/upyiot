@@ -1,11 +1,16 @@
 import machine
 
-_DeviceId = ""
+_DeviceId = None
 
 def DeviceIdSet(device_id):
     _DeviceId = device_id
 
-def DeviceId():
-    if _DeviceId is "":
+def DeviceIdString():
+    if _DeviceId is None:
         return str(ubinascii.hexlify(machine.unique_id()).decode('utf-8'))
+    return str(_DeviceId)
+
+def DeviceId():
+    if _DeviceId is None:
+        return machine.unique_id()
     return _DeviceId
