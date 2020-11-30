@@ -70,6 +70,9 @@ class Service:
     def SvcIntervalSet(self, interval):
         self.SvcInterval = interval
 
+    def SvcModeSet(self, mode):
+        self.SvcMode = mode
+
     def SvcIsInitialized(self):
         return self.SvcState is not Service.STATE_UNINITIALIZED
 
