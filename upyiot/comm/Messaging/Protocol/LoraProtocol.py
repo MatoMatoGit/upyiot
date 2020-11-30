@@ -27,11 +27,12 @@ class LoraProtocol(MessagingProtocol):
         return
 
     def Connect(self):
-        self.Client.connect()
+        #self.Client.connect()
+        pass
 
     def Disconnect(self):
-        self.Client.disconnect()
-        return
+        #self.Client.disconnect()
+        pass
 
     @staticmethod
     def _ReceiveCallback(lora, outgoing):
