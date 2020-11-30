@@ -43,11 +43,15 @@ class Logger:
 
     def log(self, level, msg, *args):
         if level >= (self.level or _level):
-            _stream.write("%s:%s:" % (self._level_str(level), self.name))
+            log_entry = "%s:%s:" % (self._level_str(level), self.name)
             if not args:
-                _stream.write(msg + '\n')
+                log_entry += msg
             else:
-                _stream.write(msg + '\n' % args)
+                log_entry += msg % args
+
+            print("%s" % log_entry)
+            log_entry += '\n'
+            _stream.write(log_entry)
 
     def debug(self, msg, *args):
         self.log(DEBUG, msg, *args)
@@ -82,18 +86,14 @@ class LoggerStream(object):
 # #### IO stream API ####
 
     def write(self, string):
-        print("[LoggerStream] Writing string: {}".format(string))
-
         if self.Stream is not None:
             self.Stream.write(string)
 
         if self.File is not None:
             try:
-                f = open(self.File, 'a')
-                f.write(string)
-                f.close()
+                self.File.write(string)
             except OSError:
-                print("[LoggerStream] Failed to write to file.")
+                print("[ExtLog] Failed to write to file.")
 
         return 1
 
@@ -114,19 +114,19 @@ _Stream = None
 _File = None
 
 
-def _FileCreate(file):
+def _FileCreate(file_path):
     try:
-        f = open(file, 'r')
-        f.close()
-        print("File already exists")
+        f = open(file_path, 'a')
+        print("[ExtLog] Log file '{}' exists".format(file_path))
+        return f
     except OSError:
         try:
-            f = open(file, 'w')
-            f.close()
-            print("File created")
+            f = open(file_path, 'w')
+            print("[ExtLog] Log file '{}' created".format(file_path))
+            return f
         except OSError:
-            print("Failed to create file")
-            raise
+            print("[ExtLog] Failed to create log file '{}'".format(file_path))
+    return None
 
 
 def _basicConfig(level=INFO, stream=None):
@@ -134,25 +134,28 @@ def _basicConfig(level=INFO, stream=None):
     _level = level
     if stream:
         _stream = stream
-    print("[Logger] Configured.")
+    print("[ExtLog] Configured.")
 
 
-def ConfigGlobal(level=INFO, stream=None, file=None):
+def ConfigGlobal(level=INFO, stream=None, file_path=None):
     global _Stream
     global _File
 
-    if file is not None:
-        _File = file
-        _FileCreate(file)
-    if stream is not None:
-        _Stream = LoggerStream(stream, file)
+    if file_path is not None:
+        _File = _FileCreate(file_path)
+    _Stream = LoggerStream(stream, _File)
     _basicConfig(level=level, stream=_Stream)
+
+
+def Stop():
+    global _File
+    _File.close()
 
 
 def LoggerGet(name):
     if name in _loggers:
         return _loggers[name]
-    print("[ExtLogging] Creating new ExtLogger for \"{}\"".format(name))
+    print("[ExtLog] Creating new ExtLogger for \"{}\"".format(name))
     logger = ExtLogger(name)
     _loggers[name] = logger
     return logger
@@ -163,7 +166,7 @@ def Clear():
         os.remove(_File)
         _FileCreate(_File)
     except OSError:
-        print("[ExtLogging]  Failed to clear log file")
+        print("[ExtLog] Failed to clear log file")
 
 
 def info(msg, *args):
