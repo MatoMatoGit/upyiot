@@ -1,6 +1,6 @@
 import utime
 from machine import SPI, Pin
-from encryption_aes import AES
+from upyiot.drivers.Modems.Sx127x.encryption_aes import AES
 import gc
 import urandom
 import ubinascii
