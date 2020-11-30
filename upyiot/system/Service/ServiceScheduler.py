@@ -3,10 +3,12 @@ from upyiot.system.Service.Service import ServiceExceptionSuspend
 from upyiot.system.Service.Service import ServiceException
 from upyiot.drivers.Sleep.DeepSleep import DeepSleep
 from upyiot.middleware.StructFile.StructFile import StructFile
+from upyiot.system.ExtLogging import ExtLogging
 
 import utime
 from micropython import const
 
+Log = ExtLogging.LoggerGet("Scheduler")
 
 class SchedulerException(Exception):
 
@@ -57,15 +59,15 @@ class SchedulerMemory:
         # Iterate through all registered services and store their data.
         i = 0
         for svc in self.Scheduler.Services:
-            print("[SchedulerMem] Writing data for service {}".format(svc.SvcName))
+            Log.debug("[Mem] Writing data for service {}".format(svc.SvcName))
             sto_name = svc.SvcName + ((self.SVC_NAME_LEN - len(svc.SvcName)) * "\0")
             self.Sfile.WriteData(i, sto_name, svc.SvcLastRun)
             i += 1
 
         self.NumEntries = len(self.Scheduler.Services)
-        print("[SchedulerMem] Total number of service entries: {}".format(self.NumEntries))
+        Log.info("[Mem] Saving total number of service entries: {}".format(self.NumEntries))
         # Store the scheduler data (in the StructFile meta).
-        print("[SchedulerMem] Writing scheduler data")
+        Log.debug("[Mem] Writing scheduler data")
         self.Sfile.WriteMeta(self.Scheduler.RunTimeSec, self.Scheduler.SleepTime,
                              self.NumEntries)
         return 0
@@ -80,7 +82,7 @@ class SchedulerMemory:
         else:
             return -1
 
-        print("[SchedulerMem] Read scheduler data. RunTime: {} | SleepTime: {} "
+        Log.info("[Mem] Read scheduler data. RunTime: {} | SleepTime: {} "
               "| NumServices: {}".format(self.Scheduler.RunTimeSec,
                                          self.Scheduler.SleepTime,
                                          self.NumEntries))
@@ -91,13 +93,13 @@ class SchedulerMemory:
         # the data if a matching service is found (by name).
         for svc_mem in self.Sfile:
             svc_name = svc_mem[self.SVC_MEM_NAME].decode("utf-8").split("\0")[0]
-            print("[SchedulerMem] Read data for service {}: {}".format(svc_name, svc_mem[self.SVC_MEM_LAST_RUN]))
+            Log.debug("[Mem] Read data for service {}: {}".format(svc_name, svc_mem[self.SVC_MEM_LAST_RUN]))
             idx = self.Sfile.IteratorIndex()
             if idx < len(self.Scheduler.Services):
                 # First service to check if the one at the same index as it was stored at.
                 # The chance is very high that the services were registered in the same order.
                 svc = self.Scheduler.Services[idx]
-                print("[SchedulerMem] Same-index service {}".format(svc.SvcName))
+                Log.debug("[Mem] Same-index service {}".format(svc.SvcName))
                 if svc.SvcName == svc_name:
                     self._LoadService(svc, svc_mem)
                     continue
@@ -113,7 +115,7 @@ class SchedulerMemory:
                 self._LoadService(svc, svc_mem)
                 continue
 
-        print("[SchedulerMem] Finished loading memory.")
+        Log.info("[Mem] Finished loading memory.")
         return 0
 
     def _LoadService(self, svc, svc_mem):
@@ -135,7 +137,7 @@ class SchedulerMemory:
         return -1
 
     def _SearchService(self, name):
-        print("[SchedulerMem] Searching service: {}".format(name))
+        Log.debug("[Mem] Searching service: {}".format(name))
         for svc in self.Scheduler.Services:
             if svc.SvcName == name:
                 return svc
@@ -151,7 +153,6 @@ class ServiceScheduler:
     SCHED_STATE_STOPPED = const(0)
     SCHED_STATE_IDLE    = const(1)
     SCHED_STATE_RUNNING = const(2)
-
 
     def __init__(self, deepsleep_threshold_sec=MIN_DEEPSLEEP_TIME, directory="./"):
         self.Services = list()
@@ -169,7 +170,7 @@ class ServiceScheduler:
 
     def ServiceRegister(self, service):
         self.Services.append(service)
-        print("[Scheduler] Registered service: {}".format(service.SvcName))
+        Log.debug("Registered service: {}".format(service.SvcName))
 
         return 0
 
@@ -179,7 +180,7 @@ class ServiceScheduler:
             if service.SvcIsInitialized() is True:
                 service.SvcDeinit()
                 service.SvcStateSet(Service.STATE_UNINITIALIZED)
-                print("[Scheduler] Deregistered service: {}".format(service.SvcName))
+                Log.debug("Deregistered service: {}".format(service.SvcName))
         except:
             service.SvcStateSet(Service.STATE_DISABLED)
             res = -1
@@ -195,15 +196,15 @@ class ServiceScheduler:
 
         self.Cycles = cycles
 
-        print("[Scheduler] ##### Run #####")
+        Log.info("##### Run #####")
         try:
             # Infinite loop
             while True:
-                print("\n[Scheduler] ##### Cycles left: {} #####\n".format(self.Cycles))
+                Log.info("\n##### Cycles left: {} #####\n".format(self.Cycles))
                 # Add the amount time spend sleeping or idling.
                 self._UpdateRuntime(self.SleepTime)
 
-                print("[Scheduler] Run time (s): {}".format(self.RunTimeSec))
+                Log.info("Run time (s): {}".format(self.RunTimeSec))
 
                 # Service run loop.
                 # Runs a service until none are ready or have been activated.
@@ -215,7 +216,7 @@ class ServiceScheduler:
                     svc_activated = False
 
                     if self.Index >= len(self.Services):
-                        print("[Scheduler] No services registered")
+                        Log.debug("No services registered")
                         t_ran_sec = self._CalculateRuntime(t_start)
                         self._UpdateRuntime(t_ran_sec)
                         # Decrease the amount of scheduler cycles left (if applicable).
@@ -224,12 +225,12 @@ class ServiceScheduler:
 
                     # Update all periodic services.
                     self.SleepTime = self._UpdatePeriodicServices()
-                    print("[Scheduler] Shortest sleep time: {}".format(self.SleepTime))
+                    Log.debug("Shortest sleep time: {}".format(self.SleepTime))
 
                     service = self.Services[self.Index]
 
                     if service.SvcStateGet() is not service.STATE_DISABLED:
-                        print("[Scheduler] Checking: {}".format(service.SvcName))
+                        Log.debug("Checking: {}".format(service.SvcName))
 
                         # If the service has been activated.
                         if service.SvcIsActive() is True:
@@ -254,16 +255,16 @@ class ServiceScheduler:
                                     # there is at least one service that has been activated.
                                     svc_activated = True
                                 else:
-                                    print("[Scheduler] Ready: {}".format(service.SvcName))
+                                    Log.debug("Ready: {}".format(service.SvcName))
                                     service.SvcStateSet(Service.STATE_READY)
 
                         # If the service is ready to run, run it.
                         if service.SvcIsReady() is True:
-                            print("[Scheduler] Running: {}".format(service.SvcName))
+                            Log.info("Running: {}".format(service.SvcName))
                             svc_activated = True
                             self._ServiceRun(service)
                     else:
-                        print("[Scheduler] Disabled: {}".format(service.SvcName))
+                        Log.info("Disabled: {}".format(service.SvcName))
 
                     t_ran_sec = self._CalculateRuntime(t_start)
                     self._UpdateRuntime(t_ran_sec)
@@ -271,22 +272,22 @@ class ServiceScheduler:
                     # Decrease the amount of scheduler cycles left (if applicable).
                     self._CyclesDec()
 
-                    print("[Scheduler] Selecting next service")
+                    Log.debug("Selecting next service")
                     # if self._IndexAdvance(svc_activated) is False:
                     #     print("[Scheduler] No more services to run")
                     #     break
                     self._IndexAdvance(svc_activated)
                     if self._CheckServiceActive() is False and svc_activated is False:
-                        print("[Scheduler] No more services to run")
+                        Log.debug("No more services to run")
                         break
 
-                    print("[Scheduler] Next index: {}".format(self.Index))
+                    Log.debug("Next index: {}".format(self.Index))
 
                 # The statements below run after the scheduler finishes checking
                 # the services that are ready / have been activated.
 
                 if self.SleepTimeRequested is not -1:
-                    print("[Scheduler] Initiating deep sleep for {} seconds".format(self.SleepTimeRequested))
+                    Log.info("Initiating requested deep sleep for {} seconds".format(self.SleepTimeRequested))
                     self._InitiateDeepSleep(self.SleepTimeRequested)
 
                 # If the sleep time is 0 there are no services sleeping.
@@ -302,7 +303,7 @@ class ServiceScheduler:
                 # If the shortest sleep time is shorter than the minimum
                 # deepsleep time, than idle instead.
                 elif self.SleepTime < self.DeepSleepThresholdSec:
-                    print("[Scheduler] Idling for {} seconds".format(self.SleepTime))
+                    Log.info("Idling for {} seconds".format(self.SleepTime))
                     # No services are ready at this moment.
                     utime.sleep(self.SleepTime)
                     self.State = self.SCHED_STATE_IDLE
@@ -310,12 +311,12 @@ class ServiceScheduler:
                 # If the shortest sleep time is sufficient for a deepsleep,
                 # initiate it.
                 else:
-                    print("[Scheduler] Initiating deep sleep for {} seconds".format(self.SleepTime))
+                    Log.info("Initiating deep sleep for {} seconds".format(self.SleepTime))
                     self._InitiateDeepSleep(self.SleepTime)
 
         except SchedulerExceptionStopped:
             self.State = self.SCHED_STATE_STOPPED
-            print("[Scheduler] Stopped.")
+            Log.info("Stopped.")
 
     def RequestDeepSleep(self, t_sec):
         if self.State is self.SCHED_STATE_STOPPED:
@@ -330,12 +331,12 @@ class ServiceScheduler:
         t_ran = utime.ticks_diff(t_end, t_start)
         t_ran_sec = int(round((t_ran / 1000)))
 
-        print("[Scheduler] t start: {}  |"
-              "t_end: {} | t_ran (ms): {} | "
-              "t ran (s): {}".format(t_start,
-                                     t_end,
-                                     t_ran,
-                                     t_ran_sec))
+        Log.debug("t start: {}  | "
+                  "t_end: {} | t_ran (ms): {} | "
+                  "t ran (s): {}".format(t_start,
+                                         t_end,
+                                         t_ran,
+                                         t_ran_sec))
 
         return t_ran_sec
 
@@ -349,7 +350,7 @@ class ServiceScheduler:
         # Deep sleep, this function call does not return (if successful).
         self.DeepSleep.DeepSleep(t_sec * 1000)
         # Raise an exception to stop the scheduler if deep sleep fails.
-        print("[Scheduler] Error: Deep sleep failed.")
+        Log.error("Deep sleep failed.")
         raise SchedulerExceptionDeepSleepFailed
 
     def _ServiceRun(self, service):
@@ -357,10 +358,10 @@ class ServiceScheduler:
             service.SvcRun()
             service.SvcStateSet(Service.STATE_SUSPENDED)
         except ServiceExceptionSuspend:
-            print("[Scheduler] Suspending service")
+            Log.info("Suspending service")
             service.SvcStateSet(Service.STATE_SUSPENDED)
         except ServiceException:
-            print("[Scheduler] Error occurred, disabling service.")
+            Log.error("Error occurred, disabling service.")
             service.SvcStateSet(Service.STATE_DISABLED)
 
         # Update the last run timestamp.
@@ -391,10 +392,10 @@ class ServiceScheduler:
                     last_run = 0
                 else:
                     last_run = svc.SvcLastRun
-                print("[Scheduler] Updating periodic service: {}".format(svc.SvcName))
+                Log.debug("Updating periodic service: {}".format(svc.SvcName))
                 # If interval time has passed, activate the service.
                 if self.RunTimeSec >= svc.SvcInterval + last_run:
-                    print("[Scheduler] Activating periodic service: {}".format(svc.SvcName))
+                    Log.debug("Activating periodic service: {}".format(svc.SvcName))
                     svc.SvcActivate()
                 # Otherwise calculate the sleep time based on the interval and last run
                 # timestamp.
@@ -407,7 +408,7 @@ class ServiceScheduler:
         ready = True
         # Iterator through the dependency dict keys.
         for svc_dep in service.SvcDeps.keys():
-            print("[Scheduler] Checking dependency: {}".format(svc_dep.SvcName))
+            Log.debug("Checking dependency: {}".format(svc_dep.SvcName))
 
             # Check if the service was initialized
             if service.SvcState is Service.STATE_UNINITIALIZED:
@@ -439,18 +440,18 @@ class ServiceScheduler:
                         self._ActivateFromDependency(svc_dep)
                         ready = False
 
-        print("[Scheduler] Dependencies ok: {}".format(ready))
+        Log.debug("Dependencies ok: {}".format(ready))
         return ready
 
     def _ActivateFromDependency(self, service):
         # The service dependency must NOT be disabled, otherwise
         # the dependency cannot be activated.
         if service.SvcState is not Service.STATE_DISABLED:
-            print("[Scheduler] Activating dependency: {}".format(service.SvcName))
+            Log.debug("Activating dependency: {}".format(service.SvcName))
             service.SvcActivate()
             return 0
         else:
-            print("[Scheduler] Dependency {} is disabled".format(service.SvcName))
+            Log.debug("Dependency {} is disabled".format(service.SvcName))
             return -1
 
     def _IndexAdvance(self, svc_activated):
@@ -459,7 +460,7 @@ class ServiceScheduler:
         self.Index += 1
 
         if self.Index >= len(self.Services):
-            print("[Scheduler] Resetting service list index")
+            Log.debug("Resetting service list index")
             self.Index = 0
             # A minimum of one service must
             # have been activated.
@@ -470,7 +471,7 @@ class ServiceScheduler:
     def _CyclesDec(self):
         if self.Cycles is not None:
             self.Cycles -= 1
-            print("[Scheduler] Cycles left: {}.".format(self.Cycles))
+            Log.debug("Cycles left: {}.".format(self.Cycles))
             if self.Cycles is 0:
                 raise SchedulerExceptionStopped
 
