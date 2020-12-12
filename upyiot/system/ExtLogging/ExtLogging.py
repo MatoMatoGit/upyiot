@@ -1,8 +1,8 @@
+from upyiot.middleware.StructFile import StructFile
+
 from micropython import const
 import uos as os
 import sys
-
-WRITES_PER_LOG = const(2)
 
 CRITICAL = 50
 ERROR    = 40
@@ -20,7 +20,111 @@ _level_dict = {
 }
 
 
+def _FileOpenAppend(file_path):
+    try:
+        f = open(file_path, 'a')
+        print("[ExtLog] Appending to file '{}'".format(file_path))
+        return f
+    except OSError:
+        try:
+            f = open(file_path, 'w')
+            print("[ExtLog] File '{}' created".format(file_path))
+            return f
+        except OSError:
+            print("[ExtLog] Failed to create file '{}'".format(file_path))
+    return None
+
+
+class LogFileManager:
+
+    COUNT_FILE_NAME = "/cf"
+    COUNT_FILE_FMT = "<II"
+    COUNT_DATA_FIRST = const(0)
+    COUNT_DATA_LAST = const(1)
+
+    def __init__(self, dir, prefix, file_limit):
+        file_path = dir + self.COUNT_FILE_NAME
+        self.SFile = StructFile.StructFile(file_path, self.COUNT_FILE_FMT)
+        self.Last = 0
+        self.First = 0
+        self.Max = file_limit
+        self.Dir = dir
+        self.Prefix = prefix
+        self.File = None
+        count_data = self.SFile.ReadData(0)
+        if count_data is not None:
+            self.Last = count_data[self.COUNT_DATA_LAST]
+            self.First = count_data[self.COUNT_DATA_FIRST]
+
+    def DeleteAll(self):
+        for file in self.List():
+            print("[LogFileMngr] Deleting {}".format(file))
+            os.remove(file)
+
+        self.Last = self.First = 0
+        self.SFile.WriteData(0, self.First, self.Last)
+
+    def Count(self):
+        return self.Last - self.First + 1
+
+    def OpenMostRecent(self):
+        file_path = self._FilePath(self.Last)
+        self.File = _FileOpenAppend(file_path)
+        return self.File
+
+    def New(self):
+        self.File.close()
+
+        self.Last += 1
+
+        if self.Count() > self.Max:
+            file_path = self._FilePath(self.First)
+            print("[LogFileMngr] Removed log file: {}".format(file_path))
+            self.First += 1
+
+        self.SFile.WriteData(0, self.First, self.Last)
+
+        return self.OpenMostRecent()
+
+    def PrintList(self):
+        print("[LogFileMngr] List of log files ({})".format(self.Count()))
+        for file in self.List():
+            print("[LogFileMngr] {}".format(file))
+
+    def List(self):
+        file_list = list()
+        for i in range(self.First, self.Last + 1, 1):
+            file_list.append(self._FilePath(i))
+
+        return file_list
+
+    def _FilePath(self, number):
+        return self.Dir + '/' + self.Prefix + str(number)
+
+
+class LogFile:
+
+    def __init__(self, log_file_mngr, line_limit):
+        self.Mngr = log_file_mngr
+        self.File = self.Mngr.OpenMostRecent()
+        self.LineCount = 0
+        self.LineLimit = line_limit
+
+    def write(self, string):
+        if self.LineCount >= self.LineLimit:
+            print("[LogFileMngr] Line limit reached")
+            self.File = self.Mngr.New()
+            self.LineCount = 0
+
+        self.LineCount += 1
+        self.File.write(string)
+
+    def close(self):
+        self.File.close()
+
+
 _stream = sys.stderr
+
 
 class Logger:
 
@@ -101,6 +205,10 @@ class LoggerStream(object):
 
         return
 
+    def close(self):
+        if self.File is not None:
+            self.File.close()
+
 
 class ExtLogger(Logger):
 
@@ -112,21 +220,8 @@ _level = INFO
 _loggers = {}
 _Stream = None
 _File = None
+Mngr = None
 
-
-def _FileCreate(file_path):
-    try:
-        f = open(file_path, 'a')
-        print("[ExtLog] Log file '{}' exists".format(file_path))
-        return f
-    except OSError:
-        try:
-            f = open(file_path, 'w')
-            print("[ExtLog] Log file '{}' created".format(file_path))
-            return f
-        except OSError:
-            print("[ExtLog] Failed to create log file '{}'".format(file_path))
-    return None
 
 
 def _basicConfig(level=INFO, stream=None):
@@ -137,22 +232,26 @@ def _basicConfig(level=INFO, stream=None):
     print("[ExtLog] Configured.")
 
 
-def ConfigGlobal(level=INFO, stream=None, file_path=None):
+def ConfigGlobal(level=INFO, stream=None, dir=None, file_prefix=None, line_limit=1000, file_limit=10):
     global _Stream
     global _File
+    global Mngr
 
-    if file_path is not None:
-        _File = _FileCreate(file_path)
+    if Mngr is None:
+        Mngr = LogFileManager(dir, file_prefix, file_limit)
+
+    _File = LogFile(Mngr, line_limit)
     _Stream = LoggerStream(stream, _File)
     _basicConfig(level=level, stream=_Stream)
 
 
 def Stop():
-    global _File
-    _File.close()
+    global _Stream
+    _Stream.flush()
+    _Stream.close()
 
 
-def LoggerGet(name):
+def Create(name):
     if name in _loggers:
         return _loggers[name]
     print("[ExtLog] Creating new ExtLogger for \"{}\"".format(name))
@@ -162,9 +261,10 @@ def LoggerGet(name):
 
 
 def Clear():
+    global Mngr
+
     try:
-        os.remove(_File)
-        _FileCreate(_File)
+        Mngr.DeleteAll()
     except OSError:
         print("[ExtLog] Failed to clear log file")
 
