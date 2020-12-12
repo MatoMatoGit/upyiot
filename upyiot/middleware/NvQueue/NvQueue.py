@@ -1,5 +1,8 @@
 from upyiot.middleware.StructFile import StructFile
 from micropython import const
+from upyiot.system.ExtLogging import ExtLogging
+
+Log = ExtLogging.Create("NvQueue")
 
 
 class NvQueueIterator(object):
@@ -24,19 +27,20 @@ class NvQueue:
     META_STRUCT_W_OFF   = const(3)
 
     def __init__(self, file, data_fmt, capacity):
+        Log.info("Creating NvQueue with path: {}, capacity: {}, format: {}".format(file, capacity, data_fmt))
         self.Queue = StructFile.StructFile(file, data_fmt, NvQueue.META_FMT)
 
         meta = self.Queue.ReadMeta()
-        print(meta)
+        Log.debug(meta)
         # If no metadata is present in the queue file, reset the metadata and write
         # it to the file.
         if meta is None:
-            print("No metadata present, initializing queue.")
+            Log.info("No metadata present, initializing queue.")
             self.Capacity = capacity
             self._MetaReset()
             self._MetaUpdate()
         else:
-            print("Existing metadata found.")
+            Log.info("Existing metadata found.")
             self.Capacity = meta[NvQueue.META_STRUCT_CAP]
             self.Count = meta[NvQueue.META_STRUCT_CNT]
             self.ReadOffset = meta[NvQueue.META_STRUCT_R_OFF]
@@ -44,18 +48,19 @@ class NvQueue:
 
             # If the read capacity differs from the capacity argument, update it.
             if self.Capacity is not capacity:
-                print("Capacity changed, updating metadata.")
+                Log.info("Capacity changed, updating metadata.")
                 self.Capacity = capacity
                 self._MetaUpdate()
 
     def __iter__(self):
-        print("Creating iter")
+        Log.debug("Creating iterator")
         return NvQueueIterator(self)
 
     def Push(self, *item):
         if self.Space() is 0:
+            Log.info("Queue is full")
             return -1
-        print("[NvQueue] Writing tuple to file: {}".format(item))
+        Log.debug("Adding ({}) to queue at offset {}".format(item, self.WriteOffset))
         self.Queue.WriteData(self.WriteOffset, *item)
         self.WriteOffset = self._OffsetAdvance(self.WriteOffset)
         self._CountInc()
@@ -64,9 +69,11 @@ class NvQueue:
 
     def Pop(self):
         if self.Count is 0:
+            Log.info("Queue is empty")
             return None
 
         data = self.Queue.ReadData(self.ReadOffset)
+        Log.debug("Removed ({}) from queue at offset {}".format(data, self.ReadOffset))
         self.ReadOffset = self._OffsetAdvance(self.ReadOffset)
         self._CountDec()
         self._MetaUpdate()

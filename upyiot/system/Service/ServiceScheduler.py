@@ -8,7 +8,7 @@ from upyiot.system.ExtLogging import ExtLogging
 import utime
 from micropython import const
 
-Log = ExtLogging.LoggerGet("Scheduler")
+Log = ExtLogging.Create("Scheduler")
 
 class SchedulerException(Exception):
 
@@ -59,15 +59,15 @@ class SchedulerMemory:
         # Iterate through all registered services and store their data.
         i = 0
         for svc in self.Scheduler.Services:
-            Log.debug("[Mem] Writing data for service {}".format(svc.SvcName))
+            Log.debug("Mem: Writing data for service {}".format(svc.SvcName))
             sto_name = svc.SvcName + ((self.SVC_NAME_LEN - len(svc.SvcName)) * "\0")
             self.Sfile.WriteData(i, sto_name, svc.SvcLastRun)
             i += 1
 
         self.NumEntries = len(self.Scheduler.Services)
-        Log.info("[Mem] Saving total number of service entries: {}".format(self.NumEntries))
+        Log.info("Mem: Saving total number of service entries: {}".format(self.NumEntries))
         # Store the scheduler data (in the StructFile meta).
-        Log.debug("[Mem] Writing scheduler data")
+        Log.debug("Mem: Writing scheduler data")
         self.Sfile.WriteMeta(self.Scheduler.RunTimeSec, self.Scheduler.SleepTime,
                              self.NumEntries)
         return 0
@@ -82,7 +82,7 @@ class SchedulerMemory:
         else:
             return -1
 
-        Log.info("[Mem] Read scheduler data. RunTime: {} | SleepTime: {} "
+        Log.info("Mem: Read scheduler data. RunTime: {} | SleepTime: {} "
               "| NumServices: {}".format(self.Scheduler.RunTimeSec,
                                          self.Scheduler.SleepTime,
                                          self.NumEntries))
@@ -93,13 +93,13 @@ class SchedulerMemory:
         # the data if a matching service is found (by name).
         for svc_mem in self.Sfile:
             svc_name = svc_mem[self.SVC_MEM_NAME].decode("utf-8").split("\0")[0]
-            Log.debug("[Mem] Read data for service {}: {}".format(svc_name, svc_mem[self.SVC_MEM_LAST_RUN]))
+            Log.debug("Mem: Read data for service {}: {}".format(svc_name, svc_mem[self.SVC_MEM_LAST_RUN]))
             idx = self.Sfile.IteratorIndex()
             if idx < len(self.Scheduler.Services):
                 # First service to check if the one at the same index as it was stored at.
                 # The chance is very high that the services were registered in the same order.
                 svc = self.Scheduler.Services[idx]
-                Log.debug("[Mem] Same-index service {}".format(svc.SvcName))
+                Log.debug("Mem: Same-index service {}".format(svc.SvcName))
                 if svc.SvcName == svc_name:
                     self._LoadService(svc, svc_mem)
                     continue
@@ -115,7 +115,7 @@ class SchedulerMemory:
                 self._LoadService(svc, svc_mem)
                 continue
 
-        Log.info("[Mem] Finished loading memory.")
+        Log.info("Mem: Finished loading memory.")
         return 0
 
     def _LoadService(self, svc, svc_mem):
@@ -137,7 +137,7 @@ class SchedulerMemory:
         return -1
 
     def _SearchService(self, name):
-        Log.debug("[Mem] Searching service: {}".format(name))
+        Log.debug("Mem: Searching service: {}".format(name))
         for svc in self.Scheduler.Services:
             if svc.SvcName == name:
                 return svc

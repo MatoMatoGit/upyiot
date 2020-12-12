@@ -1,4 +1,7 @@
 from upyiot.middleware.NvQueue import NvQueue
+from upyiot.system.ExtLogging import ExtLogging
+
+Log = ExtLogging.Create("MsgBuf")
 
 
 class MessageBuffer:
@@ -20,17 +23,16 @@ class MessageBuffer:
         MessageBuffer.MsgDataLen = msg_len_max
         MessageBuffer.MsgStructFmt = "<iiI" + \
                                      str(MessageBuffer.MsgDataLen) + "s"
-        print("[MsgBuf] FMT: {}".format(MessageBuffer.MsgStructFmt))
+        Log.debug("FMT: {}".format(MessageBuffer.MsgStructFmt))
         MessageBuffer.Directory = directory
-        print(directory)
+        Log.debug(directory)
         MessageBuffer._UnPackBuffer = bytearray(msg_len_max + msg_len_max)
-        print(type(MessageBuffer._UnPackBuffer))
         MessageBuffer.Configured = True
 
     def __init__(self, file_prefix, msg_type, msg_subtype, max_entries):
         file_path = MessageBuffer.Directory + file_prefix + str(msg_type) \
                    + "_" + str(msg_subtype)
-        print("[MsgBuf] File path: {}".format(file_path))
+        Log.debug("File path: {}".format(file_path))
         self.Queue = NvQueue.NvQueue(file_path, MessageBuffer.MsgStructFmt,
                                      max_entries)
         self.MsgType = msg_type
@@ -38,10 +40,10 @@ class MessageBuffer:
 
     def MessagePut(self, msg_string):
         if len(msg_string) > MessageBuffer.MsgDataLen:
-            print("[MsgBuf] Error: Message string length ({})exceeds max length ({})".format(len(msg_string),
+            Log.error(" Message string length ({})exceeds max length ({})".format(len(msg_string),
                                                                                              MessageBuffer.MsgDataLen))
             return -1
-        print("[MsgBuf] Pushing message string: {}".format(msg_string))
+        Log.debug("Pushing message string: {}".format(msg_string))
         # TODO: Use this instead when NvQueue / StructFile can utilize an external buffer.
         # ustruct.pack_into(MessageBuffer.MsgStructFmt, MessageBuffer._UnPackBuffer, 0,
         #                  self.MsgType, self.MsgSubtype, msg_string)
@@ -49,10 +51,10 @@ class MessageBuffer:
 
     def MessagePutWithType(self, msg_type, msg_subtype, msg_string):
         if len(msg_string) > MessageBuffer.MsgDataLen:
-            print("[MsgBuf] Error: Message string length ({})exceeds max length ({})".format(len(msg_string),
+            Log.error("Message string length ({})exceeds max length ({})".format(len(msg_string),
                                                                                              MessageBuffer.MsgDataLen))
             return -1
-        print("[MsgBuf] Pushing message string: {}".format(msg_string))
+        Log.debug("Pushing message string: {}".format(msg_string))
         # TODO: Use this instead when NvQueue / StructFile can utilize an external buffer.
         # ustruct.pack_into(MessageBuffer.MsgStructFmt, MessageBuffer._UnPackBuffer, 0,
         #                  self.MsgType, self.MsgSubtype, msg_string)

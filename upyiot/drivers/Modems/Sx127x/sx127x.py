@@ -1,6 +1,7 @@
 import utime
 from machine import SPI, Pin
 from upyiot.drivers.Modems.Sx127x.encryption_aes import AES
+from upyiot.system.ExtLogging import ExtLogging
 import gc
 import urandom
 import ubinascii
@@ -81,8 +82,6 @@ IRQ_RX_TIME_OUT_MASK = 0x80
 # Buffer size
 MAX_PKT_LENGTH = 255
 
-__DEBUG__ = True
-
 class TTN:
     """ TTN Class.
     """
@@ -152,6 +151,7 @@ class SX127x:
         self._pins = pins
         self._parameters = lora_parameters
         self._lock = False
+        self._log = ExtLogging.Create("SX127x")
 
         # setting pins
         if "dio_0" in self._pins:
@@ -168,9 +168,8 @@ class SX127x:
         while init_try and re_try < 5:
             version = self.read_register(REG_VERSION)
             re_try = re_try + 1
-            
-            if __DEBUG__:
-                print("SX version: {}".format(version))
+
+            self._log.info("SX version: {}".format(version))
 
             if version == 0x12:
                 init_try = False
@@ -343,13 +342,11 @@ class SX127x:
         # Set length of LoRa packet
         lora_pkt_len = 9
 
-        if __DEBUG__:
-            print("PHYPayload", ubinascii.hexlify(lora_pkt))
+        self._log.debug("PHYPayload", ubinascii.hexlify(lora_pkt))
         # load encrypted data into lora_pkt
         lora_pkt[lora_pkt_len : lora_pkt_len + data_length] = enc_data[0:data_length]
 
-        if __DEBUG__:
-            print("PHYPayload with FRMPayload", ubinascii.hexlify(lora_pkt))
+        self._log.debug("PHYPayload with FRMPayload", ubinascii.hexlify(lora_pkt))
 
         # Recalculate packet length
         lora_pkt_len += data_length
@@ -362,15 +359,16 @@ class SX127x:
         lora_pkt[lora_pkt_len : lora_pkt_len + 4] = mic[0:4]
         # Recalculate packet length (add MIC length)
         lora_pkt_len += 4
-        
-        if __DEBUG__:
-            print("PHYPayload with FRMPayload + MIC ({}): {}".format(lora_pkt_len, ubinascii.hexlify(lora_pkt)))
-        
+
+        self._log.debug("PHYPayload with FRMPayload + MIC ({}): {}".format(lora_pkt_len, ubinascii.hexlify(lora_pkt)))
+
         self.send_packet(lora_pkt, lora_pkt_len, timeout)
 
     def send_packet(self, lora_packet, packet_length, timeout):
         """ Sends a LoRa packet using the SX1276 module.
         """
+        self._log.info("Sending LoRa packet of length {}".format(packet_length))
+
         self.set_lock(True)  # wait until RX_Done, lock and begin writing.
 
         self.begin_packet()
@@ -389,18 +387,17 @@ class SX127x:
     def get_irq_flags(self):
         irq_flags = self.read_register(REG_IRQ_FLAGS)
 
-        if __DEBUG__:
-            irq_dict = dict(
-                rx_timeout     = irq_flags >> 7 & 0x01,
-                rx_done        = irq_flags >> 6 & 0x01,
-                crc_error      = irq_flags >> 5 & 0x01,
-                valid_header   = irq_flags >> 4 & 0x01,
-                tx_done        = irq_flags >> 3 & 0x01,
-                cad_done       = irq_flags >> 2 & 0x01,
-                fhss_change_ch = irq_flags >> 1 & 0x01,
-                cad_detected   = irq_flags >> 0 & 0x01,
-            )
-            print(irq_dict)
+        irq_dict = dict(
+            rx_timeout     = irq_flags >> 7 & 0x01,
+            rx_done        = irq_flags >> 6 & 0x01,
+            crc_error      = irq_flags >> 5 & 0x01,
+            valid_header   = irq_flags >> 4 & 0x01,
+            tx_done        = irq_flags >> 3 & 0x01,
+            cad_done       = irq_flags >> 2 & 0x01,
+            fhss_change_ch = irq_flags >> 1 & 0x01,
+            cad_detected   = irq_flags >> 0 & 0x01,
+        )
+        self._log.debug(irq_dict)
 
         self.write_register(REG_IRQ_FLAGS, irq_flags)
         
@@ -421,6 +418,7 @@ class SX127x:
         utime.sleep_ms(10)
 
     def sleep(self):
+        self._log.info("Setting modem into sleep mode")
         self.write_register(REG_OP_MODE, MODE_LONG_RANGE_MODE | MODE_SLEEP)
         utime.sleep_ms(10)
 
@@ -542,7 +540,7 @@ class SX127x:
 
         if self._pin_rx_done:
             if callback:
-                print("callback attached")
+                print("Callback attached")
                 self.write_register(REG_DIO_MAPPING_1, 0x00)
                 self._pin_rx_done.irq(
                     trigger=Pin.IRQ_RISING, handler = self.handle_on_receive
@@ -687,5 +685,4 @@ class SX127x:
 
     def collect_garbage(self):
         gc.collect()
-        #if __DEBUG__:
-        #    print('[Memory - free: {}   allocated: {}]'.format(gc.mem_free(), gc.mem_alloc()))
+        self._log.debug('[Memory - free: {}   allocated: {}]'.format(gc.mem_free(), gc.mem_alloc()))

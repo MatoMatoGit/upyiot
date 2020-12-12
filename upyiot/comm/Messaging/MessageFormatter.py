@@ -1,5 +1,8 @@
 from micropython import const
 from upyiot.middleware.SubjectObserver.SubjectObserver import Observer
+from upyiot.system.ExtLogging import ExtLogging
+
+Log = ExtLogging.Create("MsgFmt")
 
 
 class MessagePartSource:
@@ -48,7 +51,7 @@ class MessageFormatter:
 
     def __init__(self, msg_ex_obj, mode, msg_spec_obj, msg_meta_dict=None):
         self.MsgDef = msg_spec_obj.DataDef.copy()
-        print("[MsgFmt] Definition: {}".format(self.MsgDef))
+        Log.info("Definition: {}".format(self.MsgDef))
         self.Mode = mode
         self.Inputs = set()
         self.MsgType = msg_spec_obj.Type
@@ -75,7 +78,7 @@ class MessageFormatter:
         return stream
 
     def MessagePartAdd(self, key, value):
-        print("[MsgFmt] Adding part: {}:{}".format(key, value))
+        Log.debug("Adding part: {}:{}".format(key, value))
         if type(self.MsgDef[key]) is list:
             if type(value) is list:
                 self.MsgDef[key] = value
@@ -86,7 +89,7 @@ class MessageFormatter:
             self.MsgDef[key] = value
 
     def MessagePartAppend(self, key, value):
-        print("[MsgFmt] Appending part: {}:{}".format(key, value))
+        Log.debug("Appending part: {}:{}".format(key, value))
         # If the message value is a string, append it.
         if type(value) is str:
             self.MsgDef[key] += value
@@ -104,10 +107,10 @@ class MessageFormatter:
         # hand over the message to the Messaging Exchange class.
         if self.PartCount is len(self.MsgDef) or \
                 self.Mode is MessageFormatter.SEND_ON_CHANGE:
-            print("[MsgFmt] Handover to MsgEx: {}".format(self.MsgDef))
+            Log.info("Handover to MsgEx: {}".format(self.MsgDef))
             res = self.MsgEx.MessagePut(self.MsgDef, self.MsgType,
                                            self.MsgSubtype, self.MsgMeta)
 
             if res is -1:
-                print("[MsgFmt] Error: message handover failed.")
+                Log.error("Message handover failed.")
             self.PartCount = 0

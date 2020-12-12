@@ -1,5 +1,6 @@
 from micropython import const
 from upyiot.comm.Messaging.MessageTemplate import MessageTemplate
+from upyiot.system.ExtLogging import ExtLogging
 import uio
 
 
@@ -8,11 +9,12 @@ class Message:
     Msg = None
     _StreamBuffer = None
     _Parser = None
+    Log = ExtLogging.Create("Msg")
 
     @staticmethod
     def SetParser(parser_obj):
         Message._Parser = parser_obj
-        print("[Msg] Parser set: {}".format(Message._Parser))
+        Message.Log.debug("Parser set: {}".format(Message._Parser))
 
     @staticmethod
     def Message():
@@ -27,7 +29,7 @@ class Message:
         # Create a message from the template.
         Message.Msg = MessageTemplate()
         Message.Msg = Message.Msg.Msg
-        print("[Msg] Serializing message with metadata: {} | data: {}"
+        Message.Log.debug("Serializing message with metadata: {} | data: {}"
             .format(meta_dict, data_dict))
         # Close the previous stream if there is one.
         if Message._StreamBuffer is not None:
@@ -49,9 +51,9 @@ class Message:
         try:
             Message.Msg = Message._Parser.Loads(msg_str)
         except ValueError:
-            print("[Msg] Invalid format: {}".format(msg_str))
+            Message.Log.error("Invalid format: {}".format(msg_str))
         return Message.Msg
 
     @staticmethod
     def Print():
-        print(Message.Msg)
+        Message.Log.info(Message.Msg)

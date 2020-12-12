@@ -3,6 +3,7 @@ from upyiot.middleware.SubjectObserver.SubjectObserver import Subject
 from upyiot.middleware.NvQueue import NvQueue
 from upyiot.system.Service.Service import Service
 from upyiot.system.Service.Service import ServiceException
+from upyiot.system.ExtLogging import ExtLogging
 from micropython import const
 
 
@@ -31,9 +32,11 @@ class Sensor(SensorService):
         self.SensorDriver = sensor_driver_obj
         self.SamplesPerRead = samples_per_read
         self.Filter = AvgFilter.AvgFilter(filter_depth, dec_round)
-        self.SampleQueue = NvQueue.NvQueue(directory + '/' + name, Sensor.SAMPLE_FMT, Sensor.FILE_SAMPLES_MAX)
+        if store_data is True:
+            self.SampleQueue = NvQueue.NvQueue(directory + '/' + name, Sensor.SAMPLE_FMT, Sensor.FILE_SAMPLES_MAX)
         self.NewSample = Subject()
         self.StoreData = store_data
+        self.Log = ExtLogging.Create("Sensor-{}".format(name))
 
     def SvcRun(self):
         self.Read()
@@ -63,10 +66,12 @@ class Sensor(SensorService):
         self.SensorDriver.Enable()
         for i in range(0, self.SamplesPerRead):
             val = self.SensorDriver.Read()
-            print("[Sensor] Read value: {}".format(val))
+            self.Log.debug("Read value: {}".format(val))
             self.Filter.Input(val)
         self.SensorDriver.Disable()
-        self._SampleProcess(self.Filter.Output())
+        out = self.Filter.Output()
+        self.Log.info("Sensor value: {}".format(out))
+        self._SampleProcess(out)
         return self.NewSample.State
     
     def ObserverAttachNewSample(self, observer):
