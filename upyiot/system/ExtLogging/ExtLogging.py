@@ -270,9 +270,9 @@ def Clear():
 
 
 def info(msg, *args):
-    LoggerGet(None).info(msg, *args)
+    Create(None).info(msg, *args)
 
 
 def debug(msg, *args):
-    LoggerGet(None).debug(msg, *args)
+    Create(None).debug(msg, *args)
 
