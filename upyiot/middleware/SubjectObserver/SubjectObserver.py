@@ -3,6 +3,7 @@ Define a one-to-many dependency between objects so that when one object
 changes state, all its dependents are notified and updated automatically.
 """
 
+
 class Subject(object):
     """
     Know its observers. Any number of Observer objects may observe a
@@ -38,6 +39,7 @@ class Subject(object):
     def _Notify(self):
         for observer in self._Observers:
             observer.Update(self._State)
+
 
 class Observer(object):
     """
