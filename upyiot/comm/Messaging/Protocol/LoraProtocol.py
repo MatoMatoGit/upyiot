@@ -69,9 +69,10 @@ class LoRaWANParams:
 
 
 class LoRaWANSend(LoRa):
-    def __init__(self, params_obj, verbose = False):
+    def __init__(self, params_obj, payload, verbose=False):
         super(LoRaWANSend, self).__init__(verbose)
         self.Params = params_obj
+        self.Payload = payload
 
     def on_tx_done(self):
         self.set_mode(MODE.STDBY)
@@ -86,7 +87,9 @@ class LoRaWANSend(LoRa):
 
         Log.info("Frame counter: {}".format(self.Params.FrameCounter))
 
-        lorawan.create(MHDR.UNCONF_DATA_UP, {'devaddr': self.Params.DevAddr, 'fcnt': self.Params.FrameCounter, 'data': list(map(ord, 'Python rules!')) })
+        lorawan.create(MHDR.UNCONF_DATA_UP, {'devaddr': self.Params.DevAddr,
+                                             'fcnt': self.Params.FrameCounter,
+                                             'data': self.Payload })
 
         self.write_payload(lorawan.to_raw())
         self.set_mode(MODE.TX)
@@ -98,7 +101,7 @@ class LoRaWANSend(LoRa):
 
 
 class LoRaWANReceive(LoRa):
-    def __init__(self, params_obj, verbose = False):
+    def __init__(self, params_obj, verbose=False):
         super(LoRaWANReceive, self).__init__(verbose)
         self.Params = params_obj
 
@@ -130,7 +133,7 @@ class LoRaWANReceive(LoRa):
 
 
 class LoRaWANOtaa(LoRa):
-    def __init__(self, devnonce, dev_eui, app_eui, app_key, params_obj, verbose = False):
+    def __init__(self, devnonce, dev_eui, app_eui, app_key, params_obj, verbose=False):
         self.DevNonce = devnonce
         self.Params = params_obj
         self.DevEui = dev_eui
@@ -180,7 +183,8 @@ class LoRaWANOtaa(LoRa):
 
         lorawan = LoRaWAN.new(self.AppKey)
         lorawan.create(MHDR.JOIN_REQUEST, {'deveui': self.DevEui,
-                                           'appeui': self.AppEui, 'devnonce': self.DevNonce})
+                                           'appeui': self.AppEui,
+                                           'devnonce': self.DevNonce})
 
         self.write_payload(lorawan.to_raw())
         self.set_mode(MODE.TX)
@@ -211,7 +215,7 @@ class LoraProtocol(MessagingProtocol):
         if self.Params.HasSession() is False:
             return
 
-        self.Lora = LoRaWANSend(self.Params, verbose=True)
+        self.Lora = LoRaWANSend(self.Params, payload, verbose=True)
         self._ConfigureLora()
         self.Lora.Start()
         return
