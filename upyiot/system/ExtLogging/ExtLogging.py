@@ -37,16 +37,18 @@ def _FileOpenAppend(file_path):
 
 class LogFileManager:
 
-    COUNT_FILE_NAME = "/cf"
-    COUNT_FILE_FMT = "<II"
+    COUNT_FILE_NAME = "/log_meta"
+    COUNT_FILE_FMT = "<III"
     COUNT_DATA_FIRST = const(0)
     COUNT_DATA_LAST = const(1)
+    COUNT_DATA_LINES = const(2)
 
     def __init__(self, dir, prefix, file_limit):
         file_path = dir + self.COUNT_FILE_NAME
         self.SFile = StructFile.StructFile(file_path, self.COUNT_FILE_FMT)
         self.Last = 0
         self.First = 0
+        self.LineCount = 0
         self.Max = file_limit
         self.Dir = dir
         self.Prefix = prefix
@@ -55,14 +57,16 @@ class LogFileManager:
         if count_data is not None:
             self.Last = count_data[self.COUNT_DATA_LAST]
             self.First = count_data[self.COUNT_DATA_FIRST]
+            self.LineCount = count_data[self.COUNT_DATA_LINES]
+            print("[LogFileMngr] First: {} | Last: {} | LineCount: {}".format(self.Last, self.First, self.LineCount))
 
     def DeleteAll(self):
         for file in self.List():
             print("[LogFileMngr] Deleting {}".format(file))
             os.remove(file)
 
-        self.Last = self.First = 0
-        self.SFile.WriteData(0, self.First, self.Last)
+        self.Last = self.First = self.LineCount = 0
+        self.SFile.WriteData(0, self.First, self.Last, self.LineCount)
 
     def Count(self):
         return self.Last - self.First + 1
@@ -72,6 +76,9 @@ class LogFileManager:
         self.File = _FileOpenAppend(file_path)
         return self.File
 
+    def Sync(self):
+        self.SFile.WriteData(0, self.First, self.Last, self.LineCount)
+
     def New(self):
         self.File.close()
 
@@ -79,10 +86,12 @@ class LogFileManager:
 
         if self.Count() > self.Max:
             file_path = self._FilePath(self.First)
+            os.remove(file_path)
             print("[LogFileMngr] Removed log file: {}".format(file_path))
             self.First += 1
 
-        self.SFile.WriteData(0, self.First, self.Last)
+        self.LineCount = 0
+        self.Sync()
 
         return self.OpenMostRecent()
 
@@ -107,19 +116,18 @@ class LogFile:
     def __init__(self, log_file_mngr, line_limit):
         self.Mngr = log_file_mngr
         self.File = self.Mngr.OpenMostRecent()
-        self.LineCount = 0
         self.LineLimit = line_limit
 
     def write(self, string):
-        if self.LineCount >= self.LineLimit:
+        if self.Mngr.LineCount >= self.LineLimit:
             print("[LogFileMngr] Line limit reached")
             self.File = self.Mngr.New()
-            self.LineCount = 0
 
-        self.LineCount += 1
+        self.Mngr.LineCount += 1
         self.File.write(string)
 
     def close(self):
+        self.Mngr.Sync()
         self.File.close()
 
 
@@ -224,7 +232,7 @@ Mngr = None
 
 
 
-def _basicConfig(level=INFO, stream=None):
+def _ConfigBasic(level=INFO, stream=None):
     global _level, _stream
     _level = level
     if stream:
@@ -242,7 +250,11 @@ def ConfigGlobal(level=INFO, stream=None, dir=None, file_prefix=None, line_limit
 
     _File = LogFile(Mngr, line_limit)
     _Stream = LoggerStream(stream, _File)
-    _basicConfig(level=level, stream=_Stream)
+    _ConfigBasic(level=level, stream=_Stream)
+
+
+def ConfigError(error_code_stream):
+    return
 
 
 def Stop():
