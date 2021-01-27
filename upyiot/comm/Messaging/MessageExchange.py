@@ -10,6 +10,8 @@ from upyiot.system.ExtLogging import ExtLogging
 
 import utime
 
+RECEIVE_MESSAGES_ENABLED = 0
+
 
 class MessageExchangeService(Service):
     MSG_EX_SERVICE_MODE = Service.MODE_RUN_PERIODIC
@@ -69,35 +71,10 @@ class MessageExchange(MessageExchangeService):
 
         # Iterate through all queued messages once.
         for i in range(0, msg_count):
+            self._SendMessage()
 
-            # Get the message tuple, and extract the mapping.
-            msg_tup = self.SendMessageBuffer.MessageGet()
-            msg_map = self.MessageMapFromType(msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
-                                              msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE])
-
-            # If a valid mapping was found, transmit the message.
-            if msg_map is not None:
-
-                # Get the message length and call the protocol send function.
-                self.Log.debug("Found message map: {}".format(msg_map))
-                msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
-
-                self.Log.info("Sending message of length {}".format(msg_len))
-                self.Protocol.Send(msg_map, msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len], msg_len)
-
-            else:
-                self.Log.warning("No map defined for message type %d.%d" %
-                      (msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
-                       msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE]))
-
-        self.Log.info("Checking for received messages.")
-        while True:
-            # Check for any received messages. The 'message received'-callback is called if a message
-            # was received.
-            self.Protocol.Receive()
-            if self.NewMessage is False:
-                break
-            self.NewMessage = False
+        if RECEIVE_MESSAGES_ENABLED is 1:
+            self._ReceiveMessage()
 
 # ########
 
@@ -213,3 +190,35 @@ class MessageExchange(MessageExchangeService):
             self.Log.warning("Failed to connect after retries.")
             # TODO: Raise ServiceException
             return
+
+    def _SendMessage(self):
+
+        # Get the message tuple, and extract the mapping.
+        msg_tup = self.SendMessageBuffer.MessageGet()
+        msg_map = self.MessageMapFromType(msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
+                                          msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE])
+
+        # If a valid mapping was found, transmit the message.
+        if msg_map is not None:
+
+            # Get the message length and call the protocol send function.
+            self.Log.debug("Found message map: {}".format(msg_map))
+            msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
+
+            self.Log.info("Sending message of length {}".format(msg_len))
+            self.Protocol.Send(msg_map, msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len], msg_len)
+
+        else:
+            self.Log.warning("No map defined for message type %d.%d" %
+                             (msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
+                              msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE]))
+
+    def _ReceiveMessage(self):
+        self.Log.info("Checking for received messages.")
+        while True:
+            # Check for any received messages. The 'message received'-callback is called if a message
+            # was received.
+            self.Protocol.Receive()
+            if self.NewMessage is False:
+                break
+            self.NewMessage = False
