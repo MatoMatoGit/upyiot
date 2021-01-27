@@ -31,7 +31,6 @@ class NvQueue:
         self.Queue = StructFile.StructFile(file, data_fmt, NvQueue.META_FMT)
 
         meta = self.Queue.ReadMeta()
-        Log.debug(meta)
         # If no metadata is present in the queue file, reset the metadata and write
         # it to the file.
         if meta is None:
@@ -41,6 +40,7 @@ class NvQueue:
             self._MetaUpdate()
         else:
             Log.info("Existing metadata found.")
+            Log.debug(str(meta))
             self.Capacity = meta[NvQueue.META_STRUCT_CAP]
             self.Count = meta[NvQueue.META_STRUCT_CNT]
             self.ReadOffset = meta[NvQueue.META_STRUCT_R_OFF]

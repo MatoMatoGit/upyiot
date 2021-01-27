@@ -26,7 +26,7 @@ class MessageBuffer:
         Log.debug("FMT: {}".format(MessageBuffer.MsgStructFmt))
         MessageBuffer.Directory = directory
         Log.debug(directory)
-        MessageBuffer._UnPackBuffer = bytearray(msg_len_max + msg_len_max)
+        # MessageBuffer._UnPackBuffer = bytearray(msg_len_max + msg_len_max)
         MessageBuffer.Configured = True
 
     def __init__(self, file_prefix, msg_type, msg_subtype, max_entries):

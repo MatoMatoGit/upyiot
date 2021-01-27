@@ -1,6 +1,7 @@
 from upyiot.comm.Messaging.Protocol.MessagingProtocol import MessagingProtocol
 from upyiot.comm.Messaging.MessageExchange import MessageExchange
 
+
 class MqttProtocol(MessagingProtocol):
 
     _Instance = None
