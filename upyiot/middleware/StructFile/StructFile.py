@@ -1,7 +1,12 @@
 import uos as os
 import ustruct
 from micropython import const
-from upyiot.system.ExtLogging import ExtLogging
+#from upyiot.system.ExtLogging import ExtLogging
+
+def InitLogger(logger):
+    global Log
+
+    Log = logger
 
 class SimpleLogger:
 
@@ -141,17 +146,6 @@ class StructFile(object):
     META_FMT    = "<II"
     META_SIZE   = 0
     FILE_OFFSET_META = const(0)
-    FILE_OFFSET_USER_META = 0
-    FILE_OFFSET_DATA = 0
-
-    @staticmethod
-    def InitLogger(logger=None):
-        global Log
-
-        if logger is None:
-            Log = ExtLogging.Create("StructFile")
-        else:
-            Log = logger
 
     def __init__(self, file_path, data_fmt, meta_fmt=None):
         self.DataSize = ustruct.calcsize(data_fmt)
@@ -161,6 +155,8 @@ class StructFile(object):
         self.IteratorIndexEnd = 0
         self.IteratorCount = 0
         self.Iterator = None
+        self.OffsetUserMeta = 0
+        self.OffsetData = 0
 
         if meta_fmt is not None:
             self.UserMetaSize = ustruct.calcsize(meta_fmt)
@@ -171,12 +167,12 @@ class StructFile(object):
         Log.info("Data size: {}".format(self.DataSize))
         
         StructFile.META_SIZE = ustruct.calcsize(StructFile.META_FMT)
-        StructFile.FILE_OFFSET_USER_META = StructFile.META_SIZE
-        StructFile.FILE_OFFSET_DATA = StructFile.FILE_OFFSET_USER_META + self.UserMetaSize
+        StructFile.OffsetUserMeta = StructFile.META_SIZE
+        self.OffsetData = self.OffsetUserMeta + self.UserMetaSize
 
         Log.info("Meta offset: {}".format(StructFile.FILE_OFFSET_META))
-        Log.info("User meta offset: {}".format(StructFile.FILE_OFFSET_USER_META))
-        Log.info("Data offset: {}".format(StructFile.FILE_OFFSET_DATA))
+        Log.info("User meta offset: {}".format(self.OffsetUserMeta))
+        Log.info("Data offset: {}".format(self.OffsetData))
 
         self._FileCreate()
         self._FileInit()
@@ -193,7 +189,7 @@ class StructFile(object):
                                                                          self.IteratorCount))
     def IteratorIndex(self):
         Log.debug("Getting iterator index.")
-        Log.debug(self.Iterator)
+        Log.debug(str(self.Iterator))
         return self.Iterator.IndexCurrent()
 
     def __iter__(self):
@@ -207,15 +203,14 @@ class StructFile(object):
                   .format(len(struct), self.DataSize))
             return -1
         
-        self._FileWriteStruct(struct, index)
+        self._FileWriteStruct(index, struct)
         return 0
         
     def WriteData(self, index, *data):
-        Log.debug("Writing data: {}".format(data))
+        Log.debug("Writing data [{}] {}".format(index, data))
         struct = ustruct.pack(self.DataFmt, *data)
         # print("[StructFile] Packed data: {}".format(struct))
-        self._FileWriteStruct(struct, index)
-
+        self.WriteStruct(index, struct)
         return 0
 
     def ReadStruct(self, index):
@@ -291,7 +286,7 @@ class StructFile(object):
         try:
             f = open(self.FilePath, 'r')
 
-            f.seek(StructFile.FILE_OFFSET_USER_META)
+            f.seek(self.OffsetUserMeta)
             Log.debug("Reading user meta struct at offset: {}".format(f.tell()))
             struct = f.read(self.UserMetaSize)
             f.close()
@@ -305,7 +300,7 @@ class StructFile(object):
         try:
             f = open(self.FilePath, 'r+')
 
-            f.seek(StructFile.FILE_OFFSET_USER_META)
+            f.seek(self.OffsetUserMeta)
             Log.debug("Writing user meta struct at offset: {}".format(f.tell()))
             f.write(meta_struct)
 
@@ -314,13 +309,14 @@ class StructFile(object):
             Log.error("Could not access Struct file: {}".format(ferr))
             _FileCloseOnException(f, ferr)
 
-    def _FileWriteStruct(self, struct, index):
+    def _FileWriteStruct(self, index, struct):
         if index < 0:
             return None
         try:
             f = open(self.FilePath, 'r+') 
-            
-            f.seek(self.IndexToOffset(index))
+            offset = self.IndexToOffset(index)
+            Log.debug("Calculated offset: {}".format(offset))
+            f.seek(offset)
             Log.debug("Writing struct at offset: {}".format(f.tell()))
             written = f.write(struct)
             Log.debug("Written: {}".format(written))
@@ -346,6 +342,7 @@ class StructFile(object):
             return None
     
     def _FileCreate(self):
+        Log.info("Creating Struct file '{}'.".format(self.FilePath))
         try:
             f = open(self.FilePath, 'r')
             f.close()
@@ -379,4 +376,4 @@ class StructFile(object):
             _FileCloseOnException(f, ferr)
 
     def IndexToOffset(self, index):
-        return StructFile.FILE_OFFSET_DATA + self.DataSize * index
+        return self.OffsetData + self.DataSize * index
