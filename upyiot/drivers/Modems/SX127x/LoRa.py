@@ -147,6 +147,9 @@ class LoRa(object):
     def on_fhss_change_channel(self):
         pass
 
+    def on_cad_detected(self):
+        pass
+
     # Internal callbacks for add_events()
 
     def _dio0(self, channel):
@@ -171,7 +174,7 @@ class LoRa(object):
         elif self.dio_mapping[1] == 1:
             self.on_fhss_change_channel()
         elif self.dio_mapping[1] == 2:
-            self.on_CadDetected()
+            self.on_cad_detected()
         else:
             raise RuntimeError("unknown dio1mapping!")
 
@@ -217,6 +220,9 @@ class LoRa(object):
         # the mode is backed up in self.mode
         if mode == self.mode:
             return mode
+        if mode not in MODE.lookup.keys():
+            mode = MODE.STDBY
+
         if self.verbose:
             sys.stderr.write("Mode <- %s\n" % MODE.lookup[mode])
         self.mode = mode
