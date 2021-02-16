@@ -1,23 +1,38 @@
-from micropython import const
-
 from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
 from upyiot.comm.Messaging.Message import Message
 from upyiot.comm.Messaging.MessageTemplate import MessageTemplate
 from upyiot.comm.Messaging.MessageBuffer import MessageBuffer
+from upyiot.middleware.SubjectObserver.SubjectObserver import Subject
 from upyiot.system.Service.Service import Service
 from upyiot.system.Service.Service import ServiceException
 from upyiot.system.ExtLogging import ExtLogging
 
+from micropython import const
 import utime
 
 RECEIVE_MESSAGES_ENABLED = 0
+
+
+class MessageExchangeExceptionMessageSize(Exception):
+    """Raised when MessageExchange is initialized with a max message size
+    that exceeds the MTU defined by the used protocol. """
+    def __init__(self, msg_size, mtu):
+        self.MsgSize = msg_size
+        self.Mtu = mtu
+        msg = (" MessageExchange is initialized with a max message size {} "
+               "that exceeds the MTU {} defined by the used protocol.".format(self.MsgSize, self.Mtu))
+        super().__init__(msg)
 
 
 class MessageExchangeService(Service):
     MSG_EX_SERVICE_MODE = Service.MODE_RUN_PERIODIC
 
     def __init__(self):
+        self.DefaultInterval = 100
         super().__init__("MsgEx", self.MSG_EX_SERVICE_MODE, {})
+
+    def DefaultIntervalSet(self, default_interval_sec):
+        self.DefaultInterval = default_interval_sec
 
 
 class MessageExchange(MessageExchangeService):
@@ -36,12 +51,18 @@ class MessageExchange(MessageExchangeService):
 
     _Instance = None
 
-    def __init__(self, directory, proto_obj, send_retries):
+    def __init__(self, directory, proto_obj, send_retries, msg_size_max, msg_send_limit=5):
+        if msg_size_max > proto_obj.Mtu:
+            raise MessageExchangeExceptionMessageSize(msg_size_max, proto_obj.Mtu)
+
         # Initialize the MessageExchangeService class.
         super().__init__()
 
+        # Configure the max size of a single message. Determines buffer sizes.
+        MessageTemplate.Configure(msg_size_max)
+
         # Configure the MessageBuffer and Message classes.
-        MessageBuffer.Configure(directory, MessageTemplate.MSG_SIZE_MAX)
+        MessageBuffer.Configure(directory)
 
         # Create a generic send buffer for all outgoing messages.
         self.SendMessageBuffer = MessageBuffer('send', -1, -1,
@@ -49,10 +70,13 @@ class MessageExchange(MessageExchangeService):
         self.MessageMappings = set()
         self.Protocol = proto_obj
         self.SendRetries = send_retries
+        self.SendLimit = msg_send_limit
+        self.ConnectionState = Subject()
+        self.ConnectionState.State = False
         self.ServiceInit = False
         self.NewMessage = False  # Set to True by the receive callback on a received message.
-
         self.Log = ExtLogging.Create("MsgEx")
+
         MessageExchange._Instance = self
 
     @staticmethod
@@ -66,17 +90,37 @@ class MessageExchange(MessageExchangeService):
 
     def SvcRun(self):
         # Get the amount of messages queued for transmission.
-        msg_count = self.SendMessageBuffer.MessageCount()
-        self.Log.info("Messages in send-buffer: {}".format(msg_count))
+        msg_count = self.SendMessageBuffer.MessageCount() \
+            if self.SendMessageBuffer.MessageCount() < self.SendLimit else self.SendLimit
+
+        self.Log.info("Messages in send-buffer: {}".format(self.SendMessageBuffer.MessageCount()))
 
         # Iterate through all queued messages once.
+        self.Log.info("Sending {} messages".format(msg_count))
         for i in range(0, msg_count):
             self._SendMessage()
 
         if RECEIVE_MESSAGES_ENABLED is 1:
             self._ReceiveMessage()
 
+        # If not all messages could be send in a single cycle due to a send limit,
+        # AND a custom send interval has been defined (not default),
+        # set the send interval for this cycle. The scheduler will schedule this
+        # service again after the send interval.
+        if self.SendMessageBuffer.MessageCount() \
+                and self.Protocol.SendInterval is not self.Protocol.SEND_INTERVAL_DEFAULT:
+            self.Log.info("Setting send interval: {}".format(self.Protocol.SendInterval))
+            self.SvcIntervalSet(self.Protocol.SendInterval)
+        else:
+            self.SvcIntervalSet(self.DefaultInterval)
+
 # ########
+
+    def AttachConnectionStateObserver(self, observer):
+        self.ConnectionState.Attach(observer)
+
+    def DetachConnectionStateObserver(self, observer):
+        self.ConnectionState.Detach(observer)
 
     def RegisterMessageType(self, msg_spec_obj):
         # If this message can be received
@@ -99,6 +143,20 @@ class MessageExchange(MessageExchangeService):
                 msg_buf.Delete()
 
     def MessagePut(self, msg_data_dict, msg_type, msg_subtype, msg_meta_dict=None):
+        """
+        Put a single message in the send queue (FIFO) of the Message Exchange service.
+        :param msg_data_dict: Message data
+        :type msg_data_dict: dict
+        :param msg_type: Message type
+        :type msg_type: int
+        :param msg_subtype: Message subtype
+        :type msg_subtype: int
+        :param msg_meta_dict: Message metadata (optional)
+        :type msg_meta_dict: dict
+        :return:
+        :rtype:
+        :except
+        """
         # Get the current date-time.
         self.Log.debug("Serializing message: {}".format(msg_data_dict))
         # Serialize the message.
@@ -180,12 +238,15 @@ class MessageExchange(MessageExchangeService):
                 connected = True
                 self.Log.info("Connected.")
             except OSError:
-                retries = retries + 1
+                retries += 1
                 self.Log.info("Failed to connect to server. Retries left %d"
                       % (self.SendRetries - retries))
                 utime.sleep(MessageExchange.CONNECT_RETRY_INTERVAL_SEC)
                 continue
-
+        
+        # Update the Connection state subject
+        self.ConnectionState.State = connected
+        
         if connected is False:
             self.Log.warning("Failed to connect after retries.")
             # TODO: Raise ServiceException
@@ -209,7 +270,8 @@ class MessageExchange(MessageExchangeService):
             self.Protocol.Send(msg_map, msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len], msg_len)
 
         else:
-            self.Log.warning("No map defined for message type %d.%d" %
+            # TODO: Raise an exception here. This should not happen.
+            self.Log.error("No map defined for message type %d.%d" %
                              (msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
                               msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE]))
 
