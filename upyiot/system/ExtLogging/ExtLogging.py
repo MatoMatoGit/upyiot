@@ -245,10 +245,11 @@ def ConfigGlobal(level=INFO, stream=None, dir=None, file_prefix=None, line_limit
     global _File
     global Mngr
 
-    if Mngr is None:
-        Mngr = LogFileManager(dir, file_prefix, file_limit)
+    if dir is not None:
+        if Mngr is None:
+            Mngr = LogFileManager(dir, file_prefix, file_limit)
+        _File = LogFile(Mngr, line_limit)
 
-    _File = LogFile(Mngr, line_limit)
     _Stream = LoggerStream(stream, _File)
     _ConfigBasic(level=level, stream=_Stream)
 
