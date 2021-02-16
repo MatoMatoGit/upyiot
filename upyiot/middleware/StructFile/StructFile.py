@@ -1,12 +1,23 @@
 import uos as os
 import ustruct
 from micropython import const
-#from upyiot.system.ExtLogging import ExtLogging
 
-def InitLogger(logger):
+
+def SetLogger(logger):
+    """
+    Set the logger for the StructFile module.
+    :param logger: Logger to use.
+    :type logger: <Logger> or <ExtLogging>
+    """
     global Log
 
     Log = logger
+
+
+def ResetLogger():
+    global  Log
+    Log = SimpleLogger()
+
 
 class SimpleLogger:
 
