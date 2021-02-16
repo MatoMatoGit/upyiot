@@ -3,20 +3,26 @@ from micropython import const
 
 class MessageTemplate:
 
+    DEFAULT_MSG_SIZE = const(300)
+
     # JSON representation
     MSG_SECTION_META = ""
     MSG_SECTION_DATA = ""
     Metadata = None
     MetadataFunctions = None
 
-    MSG_SIZE_MAX = const(300)
+    MsgSizeMax = DEFAULT_MSG_SIZE
+
+    @staticmethod
+    def Configure(msg_size_max):
+        MessageTemplate.MsgSizeMax = msg_size_max
 
     @staticmethod
     def SectionsSet(meta_section_key, data_section_key):
         MessageTemplate.MSG_SECTION_META = meta_section_key
         MessageTemplate.MSG_SECTION_DATA = data_section_key
         print("[MsgTemp] Section keys: {}".format((MessageTemplate.MSG_SECTION_META,
-            MessageTemplate.MSG_SECTION_DATA)))
+                                                   MessageTemplate.MSG_SECTION_DATA)))
 
 
     @staticmethod

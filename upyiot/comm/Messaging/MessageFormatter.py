@@ -131,7 +131,7 @@ class MessageFormatter:
                 self.Mode is MessageFormatter.SEND_ON_CHANGE:
             Log.info("Handover to MsgEx: {}".format(self.MsgOut))
             res = self.MsgEx.MessagePut(self.MsgOut, self.MsgType,
-                                           self.MsgSubtype, self.MsgMeta)
+                                        self.MsgSubtype, self.MsgMeta)
 
             if res is -1:
                 Log.error("Message handover failed.")

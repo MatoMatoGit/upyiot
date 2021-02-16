@@ -34,7 +34,7 @@ class Message:
         # Close the previous stream if there is one.
         if Message._StreamBuffer is not None:
             Message._StreamBuffer.close()
-        Message._StreamBuffer = uio.BytesIO(MessageTemplate.MSG_SIZE_MAX)
+        Message._StreamBuffer = uio.BytesIO(MessageTemplate.MsgSizeMax)
         # If metadata was given, check for matching keys and copy the values.
         if meta_dict is not None:
             for key in Message.Msg[MessageTemplate.MSG_SECTION_META].keys():

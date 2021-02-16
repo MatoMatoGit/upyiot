@@ -1,5 +1,6 @@
 from upyiot.middleware.NvQueue import NvQueue
 from upyiot.system.ExtLogging import ExtLogging
+from upyiot.comm.Messaging.MessageTemplate import MessageTemplate
 
 Log = ExtLogging.Create("MsgBuf")
 
@@ -19,12 +20,12 @@ class MessageBuffer:
     Configured = False
 
     @staticmethod
-    def Configure(directory, msg_len_max):
-        MessageBuffer.MsgDataLen = msg_len_max
+    def Configure(directory):
+        MessageBuffer.MsgDataLen = MessageTemplate.MsgSizeMax
         MessageBuffer.MsgStructFmt = "<iiI" + \
                                      str(MessageBuffer.MsgDataLen) + "s"
         Log.debug("FMT: {}".format(MessageBuffer.MsgStructFmt))
-        MessageBuffer.Directory = directory
+        MessageBuffer.Directory = directory + "/"
         Log.debug(directory)
         # MessageBuffer._UnPackBuffer = bytearray(msg_len_max + msg_len_max)
         MessageBuffer.Configured = True

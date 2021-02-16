@@ -1,13 +1,16 @@
 from upyiot.comm.Messaging.Protocol.MessagingProtocol import MessagingProtocol
 from upyiot.comm.Messaging.MessageExchange import MessageExchange
+from micropython import const
 
 
 class MqttProtocol(MessagingProtocol):
 
+    MQTT_MTU = const(1400)
+
     _Instance = None
 
     def __init__(self, mqtt_client):
-        super().__init__(mqtt_client)
+        super().__init__(mqtt_client, self.MQTT_MTU)
         MqttProtocol._Instance = self
         return
 

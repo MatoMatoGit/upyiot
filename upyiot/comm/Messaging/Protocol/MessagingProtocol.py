@@ -1,11 +1,16 @@
+from micropython import const
 
 
 class MessagingProtocol:
 
-    def __init__(self, client):
+    SEND_INTERVAL_DEFAULT = const(0)
+
+    def __init__(self, client, mtu, send_interval=SEND_INTERVAL_DEFAULT):
         self.RecvCallback = None
         self.Client = client
         self.MessageMappings = None
+        self.Mtu = mtu
+        self.SendInterval = send_interval
         return
 
     def Setup(self, recv_callback, msg_mappings):

@@ -1,14 +1,17 @@
 from upyiot.comm.Messaging.Protocol.MessagingProtocol import MessagingProtocol
 from upyiot.comm.Messaging.MessageExchange import MessageExchange
+from micropython import const
 import urequests
 
 
 class HttpProtocol(MessagingProtocol):
 
+    HTTP_MTU = const(1400)
+
     _Instance = None
 
     def __init__(self, mqtt_client):
-        super().__init__(mqtt_client)
+        super().__init__(mqtt_client, self.HTTP_MTU)
         HttpProtocol._Instance = self
         return
 
