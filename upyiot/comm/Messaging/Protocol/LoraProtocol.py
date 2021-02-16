@@ -4,20 +4,23 @@ from upyiot.comm.Network import LoRaWAN
 from upyiot.comm.Network.LoRaWAN.MHDR import MHDR
 from upyiot.middleware.StructFile import StructFile
 from upyiot.drivers.Modems.SX127x.LoRa import *
-from upyiot.drivers.Modems.SX127x.LoRaArgumentParser import LoRaArgumentParser
 from upyiot.drivers.Modems.SX127x.board_config import BOARD
 from upyiot.system.ExtLogging import ExtLogging
 
 from time import sleep
 from random import randrange
 import machine
+from micropython import const
 
-parser = LoRaArgumentParser("LoraProto")
 Log = ExtLogging.Create("LoraProto")
 
-ADDR_SIZE = 4
-EUI_SIZE = 8
-KEY_SIZE = 16
+ADDR_SIZE = const(4)
+EUI_SIZE = const(8)
+KEY_SIZE = const(16)
+
+TX_TIMEOUT_SEC = const(10)
+RX_TIMEOUT_SEC = const(30)
+TIMEOUT_POLL_SEC = const(1)
 
 
 class LoRaWANParams:
@@ -29,20 +32,29 @@ class LoRaWANParams:
         self.SessionSFile = StructFile.StructFile(dir + '/session', self.SESSION_DATA_FMT)
         self.FrameCountSFile = StructFile.StructFile(dir + '/fcnt', self.FCNT_DATA_FMT)
 
-        self.FrameCounter = self.FrameCountSFile.ReadData(0)[0]
-        self.DevAddr, self.AppSKey, self.NwkSKey = self.SessionSFile.ReadData(0)
-
-        if self.FrameCounter is None:
+        try:
+            self.FrameCounter = self.FrameCountSFile.ReadData(0)[0]
+            Log.info("FrameCounter: {}".format(self.FrameCounter))
+        except TypeError:
+            Log.info("No LoRaWAN framecounter present.")
             self.FrameCounter = 0
 
-        if self.HasSession() is False:
-            Log.info("No LoRaWAN session info present")
-            self.FrameCounter = 0
-        else:
-            Log.info("LoRaWAN session info loaded")
-            Log.debug("NwSKey: {} | AppSKey: {} | DevAddr: {}".format(self.NwkSKey, self.AppSKey, self.DevAddr))
+        try:
+            self.DevAddr, self.AppSKey, self.NwkSKey = self.SessionSFile.ReadData(0)
+            self.DevAddr = list(self.DevAddr)
+            self.AppSKey = list(self.AppSKey)
+            self.NwkSKey = list(self.NwkSKey)
 
-        Log.info("FrameCounter: {}".format(self.FrameCounter))
+            Log.info("LoRaWAN session info loaded.")
+            Log.debug("NwSKey: {} | AppSKey: {} | DevAddr: {}".format(self.NwkSKey,
+                                                                      self.AppSKey,
+                                                                      self.DevAddr))
+        except TypeError:
+            self.FrameCounter = 0
+            self.DevAddr = None
+            self.AppSKey = None
+            self.NwkSKey = None
+            Log.info("No LoRaWAN session present.")
 
     def IncrementFrameCounter(self):
         self.FrameCounter += 1
@@ -57,12 +69,23 @@ class LoRaWANParams:
         self.AppSKey = app_skey
         self.NwkSKey = nwk_skey
         Log.info("Storing LoRaWAN session")
-        self.SessionSFile.WriteData(0, self.DevAddr, self.AppSKey, self.NwkSKey)
+        self.SessionSFile.WriteData(0, bytearray(self.DevAddr),
+                                    bytearray(self.AppSKey), bytearray(self.NwkSKey))
 
     def ResetSession(self):
         self.SessionSFile.Clear()
 
     def HasSession(self):
+        """
+        Checks whether a LoRaWAN session has been stored. A session is stored
+        on a successful network join or if it has been been pre-set.
+        A session consists of:
+        - The device address
+        - The application session key
+        - The network session key
+        :return: True if a session exists, False if it does not.
+        :rtype: boolean
+        """
         return self.DevAddr is not None \
                and self.AppSKey is not None \
                and self.NwkSKey is not None
@@ -73,37 +96,43 @@ class LoRaWANSend(LoRa):
         super(LoRaWANSend, self).__init__(verbose)
         self.Params = params_obj
         self.Payload = payload
+        self.Done = False
 
     def on_tx_done(self):
         self.set_mode(MODE.STDBY)
         self.clear_irq_flags(TxDone=1)
         Log.info("TxDone")
-        sys.exit(0)
+        self.Done = True
 
     def Start(self):
         Log.info("Sending LoRaWAN TX packet")
 
-        lorawan = LoRaWAN.new(self.Params.NwkSkey, self.Params.AppSKey)
+        lorawan = LoRaWAN.new(self.Params.NwkSKey, self.Params.AppSKey)
 
         Log.info("Frame counter: {}".format(self.Params.FrameCounter))
 
         lorawan.create(MHDR.UNCONF_DATA_UP, {'devaddr': self.Params.DevAddr,
                                              'fcnt': self.Params.FrameCounter,
-                                             'data': self.Payload })
+                                             'data': list(self.Payload)})
 
         self.write_payload(lorawan.to_raw())
         self.set_mode(MODE.TX)
 
         self.Params.IncrementFrameCounter()
 
-        while True:
-            sleep(1)
+        timeout = 0
+        while self.Done is False and timeout < TX_TIMEOUT_SEC:
+            sleep(TIMEOUT_POLL_SEC)
+            timeout += TIMEOUT_POLL_SEC
+
+        self.set_mode(MODE.SLEEP)
 
 
 class LoRaWANReceive(LoRa):
     def __init__(self, params_obj, verbose=False):
         super(LoRaWANReceive, self).__init__(verbose)
         self.Params = params_obj
+        self.Done = False
 
     def on_rx_done(self):
         Log.info("RxDone")
@@ -112,7 +141,7 @@ class LoRaWANReceive(LoRa):
         payload = self.read_payload(nocheck=True)
         Log.debug("".join(format(x, '02x') for x in bytes(payload)))
 
-        lorawan = LoRaWAN.new(self.Params.NwkSkey, self.Params.AppSKey)
+        lorawan = LoRaWAN.new(self.Params.NwkSKey, self.Params.AppSKey)
         lorawan.read(payload)
         Log.debug(lorawan.get_mhdr().get_mversion())
         Log.debug(lorawan.get_mhdr().get_mtype())
@@ -122,14 +151,19 @@ class LoRaWANReceive(LoRa):
         Log.debug("".join(list(map(chr, lorawan.get_payload()))))
 
         self.set_mode(MODE.SLEEP)
-        self.reset_ptr_rx()
-        self.set_mode(MODE.RXCONT)
+
+        self.Done = True
 
     def Start(self):
         self.reset_ptr_rx()
-        self.set_mode(MODE.RXCONT)
-        while True:
-            sleep(.5)
+        self.set_mode(MODE.RXSINGLE)
+
+        timeout = 0
+        while self.Done is False and timeout < RX_TIMEOUT_SEC:
+            sleep(TIMEOUT_POLL_SEC)
+            timeout += TIMEOUT_POLL_SEC
+
+        self.set_mode(MODE.SLEEP)
 
 
 class LoRaWANOtaa(LoRa):
@@ -139,7 +173,9 @@ class LoRaWANOtaa(LoRa):
         self.DevEui = dev_eui
         self.AppEui = app_eui
         self.AppKey = app_key
-        super(LoRaWANOtaa, self).__init__(verbose=verbose, do_calibration=True, calibration_freq=869.25)
+        self.Done = False
+        super(LoRaWANOtaa, self).__init__(verbose=verbose, do_calibration=True,
+                                          calibration_freq=868.1)
 
     def on_rx_done(self):
         Log.info("RxDone")
@@ -149,23 +185,22 @@ class LoRaWANOtaa(LoRa):
 
         lorawan = LoRaWAN.new([], self.AppKey)
         lorawan.read(payload)
-        Log.debug(lorawan.get_payload())
-        Log.debug(lorawan.get_mhdr().get_mversion())
+        Log.debug(str(lorawan.get_payload()))
+        Log.debug(str(lorawan.get_mhdr().get_mversion()))
 
         if lorawan.get_mhdr().get_mtype() == MHDR.JOIN_ACCEPT:
             Log.info("Got LoRaWAN join accept")
 
-            nws_key = lorawan.derive_nwskey(self.DevNonce)
+            nwks_key = lorawan.derive_nwskey(self.DevNonce)
 
             apps_key = lorawan.derive_appskey(self.DevNonce)
 
             dev_addr = lorawan.get_devaddr()
-            Log.debug("NwSKey: {} | AppSKey: {} | DevAddr: {}".format(nws_key, apps_key, dev_addr))
+            Log.debug("NwSKey: {} | AppSKey: {} | DevAddr: {}".format(nwks_key, apps_key, dev_addr))
 
-            self.Params.StoreSession(dev_addr, apps_key, nws_key)
+            self.Params.StoreSession(dev_addr, apps_key, nwks_key)
 
-        else:
-            raise OSError
+        self.Done = True
 
     def on_tx_done(self):
         self.clear_irq_flags(TxDone=1)
@@ -176,6 +211,8 @@ class LoRaWANOtaa(LoRa):
         self.set_invert_iq(1)
         self.reset_ptr_rx()
         self.set_mode(MODE.RXCONT)
+
+        Log.info("Waiting for LoRaWAN join accept")
 
     def Start(self):
 
@@ -189,25 +226,39 @@ class LoRaWANOtaa(LoRa):
         self.write_payload(lorawan.to_raw())
         self.set_mode(MODE.TX)
 
+        timeout = 0
+        while self.Done is False and timeout < RX_TIMEOUT_SEC:
+            sleep(TIMEOUT_POLL_SEC)
+            timeout += TIMEOUT_POLL_SEC
+
+        self.set_mode(MODE.SLEEP)
+
 
 class LoraProtocol(MessagingProtocol):
 
+    LORA_MTU = const(51)
+    LORA_SEND_INTERVAL = const(10) # 600
+
     _Instance = None
 
-    def __init__(self, dev_eui, app_eui, app_key, dir="/"):
-        super().__init__(None)
+    def __init__(self, config, directory="/", send_interval=LORA_SEND_INTERVAL):
+        super().__init__(client=None, mtu=self.LORA_MTU, send_interval=send_interval)
         LoraProtocol._Instance = self
-        self.AppKey = app_key
-        self.DevEui = dev_eui
-        self.AppEui = app_eui
+        self.AppKey = config["app_key"]
+        self.DevEui = config["dev_eui"]
+        self.AppEui = config["app_eui"]
+        self.Config = config
         self.Lora = None
-        self.Params = LoRaWANParams(dir)
-        Log.debug("DevEUI: {} | AppEUI: {} | AppKey: {}".format(self.DevEui, self.AppEui, self.AppKey))
+        self.Params = LoRaWANParams(directory)
+        Log.info("DevEUI: {} | AppEUI: {} | AppKey: {}".format(self.DevEui,
+                                                               self.AppEui,
+                                                               self.AppKey))
+        Log.info("MTU: {} bytes | Send interval: {} sec".format(self.Mtu,
+                                                                self.SendInterval))
         return
 
     def Setup(self, recv_callback, msg_mappings):
         MessagingProtocol.Setup(self, recv_callback, msg_mappings)
-        self.Client.on_receive(LoraProtocol._ReceiveCallback)
         BOARD.setup()
         return
 
@@ -232,13 +283,22 @@ class LoraProtocol(MessagingProtocol):
 
     def Connect(self):
         if self.Params.HasSession() is False:
-            self.Lora = LoRaWANOtaa([randrange(256), randrange(256)], self.DevEui,
-                                    self.AppEui, self.AppKey, self.Params, verbose=True)
+            dev_nonce = [randrange(256), randrange(256)]
+
+            self.Lora = LoRaWANOtaa(dev_nonce, self.DevEui,
+                                    self.AppEui, self.AppKey,
+                                    self.Params, verbose=True)
             self._ConfigureLora()
             self.Lora.Start()
 
+        if self.Params.HasSession() is False:
+            raise OSError
+
     def Disconnect(self):
         pass
+
+    def HasSession(self):
+        return self.Params.HasSession()
 
     @staticmethod
     def _ReceiveCallback(lora, outgoing):
@@ -249,15 +309,17 @@ class LoraProtocol(MessagingProtocol):
     def _ConfigureLora(self):
         self.Lora.set_mode(MODE.SLEEP)
         self.Lora.set_dio_mapping([1, 0, 0, 0, 0, 0])
-        self.Lora.set_freq(868.1)
+        self.Lora.set_freq(self.Config["freq"])
         self.Lora.set_pa_config(pa_select=1)
-        self.Lora.set_spreading_factor(12)  # 7
-        self.Lora.set_low_data_rate_optim(1)
+        self.Lora.set_spreading_factor(self.Config["sf"])
+        self.Lora.set_low_data_rate_optim(self.Config["ldro"])
         self.Lora.set_bw(7)  # 7=125k
         self.Lora.set_pa_config(max_power=0x0F, output_power=0x0F)
         self.Lora.set_sync_word(0x34)
         self.Lora.set_rx_crc(True)
-        self.Lora.set_agc_auto_on(1)
+        self.Lora.set_detect_optimize(0x03)  # 0x03 for SF7-SF12
+        self.Lora.set_detection_threshold(0x0A)  # 0x0A for SF7-SF12
+        #self.Lora.set_agc_auto_on(1)
 
-        Log.debug(self.Lora)
+        Log.debug(str(self.Lora))
 
