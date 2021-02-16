@@ -18,7 +18,7 @@ from upyiot.comm.Messaging.MessageExchange import MessageExchange
 from upyiot.comm.Messaging.MessageExchange import Endpoint
 from upyiot.comm.Messaging.MessageFormatAdapter import MessageFormatAdapter
 from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
-from upyiot.drivers.Sleep.DeepSleep import DeepSleepExceptionInitiated
+from upyiot.drivers.Sleep.MachineDeepSleep import DeepSleepExceptionInitiated
 
 # Other
 from umqtt.simple import MQTTClient

@@ -7,6 +7,7 @@ from TestUtil import TestUtil
 
 # Unit Under Test
 from upyiot.comm.Messaging.MessageBuffer import MessageBuffer
+from upyiot.comm.Messaging.MessageBuffer import MessageTemplate
 
 # Other
 
@@ -19,19 +20,20 @@ class test_MessageBuffer(unittest.TestCase):
     MsgBuf = None
 
     def setUp(arg):
+        MessageTemplate.Configure(test_MessageBuffer.MSG_LEN)
         return
 
     def tearDown(arg):
         return
 
     def test_Configure(self):
-        MessageBuffer.Configure(test_MessageBuffer.DIR, test_MessageBuffer.MSG_LEN)
+        MessageBuffer.Configure(test_MessageBuffer.DIR)
 
         self.assertEqual(MessageBuffer.Directory, test_MessageBuffer.DIR)
         self.assertIsNotNone(MessageBuffer._UnPackBuffer)
 
     def test_Constructor(self):
-        MessageBuffer.Configure(test_MessageBuffer.DIR, test_MessageBuffer.MSG_LEN)
+        MessageBuffer.Configure(test_MessageBuffer.DIR)
 
         self.MsgBuf = MessageBuffer("test", 1, 2, 30)
 
@@ -41,7 +43,7 @@ class test_MessageBuffer(unittest.TestCase):
         self.MsgBuf.Queue.Delete()
 
     def test_MessagePutStringTooLong(self):
-        MessageBuffer.Configure(test_MessageBuffer.DIR, test_MessageBuffer.MSG_LEN)
+        MessageBuffer.Configure(test_MessageBuffer.DIR)
 
         test_str = "x" * (self.MSG_LEN + 1)
         res = self.MsgBuf.MessagePut(test_str)
@@ -51,7 +53,7 @@ class test_MessageBuffer(unittest.TestCase):
         self.MsgBuf.Queue.Delete()
 
     def test_MessagePutStringMaxLength(self):
-        MessageBuffer.Configure(test_MessageBuffer.DIR, test_MessageBuffer.MSG_LEN)
+        MessageBuffer.Configure(test_MessageBuffer.DIR)
         self.MsgBuf = MessageBuffer("test", 1, 2, 30)
 
         test_str = "x" * self.MSG_LEN
@@ -63,7 +65,7 @@ class test_MessageBuffer(unittest.TestCase):
 
     def test_MessagePutStringMaxEntries(self):
 
-        MessageBuffer.Configure(test_MessageBuffer.DIR, test_MessageBuffer.MSG_LEN)
+        MessageBuffer.Configure(test_MessageBuffer.DIR)
         self.MsgBuf = MessageBuffer("test", 1, 2, 30)
 
         test_str = "x" * self.MSG_LEN
@@ -74,7 +76,7 @@ class test_MessageBuffer(unittest.TestCase):
         self.MsgBuf.Queue.Delete()
 
     def test_MessagePutGetSingle(self):
-        MessageBuffer.Configure(test_MessageBuffer.DIR, test_MessageBuffer.MSG_LEN)
+        MessageBuffer.Configure(test_MessageBuffer.DIR)
         self.MsgBuf = MessageBuffer("test", 1, 2, 30)
 
         test_str = "x" * self.MSG_LEN
@@ -92,7 +94,7 @@ class test_MessageBuffer(unittest.TestCase):
 
     def test_MessagePutGetStringMaxEntries(self):
 
-        MessageBuffer.Configure(test_MessageBuffer.DIR, test_MessageBuffer.MSG_LEN)
+        MessageBuffer.Configure(test_MessageBuffer.DIR)
         self.MsgBuf = MessageBuffer("test", 1, 2, 30)
 
         for i in range(0, 30):
