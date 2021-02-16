@@ -7,9 +7,10 @@ from upyiot.system.ExtLogging import ExtLogging
 from micropython import const
 
 
-class SensorException(ServiceException):
+class SensorExceptionInvalidConfig(ServiceException):
 
-    def __init__(self):
+    def __init__(self, msg):
+        print(msg)
         super().__init__()
 
 
@@ -25,16 +26,20 @@ class Sensor(SensorService):
     SAMPLE_FMT              = "<i"
       
     def __init__(self, directory, name, filter_depth, sensor_driver_obj,
-                 samples_per_read=1, dec_round=True, store_data=True):
+                 samples_per_update=1, dec_round=True, store_data=True):
+        if samples_per_update > 1 and store_data is False:
+            raise SensorExceptionInvalidConfig("store_data must be True if samples_per_update > 1")
+
         # Initialize the SensorService class
         super().__init__(name)
 
         self.SensorDriver = sensor_driver_obj
-        self.SamplesPerRead = samples_per_read
+        self.SamplesPerUpdate = samples_per_update
         self.Filter = AvgFilter.AvgFilter(filter_depth, dec_round)
         if store_data is True:
             self.SampleQueue = NvQueue.NvQueue(directory + '/' + name, Sensor.SAMPLE_FMT, Sensor.FILE_SAMPLES_MAX)
         self.NewSample = Subject()
+        self.NewSample.State = list()
         self.StoreData = store_data
         self.Log = ExtLogging.Create("Sensor-{}".format(name))
 
@@ -48,10 +53,14 @@ class Sensor(SensorService):
     @property
     def SamplesCount(self):
         return self.SampleQueue.Count
-    
-    def SamplesGet(self, sample_buf):
-        self._SamplesLoad(sample_buf)
-        return self.SampleQueue.Count
+
+    def SamplesGet(self):
+        """
+        Get all the stored samples.
+        :return: # of samples, samples
+        :rtype: integer, list
+        """
+        return self.SampleQueue.Count, self._SamplesLoad()
   
     def SamplesClear(self):
         self.SampleQueue.Clear()
@@ -64,7 +73,7 @@ class Sensor(SensorService):
         
     def Read(self):
         self.SensorDriver.Enable()
-        for i in range(0, self.SamplesPerRead):
+        for i in range(0, self.Filter.Depth):
             val = self.SensorDriver.Read()
             self.Log.debug("Read value: {}".format(val))
             self.Filter.Input(val)
@@ -72,7 +81,7 @@ class Sensor(SensorService):
         out = self.Filter.Output()
         self.Log.info("Sensor value: {}".format(out))
         self._SampleProcess(out)
-        return self.NewSample.State
+        return out
     
     def ObserverAttachNewSample(self, observer):
         self.NewSample.Attach(observer)
@@ -80,15 +89,26 @@ class Sensor(SensorService):
     def _SampleProcess(self, sample):
         if self.StoreData is True:
             self._SampleStore(sample)
-        self.NewSample.State = sample
+
+        if self.SamplesPerUpdate > 1:
+            if self.SamplesCount >= self.SamplesPerUpdate:
+                cnt, samples = self.SamplesGet()
+                self.Log.debug("Observer update samples ({}): {}".format(cnt, samples))
+                self.NewSample.State = samples
+        else:
+            self.Log.debug("Observer update sample: {}".format(sample))
+            self.NewSample.State = sample
 
     def _SampleStore(self, sample):
+        self.Log.debug("Storing sample")
         self.SampleQueue.Push(sample)
+        self.Log.info("Total stored samples {}".format(self.SamplesCount))
 
-    def _SamplesLoad(self, sample_buf):
-        print("Dumping {} samples:".format(self.SampleQueue.Count))
-        i = 0
+    def _SamplesLoad(self):
+        self.Log.info("Dumping {} samples:".format(self.SampleQueue.Count))
         num_samples = self.SampleQueue.Count
+        samples = list()
         for i in range(0, num_samples):
-            sample_buf[i] = self.SampleQueue.Pop()[0]
+            samples.append(self.SampleQueue.Pop()[0])
+        return samples
 
