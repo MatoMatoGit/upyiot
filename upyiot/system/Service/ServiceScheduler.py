@@ -1,7 +1,7 @@
 from upyiot.system.Service.Service import Service
 from upyiot.system.Service.Service import ServiceExceptionSuspend
 from upyiot.system.Service.Service import ServiceException
-from upyiot.drivers.Sleep.DeepSleep import DeepSleep
+from upyiot.drivers.Sleep.MachineDeepSleep import MachineDeepSleep
 from upyiot.middleware.StructFile.StructFile import StructFile
 from upyiot.system.ExtLogging import ExtLogging
 
@@ -9,6 +9,7 @@ import utime
 from micropython import const
 
 Log = ExtLogging.Create("Scheduler")
+
 
 class SchedulerException(Exception):
 
@@ -32,7 +33,7 @@ class SchedulerMemory:
 
     FILE_SCHEDULER_MEMORY = "/sched_mem"
     SVC_NAME_LEN = const(20)
-    SVC_MEM_FMT = "<" + str(SVC_NAME_LEN) + "si"
+    SVC_MEM_FMT = "<" + str(SVC_NAME_LEN) + "siI"
     SCHED_MEM_FMT = "<III"
 
     SCHED_MEM_RUNTIME = const(0)
@@ -41,6 +42,7 @@ class SchedulerMemory:
 
     SVC_MEM_NAME = const(0)
     SVC_MEM_LAST_RUN = const(1)
+    SVC_MEM_INTERVAL = const(2)
 
     def __init__(self, directory, scheduler_obj):
         self.Sfile = StructFile(directory + self.FILE_SCHEDULER_MEMORY,
@@ -61,7 +63,7 @@ class SchedulerMemory:
         for svc in self.Scheduler.Services:
             Log.debug("Mem: Writing data for service {}".format(svc.SvcName))
             sto_name = svc.SvcName + ((self.SVC_NAME_LEN - len(svc.SvcName)) * "\0")
-            self.Sfile.WriteData(i, sto_name, svc.SvcLastRun)
+            self.Sfile.WriteData(i, sto_name, svc.SvcLastRun, svc.SvcInterval)
             i += 1
 
         self.NumEntries = len(self.Scheduler.Services)
@@ -93,7 +95,7 @@ class SchedulerMemory:
         # the data if a matching service is found (by name).
         for svc_mem in self.Sfile:
             svc_name = svc_mem[self.SVC_MEM_NAME].decode("utf-8").split("\0")[0]
-            Log.debug("Mem: Read data for service {}: {}".format(svc_name, svc_mem[self.SVC_MEM_LAST_RUN]))
+            Log.debug("Mem: Read data for service {}: ".format(svc_name, svc_mem))
             idx = self.Sfile.IteratorIndex()
             if idx < len(self.Scheduler.Services):
                 # First service to check if the one at the same index as it was stored at.
@@ -122,6 +124,7 @@ class SchedulerMemory:
         if svc is None:
             return
         svc.SvcLastRun = svc_mem[self.SVC_MEM_LAST_RUN]
+        svc.SvcInterval = svc_mem[self.SVC_MEM_INTERVAL]
 
     def SearchAndLoadService(self, name):
         self.Sfile.IteratorConfig(0, self.NumEntries)
@@ -154,17 +157,21 @@ class ServiceScheduler:
     SCHED_STATE_IDLE    = const(1)
     SCHED_STATE_RUNNING = const(2)
 
-    def __init__(self, deepsleep_threshold_sec=MIN_DEEPSLEEP_TIME, directory="./"):
+    def __init__(self, deepsleep_threshold_sec=MIN_DEEPSLEEP_TIME, deep_sleep_obj=None, directory="./"):
         self.Services = list()
         self.RunTimeSec = 0
         self.Cycles = None
         self.Index = 0
         self.DeepSleepThresholdSec = deepsleep_threshold_sec
-        self.DeepSleep = DeepSleep()
+        self.DeepSleep = deep_sleep_obj
+        self.CbsBeforeDeepSleep = set()
         self.SleepTime = 0
         self.SleepTimeRequested = -1
         self.Memory = SchedulerMemory(directory, self)
         self.State = self.SCHED_STATE_STOPPED
+
+        if self.DeepSleep is None:
+            self.DeepSleep = MachineDeepSleep()
 
         return
 
@@ -325,6 +332,13 @@ class ServiceScheduler:
             self.SleepTimeRequested = t_sec
             return 0
 
+    def RegisterCallbackBeforeDeepSleep(self, callback):
+        self.CbsBeforeDeepSleep.add(callback)
+
+    def _NotifyBeforeDeepSleep(self):
+        for cb in self.CbsBeforeDeepSleep:
+            cb()
+
     def _CalculateRuntime(self, t_start):
         # Calculate the amount of time that passed while running services.
         t_end = utime.ticks_ms()
@@ -345,6 +359,8 @@ class ServiceScheduler:
         self.RunTimeSec += t_sec
 
     def _InitiateDeepSleep(self, t_sec):
+        # Call registered BeforeDeepSleep callbacks.
+        self._NotifyBeforeDeepSleep()
         # Save the scheduler run time, and last-run time of all services.
         self.Memory.Save()
         # Deep sleep, this function call does not return (if successful).
@@ -364,10 +380,11 @@ class ServiceScheduler:
             Log.error("Error occurred, disabling service.")
             service.SvcStateSet(Service.STATE_DISABLED)
 
-        # Update the last run timestamp.
-        service.SvcLastRunSet(self.RunTimeSec)
-        service.SvcDeactivate()
-        service.SvcRunCount += 1
+        if service.SvcState is not Service.STATE_DISABLED:
+            # Update the last run timestamp.
+            service.SvcLastRunSet(self.RunTimeSec)
+            service.SvcDeactivate()
+            service.SvcRunCount += 1
 
     def _InitializeService(self, service):
         try:
@@ -384,7 +401,7 @@ class ServiceScheduler:
         return res
 
     def _UpdatePeriodicServices(self):
-        sleep_time = 0
+        shortest_sleep_time = 0
         # Activate periodic services.
         for svc in self.Services:
             if svc.SvcMode is Service.MODE_RUN_PERIODIC and svc.SvcState is not Service.STATE_DISABLED:
@@ -401,8 +418,10 @@ class ServiceScheduler:
                 # timestamp.
                 else:
                     sleep_time = svc.SvcInterval - (self.RunTimeSec - last_run)
+                    if shortest_sleep_time is 0 or sleep_time < shortest_sleep_time:
+                        shortest_sleep_time = sleep_time
 
-        return sleep_time
+        return shortest_sleep_time
 
     def _CheckServiceDependencies(self, service):
         ready = True
