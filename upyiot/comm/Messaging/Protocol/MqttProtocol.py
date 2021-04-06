@@ -1,5 +1,6 @@
 from upyiot.comm.Messaging.Protocol.MessagingProtocol import MessagingProtocol
 from upyiot.comm.Messaging.MessageExchange import MessageExchange
+from upyiot.comm.Messaging.MessageSpecification import MessageSpecification
 from micropython import const
 
 
@@ -22,7 +23,7 @@ class MqttProtocol(MessagingProtocol):
         return
 
     def Send(self, msg_map, payload, size):
-        topic = msg_map[MessageExchange.MSG_MAP_ROUTING]
+        topic = MessageSpecification.UrlResolve(msg_map[MessageExchange.MSG_MAP_ROUTING])
         self.Client.publish(topic, payload)
         return
 
