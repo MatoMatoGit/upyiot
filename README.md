@@ -61,3 +61,10 @@ All available libraries can be found in the list below.
       * ServiceScheduler: Simple service scheduler with dependency detection and deep-sleep support.
    * SystemTime: Time sychronization service. Periodically synchronizes the internal RTC to NTP. 
 
+## Formatting
+The formatter used for upyiot is yapf.
+
+Install `pip3 install yapf`
+
+Run in repository root folder  
+`yapf -vv -r --in-place upyiot`
