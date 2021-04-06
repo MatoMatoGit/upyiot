@@ -117,6 +117,13 @@ class MessageExchange(MessageExchangeService):
 # ########
 
     def AttachConnectionStateObserver(self, observer):
+        """
+        Attach a connection state observer to this service. The observer is updated
+        when the connection state changes. The state update argument represents the
+        connection state; true = connected, false = not connected.
+        :param observer: Observer to attach
+        :type observer: <Observer>
+        """
         self.ConnectionState.Attach(observer)
 
     def DetachConnectionStateObserver(self, observer):
@@ -142,32 +149,45 @@ class MessageExchange(MessageExchangeService):
             if msg_buf is not None:
                 msg_buf.Delete()
 
-    def MessagePut(self, msg_data_dict, msg_type, msg_subtype, msg_meta_dict=None):
+    def MessagePut(self, msg_data: dict, msg_type: int,
+                   msg_subtype: int, msg_meta: dict = None) -> int:
         """
         Put a single message in the send queue (FIFO) of the Message Exchange service.
-        :param msg_data_dict: Message data
-        :type msg_data_dict: dict
+        :param msg_data: Message data
+        :type msg_data: dict
         :param msg_type: Message type
         :type msg_type: int
         :param msg_subtype: Message subtype
         :type msg_subtype: int
-        :param msg_meta_dict: Message metadata (optional)
-        :type msg_meta_dict: dict
+        :param msg_meta: Message metadata (optional)
+        :type msg_meta: dict
         :return:
         :rtype:
         :except
         """
         # Get the current date-time.
-        self.Log.debug("Serializing message: {}".format(msg_data_dict))
+        self.Log.debug("Serializing message: {}".format(msg_data))
         # Serialize the message.
-        Message.Serialize(msg_data_dict, msg_meta_dict)
+        Message.Serialize(msg_data, msg_meta)
         self.Log.debug("Serialized length: {}".format(len(Message.Stream().getvalue())))
 
         # Put the message in the send buffer, return the result value.
         return self.SendMessageBuffer.MessagePutWithType(msg_type, msg_subtype,
                                                          Message.Stream().getvalue())
 
-    def MessageGet(self, msg_type, msg_subtype):
+    def MessageGet(self, msg_type: int, msg_subtype: int) -> dict:
+        """
+        Returns a received message that matches the specified type and subtype.
+        :param msg_type: Message type
+        :type msg_type: int
+        :param msg_subtype: Message subtype
+        :type msg_subtype: int
+        :return: Message or {"error": <code>}.
+        -3 if no message is available.
+        -2 if the message spec is of type SEND.
+        -1 if no message mapping exists.
+        :rtype: dict
+        """
         # Get the message map for the requested type.
         msg_map = self.MessageMapFromType(msg_type, msg_subtype)
         self.Log.debug("Found message map: {}".format(msg_map))
@@ -183,13 +203,13 @@ class MessageExchange(MessageExchangeService):
                     return Message.Deserialize(msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len])
                 else:
                     self.Log.info("No message of type %d.%d received." % (msg_type, msg_subtype))
-                    return -3
+                    return {"error": -3}
             else:
                 self.Log.error("Message type %d.%d is specified as SEND." % (msg_type, msg_subtype))
-                return -2
+                return {"error": -2}
         else:
             self.Log.error("No message mapping for message type %d.%d" % (msg_type, msg_subtype))
-        return -1
+        return {"error": -1}
 
     def MessageMapFromType(self, msg_type, msg_subtype):
         for msg_map in self.MessageMappings:
