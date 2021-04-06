@@ -25,8 +25,25 @@ class Sensor(SensorService):
     FILE_SAMPLES_MAX        = const(9999)
     SAMPLE_FMT              = "<i"
       
-    def __init__(self, directory, name, filter_depth, sensor_driver_obj,
+    def __init__(self, directory: str, name: str, filter_depth, sensor_driver_obj,
                  samples_per_update=1, dec_round=True, store_data=True):
+        """
+
+        :param directory:
+        :type directory:
+        :param name:
+        :type name:
+        :param filter_depth:
+        :type filter_depth:
+        :param sensor_driver_obj:
+        :type sensor_driver_obj:
+        :param samples_per_update:
+        :type samples_per_update:
+        :param dec_round:
+        :type dec_round:
+        :param store_data:
+        :type store_data:
+        """
         if samples_per_update > 1 and store_data is False:
             raise SensorExceptionInvalidConfig("store_data must be True if samples_per_update > 1")
 
@@ -51,14 +68,14 @@ class Sensor(SensorService):
         return self.NewSample.State
     
     @property
-    def SamplesCount(self):
+    def SamplesCount(self) -> int:
         return self.SampleQueue.Count
 
-    def SamplesGet(self):
+    def SamplesGet(self) -> tuple:
         """
         Get all the stored samples.
         :return: # of samples, samples
-        :rtype: integer, list
+        :rtype: (integer, list)
         """
         return self.SampleQueue.Count, self._SamplesLoad()
   
