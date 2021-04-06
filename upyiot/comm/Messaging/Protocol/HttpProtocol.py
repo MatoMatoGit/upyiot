@@ -10,8 +10,9 @@ class HttpProtocol(MessagingProtocol):
 
     _Instance = None
 
-    def __init__(self, mqtt_client):
-        super().__init__(mqtt_client, self.HTTP_MTU)
+    def __init__(self):
+        # TODO: Add logging
+        super().__init__(None, self.HTTP_MTU)
         HttpProtocol._Instance = self
         return
 
@@ -25,8 +26,10 @@ class HttpProtocol(MessagingProtocol):
 
     def Receive(self):
         for msg_map in self.MessageMappings:
-            urequests.get(msg_map[MessageExchange.MSG_MAP_ROUTING])
-
+            resp = urequests.get(msg_map[MessageExchange.MSG_MAP_ROUTING])
+            if resp.status_code > 200:
+                self.RecvCallback(resp.content, msg_map[MessageExchange.MSG_MAP_ROUTING])
+            # TODO: Add error handling.
         return
 
     def Connect(self):
