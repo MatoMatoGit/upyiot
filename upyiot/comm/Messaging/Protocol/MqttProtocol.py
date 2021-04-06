@@ -23,7 +23,8 @@ class MqttProtocol(MessagingProtocol):
         return
 
     def Send(self, msg_map, payload, size):
-        topic = MessageSpecification.UrlResolve(msg_map[MessageExchange.MSG_MAP_ROUTING])
+        topic = MessageSpecification.UrlResolve(
+            msg_map[MessageExchange.MSG_MAP_ROUTING])
         self.Client.publish(topic, payload)
         return
 
@@ -56,6 +57,7 @@ class MqttProtocol(MessagingProtocol):
             # If the message mapping contains a receive buffer the message can be
             # received and must be subscribed to.
             if msg_map[MessageExchange.MSG_MAP_RECV_BUFFER] is not None:
-                print("[MqttProto] Subscribing to topic {}".format(msg_map[MessageExchange.MSG_MAP_ROUTING]))
+                print("[MqttProto] Subscribing to topic {}".format(
+                    msg_map[MessageExchange.MSG_MAP_ROUTING]))
                 # Subscribe to the message topic.
                 self.Client.subscribe(msg_map[MessageExchange.MSG_MAP_ROUTING])

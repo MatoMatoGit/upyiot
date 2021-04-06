@@ -29,8 +29,9 @@ class Message:
         # Create a message from the template.
         Message.Msg = MessageTemplate()
         Message.Msg = Message.Msg.Msg
-        Message.Log.debug("Serializing message with metadata: {} | data: {}"
-            .format(meta_dict, data_dict))
+        Message.Log.debug(
+            "Serializing message with metadata: {} | data: {}".format(
+                meta_dict, data_dict))
         # Close the previous stream if there is one.
         if Message._StreamBuffer is not None:
             Message._StreamBuffer.close()
@@ -39,7 +40,8 @@ class Message:
         if meta_dict is not None:
             for key in Message.Msg[MessageTemplate.MSG_SECTION_META].keys():
                 if key in meta_dict.keys():
-                    Message.Msg[MessageTemplate.MSG_SECTION_META][key] = meta_dict[key]
+                    Message.Msg[
+                        MessageTemplate.MSG_SECTION_META][key] = meta_dict[key]
         # Copy the data dictionary.
         Message.Msg[MessageTemplate.MSG_SECTION_DATA] = data_dict
         # Serialize the message using the parser.

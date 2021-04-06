@@ -7,10 +7,10 @@ Log = ExtLogging.Create("MsgBuf")
 
 class MessageBuffer:
 
-    MSG_STRUCT_TYPE     = const(0)
-    MSG_STRUCT_SUBTYPE  = const(1)
-    MSG_STRUCT_LEN      = const(2)
-    MSG_STRUCT_DATA     = const(3)
+    MSG_STRUCT_TYPE = const(0)
+    MSG_STRUCT_SUBTYPE = const(1)
+    MSG_STRUCT_LEN = const(2)
+    MSG_STRUCT_DATA = const(3)
 
     MsgDataLen = 0
     MsgStructFmt = ""
@@ -41,25 +41,29 @@ class MessageBuffer:
 
     def MessagePut(self, msg_string):
         if len(msg_string) > MessageBuffer.MsgDataLen:
-            Log.error(" Message string length ({})exceeds max length ({})".format(len(msg_string),
-                                                                                             MessageBuffer.MsgDataLen))
+            Log.error(
+                " Message string length ({})exceeds max length ({})".format(
+                    len(msg_string), MessageBuffer.MsgDataLen))
             return -1
         Log.debug("Pushing message string: {}".format(msg_string))
         # TODO: Use this instead when NvQueue / StructFile can utilize an external buffer.
         # ustruct.pack_into(MessageBuffer.MsgStructFmt, MessageBuffer._UnPackBuffer, 0,
         #                  self.MsgType, self.MsgSubtype, msg_string)
-        return self.Queue.Push(self.MsgType, self.MsgSubtype, len(msg_string), msg_string)
+        return self.Queue.Push(self.MsgType, self.MsgSubtype, len(msg_string),
+                               msg_string)
 
     def MessagePutWithType(self, msg_type, msg_subtype, msg_string):
         if len(msg_string) > MessageBuffer.MsgDataLen:
-            Log.error("Message string length ({})exceeds max length ({})".format(len(msg_string),
-                                                                                             MessageBuffer.MsgDataLen))
+            Log.error(
+                "Message string length ({})exceeds max length ({})".format(
+                    len(msg_string), MessageBuffer.MsgDataLen))
             return -1
         Log.debug("Pushing message string: {}".format(msg_string))
         # TODO: Use this instead when NvQueue / StructFile can utilize an external buffer.
         # ustruct.pack_into(MessageBuffer.MsgStructFmt, MessageBuffer._UnPackBuffer, 0,
         #                  self.MsgType, self.MsgSubtype, msg_string)
-        return self.Queue.Push(msg_type, msg_subtype, len(msg_string), msg_string)
+        return self.Queue.Push(msg_type, msg_subtype, len(msg_string),
+                               msg_string)
 
     def MessageGet(self, msg_buffer=None):
         # TODO: Use the provided message buffer to unpack the struct.

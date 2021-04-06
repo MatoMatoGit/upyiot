@@ -21,9 +21,9 @@ class MessageTemplate:
     def SectionsSet(meta_section_key, data_section_key):
         MessageTemplate.MSG_SECTION_META = meta_section_key
         MessageTemplate.MSG_SECTION_DATA = data_section_key
-        print("[MsgTemp] Section keys: {}".format((MessageTemplate.MSG_SECTION_META,
-                                                   MessageTemplate.MSG_SECTION_DATA)))
-
+        print("[MsgTemp] Section keys: {}".format(
+            (MessageTemplate.MSG_SECTION_META,
+             MessageTemplate.MSG_SECTION_DATA)))
 
     @staticmethod
     def MetadataTemplateSet(metadata_dict, metadata_funcs=None):

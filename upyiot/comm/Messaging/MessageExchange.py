@@ -20,7 +20,8 @@ class MessageExchangeExceptionMessageSize(Exception):
         self.MsgSize = msg_size
         self.Mtu = mtu
         msg = (" MessageExchange is initialized with a max message size {} "
-               "that exceeds the MTU {} defined by the used protocol.".format(self.MsgSize, self.Mtu))
+               "that exceeds the MTU {} defined by the used protocol.".format(
+                   self.MsgSize, self.Mtu))
         super().__init__(msg)
 
 
@@ -37,23 +38,29 @@ class MessageExchangeService(Service):
 
 class MessageExchange(MessageExchangeService):
 
-    CONNECT_RETRY_INTERVAL_SEC  = const(1)
+    CONNECT_RETRY_INTERVAL_SEC = const(1)
 
     # Buffer sizes (number of messages).
     SEND_BUFFER_SIZE = const(1000)
     RECV_BUFFER_SIZE = const(100)
 
-    MSG_MAP_TYPE        = const(0)
-    MSG_MAP_SUBTYPE     = const(1)
-    MSG_MAP_ROUTING     = const(2)
+    MSG_MAP_TYPE = const(0)
+    MSG_MAP_SUBTYPE = const(1)
+    MSG_MAP_ROUTING = const(2)
     MSG_MAP_RECV_BUFFER = const(3)
-    MSG_MAP_SUBSCRIBED  = const(4)
+    MSG_MAP_SUBSCRIBED = const(4)
 
     _Instance = None
 
-    def __init__(self, directory, proto_obj, send_retries, msg_size_max, msg_send_limit=5):
+    def __init__(self,
+                 directory,
+                 proto_obj,
+                 send_retries,
+                 msg_size_max,
+                 msg_send_limit=5):
         if msg_size_max > proto_obj.Mtu:
-            raise MessageExchangeExceptionMessageSize(msg_size_max, proto_obj.Mtu)
+            raise MessageExchangeExceptionMessageSize(msg_size_max,
+                                                      proto_obj.Mtu)
 
         # Initialize the MessageExchangeService class.
         super().__init__()
@@ -65,8 +72,8 @@ class MessageExchange(MessageExchangeService):
         MessageBuffer.Configure(directory)
 
         # Create a generic send buffer for all outgoing messages.
-        self.SendMessageBuffer = MessageBuffer('send', -1, -1,
-                                               MessageExchange.SEND_BUFFER_SIZE)
+        self.SendMessageBuffer = MessageBuffer(
+            'send', -1, -1, MessageExchange.SEND_BUFFER_SIZE)
         self.MessageMappings = set()
         self.Protocol = proto_obj
         self.SendRetries = send_retries
@@ -93,7 +100,8 @@ class MessageExchange(MessageExchangeService):
         msg_count = self.SendMessageBuffer.MessageCount() \
             if self.SendMessageBuffer.MessageCount() < self.SendLimit else self.SendLimit
 
-        self.Log.info("Messages in send-buffer: {}".format(self.SendMessageBuffer.MessageCount()))
+        self.Log.info("Messages in send-buffer: {}".format(
+            self.SendMessageBuffer.MessageCount()))
 
         # Iterate through all queued messages once.
         self.Log.info("Sending {} messages".format(msg_count))
@@ -109,7 +117,8 @@ class MessageExchange(MessageExchangeService):
         # service again after the send interval.
         if self.SendMessageBuffer.MessageCount() \
                 and self.Protocol.SendInterval is not self.Protocol.SEND_INTERVAL_DEFAULT:
-            self.Log.info("Setting send interval: {}".format(self.Protocol.SendInterval))
+            self.Log.info("Setting send interval: {}".format(
+                self.Protocol.SendInterval))
             self.SvcIntervalSet(self.Protocol.SendInterval)
         else:
             self.SvcIntervalSet(self.DefaultInterval)
@@ -133,11 +142,13 @@ class MessageExchange(MessageExchangeService):
         # If this message can be received
         if msg_spec_obj.Direction is not MessageSpecification.MSG_DIRECTION_SEND:
             # Create receive buffer for the messages of this type.
-            recv_buffer = MessageBuffer('recv', msg_spec_obj.Type, msg_spec_obj.Subtype,
+            recv_buffer = MessageBuffer('recv', msg_spec_obj.Type,
+                                        msg_spec_obj.Subtype,
                                         MessageExchange.RECV_BUFFER_SIZE)
         else:
             recv_buffer = None
-        self.Log.debug("Registering message specification: {}".format(msg_spec_obj))
+        self.Log.debug(
+            "Registering message specification: {}".format(msg_spec_obj))
         # Add the new mapping to the set of mappings.
         self.MessageMappings.add((msg_spec_obj.Type, msg_spec_obj.Subtype,
                                   msg_spec_obj.Url, recv_buffer))
@@ -149,8 +160,11 @@ class MessageExchange(MessageExchangeService):
             if msg_buf is not None:
                 msg_buf.Delete()
 
-    def MessagePut(self, msg_data: dict, msg_type: int,
-                   msg_subtype: int, msg_meta: dict = None) -> int:
+    def MessagePut(self,
+                   msg_data: dict,
+                   msg_type: int,
+                   msg_subtype: int,
+                   msg_meta: dict = None) -> int:
         """
         Put a single message in the send queue (FIFO) of the Message Exchange service.
         :param msg_data: Message data
@@ -169,11 +183,13 @@ class MessageExchange(MessageExchangeService):
         self.Log.debug("Serializing message: {}".format(msg_data))
         # Serialize the message.
         Message.Serialize(msg_data, msg_meta)
-        self.Log.debug("Serialized length: {}".format(len(Message.Stream().getvalue())))
+        self.Log.debug("Serialized length: {}".format(
+            len(Message.Stream().getvalue())))
 
         # Put the message in the send buffer, return the result value.
-        return self.SendMessageBuffer.MessagePutWithType(msg_type, msg_subtype,
-                                                         Message.Stream().getvalue())
+        return self.SendMessageBuffer.MessagePutWithType(
+            msg_type, msg_subtype,
+            Message.Stream().getvalue())
 
     def MessageGet(self, msg_type: int, msg_subtype: int) -> dict:
         """
@@ -200,15 +216,19 @@ class MessageExchange(MessageExchangeService):
                 if msg_tup is not None:
                     # Deserialize the message data and return it to the user.
                     msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
-                    return Message.Deserialize(msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len])
+                    return Message.Deserialize(
+                        msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len])
                 else:
-                    self.Log.info("No message of type %d.%d received." % (msg_type, msg_subtype))
+                    self.Log.info("No message of type %d.%d received." %
+                                  (msg_type, msg_subtype))
                     return {"error": -3}
             else:
-                self.Log.error("Message type %d.%d is specified as SEND." % (msg_type, msg_subtype))
+                self.Log.error("Message type %d.%d is specified as SEND." %
+                               (msg_type, msg_subtype))
                 return {"error": -2}
         else:
-            self.Log.error("No message mapping for message type %d.%d" % (msg_type, msg_subtype))
+            self.Log.error("No message mapping for message type %d.%d" %
+                           (msg_type, msg_subtype))
         return {"error": -1}
 
     def MessageMapFromType(self, msg_type, msg_subtype):
@@ -223,6 +243,7 @@ class MessageExchange(MessageExchangeService):
             if msg_map[MessageExchange.MSG_MAP_ROUTING] == route:
                 return msg_map
         return None
+
 
 # #### Private methods ####
 
@@ -241,14 +262,16 @@ class MessageExchange(MessageExchangeService):
             if msg_buf is not None:
                 msg_buf.MessagePut(msg)
         else:
-            data_ex.Log.warning("No message mapping defined for route %s" % route)
+            data_ex.Log.warning("No message mapping defined for route %s" %
+                                route)
 
     def _ProtocolSetup(self):
         self.Log.info("Connecting to server.")
         connected = False
         retries = 0
 
-        self.Protocol.Setup(MessageExchange._MsgRecvCallback, self.MessageMappings)
+        self.Protocol.Setup(MessageExchange._MsgRecvCallback,
+                            self.MessageMappings)
 
         # Try to connect to the server, if it fails retry after the specified
         # amount of retries an exception is raised.
@@ -259,14 +282,14 @@ class MessageExchange(MessageExchangeService):
                 self.Log.info("Connected.")
             except OSError:
                 retries += 1
-                self.Log.info("Failed to connect to server. Retries left %d"
-                      % (self.SendRetries - retries))
+                self.Log.info("Failed to connect to server. Retries left %d" %
+                              (self.SendRetries - retries))
                 utime.sleep(MessageExchange.CONNECT_RETRY_INTERVAL_SEC)
                 continue
-        
+
         # Update the Connection state subject
         self.ConnectionState.State = connected
-        
+
         if connected is False:
             self.Log.warning("Failed to connect after retries.")
             # TODO: Raise ServiceException
@@ -276,8 +299,9 @@ class MessageExchange(MessageExchangeService):
 
         # Get the message tuple, and extract the mapping.
         msg_tup = self.SendMessageBuffer.MessageGet()
-        msg_map = self.MessageMapFromType(msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
-                                          msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE])
+        msg_map = self.MessageMapFromType(
+            msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
+            msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE])
 
         # If a valid mapping was found, transmit the message.
         if msg_map is not None:
@@ -287,13 +311,15 @@ class MessageExchange(MessageExchangeService):
             msg_len = msg_tup[MessageBuffer.MSG_STRUCT_LEN]
 
             self.Log.info("Sending message of length {}".format(msg_len))
-            self.Protocol.Send(msg_map, msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len], msg_len)
+            self.Protocol.Send(
+                msg_map, msg_tup[MessageBuffer.MSG_STRUCT_DATA][:msg_len],
+                msg_len)
 
         else:
             # TODO: Raise an exception here. This should not happen.
             self.Log.error("No map defined for message type %d.%d" %
-                             (msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
-                              msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE]))
+                           (msg_tup[MessageBuffer.MSG_STRUCT_TYPE],
+                            msg_tup[MessageBuffer.MSG_STRUCT_SUBTYPE]))
 
     def _ReceiveMessage(self):
         self.Log.info("Checking for received messages.")

@@ -3,7 +3,6 @@ import ujson
 
 
 class JsonParser(MessageParser):
-
     def __init__(self):
         return
 

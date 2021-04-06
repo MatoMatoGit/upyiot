@@ -28,7 +28,8 @@ class HttpProtocol(MessagingProtocol):
         for msg_map in self.MessageMappings:
             resp = urequests.get(msg_map[MessageExchange.MSG_MAP_ROUTING])
             if resp.status_code > 200:
-                self.RecvCallback(resp.content, msg_map[MessageExchange.MSG_MAP_ROUTING])
+                self.RecvCallback(resp.content,
+                                  msg_map[MessageExchange.MSG_MAP_ROUTING])
             # TODO: Add error handling.
         return
 
@@ -37,4 +38,3 @@ class HttpProtocol(MessagingProtocol):
 
     def Disconnect(self):
         pass
-

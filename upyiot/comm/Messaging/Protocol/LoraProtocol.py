@@ -29,8 +29,10 @@ class LoRaWANParams:
     FCNT_DATA_FMT = "<I"
 
     def __init__(self, dir):
-        self.SessionSFile = StructFile.StructFile(dir + '/session', self.SESSION_DATA_FMT)
-        self.FrameCountSFile = StructFile.StructFile(dir + '/fcnt', self.FCNT_DATA_FMT)
+        self.SessionSFile = StructFile.StructFile(dir + '/session',
+                                                  self.SESSION_DATA_FMT)
+        self.FrameCountSFile = StructFile.StructFile(dir + '/fcnt',
+                                                     self.FCNT_DATA_FMT)
 
         try:
             self.FrameCounter = self.FrameCountSFile.ReadData(0)[0]
@@ -40,15 +42,15 @@ class LoRaWANParams:
             self.FrameCounter = 0
 
         try:
-            self.DevAddr, self.AppSKey, self.NwkSKey = self.SessionSFile.ReadData(0)
+            self.DevAddr, self.AppSKey, self.NwkSKey = self.SessionSFile.ReadData(
+                0)
             self.DevAddr = list(self.DevAddr)
             self.AppSKey = list(self.AppSKey)
             self.NwkSKey = list(self.NwkSKey)
 
             Log.info("LoRaWAN session info loaded.")
-            Log.debug("NwSKey: {} | AppSKey: {} | DevAddr: {}".format(self.NwkSKey,
-                                                                      self.AppSKey,
-                                                                      self.DevAddr))
+            Log.debug("NwSKey: {} | AppSKey: {} | DevAddr: {}".format(
+                self.NwkSKey, self.AppSKey, self.DevAddr))
         except TypeError:
             self.FrameCounter = 0
             self.DevAddr = None
@@ -70,7 +72,8 @@ class LoRaWANParams:
         self.NwkSKey = nwk_skey
         Log.info("Storing LoRaWAN session")
         self.SessionSFile.WriteData(0, bytearray(self.DevAddr),
-                                    bytearray(self.AppSKey), bytearray(self.NwkSKey))
+                                    bytearray(self.AppSKey),
+                                    bytearray(self.NwkSKey))
 
     def ResetSession(self):
         self.SessionSFile.Clear()
@@ -111,9 +114,12 @@ class LoRaWANSend(LoRa):
 
         Log.info("Frame counter: {}".format(self.Params.FrameCounter))
 
-        lorawan.create(MHDR.UNCONF_DATA_UP, {'devaddr': self.Params.DevAddr,
-                                             'fcnt': self.Params.FrameCounter,
-                                             'data': list(self.Payload)})
+        lorawan.create(
+            MHDR.UNCONF_DATA_UP, {
+                'devaddr': self.Params.DevAddr,
+                'fcnt': self.Params.FrameCounter,
+                'data': list(self.Payload)
+            })
 
         self.write_payload(lorawan.to_raw())
         self.set_mode(MODE.TX)
@@ -167,14 +173,21 @@ class LoRaWANReceive(LoRa):
 
 
 class LoRaWANOtaa(LoRa):
-    def __init__(self, devnonce, dev_eui, app_eui, app_key, params_obj, verbose=False):
+    def __init__(self,
+                 devnonce,
+                 dev_eui,
+                 app_eui,
+                 app_key,
+                 params_obj,
+                 verbose=False):
         self.DevNonce = devnonce
         self.Params = params_obj
         self.DevEui = dev_eui
         self.AppEui = app_eui
         self.AppKey = app_key
         self.Done = False
-        super(LoRaWANOtaa, self).__init__(verbose=verbose, do_calibration=True,
+        super(LoRaWANOtaa, self).__init__(verbose=verbose,
+                                          do_calibration=True,
                                           calibration_freq=868.1)
 
     def on_rx_done(self):
@@ -196,7 +209,8 @@ class LoRaWANOtaa(LoRa):
             apps_key = lorawan.derive_appskey(self.DevNonce)
 
             dev_addr = lorawan.get_devaddr()
-            Log.debug("NwSKey: {} | AppSKey: {} | DevAddr: {}".format(nwks_key, apps_key, dev_addr))
+            Log.debug("NwSKey: {} | AppSKey: {} | DevAddr: {}".format(
+                nwks_key, apps_key, dev_addr))
 
             self.Params.StoreSession(dev_addr, apps_key, nwks_key)
 
@@ -207,7 +221,7 @@ class LoRaWANOtaa(LoRa):
         Log.info("TxDone")
 
         self.set_mode(MODE.STDBY)
-        self.set_dio_mapping([0,0,0,0,0,0])
+        self.set_dio_mapping([0, 0, 0, 0, 0, 0])
         self.set_invert_iq(1)
         self.reset_ptr_rx()
         self.set_mode(MODE.RXCONT)
@@ -219,9 +233,12 @@ class LoRaWANOtaa(LoRa):
         Log.info("Sending LoRaWAN join request")
 
         lorawan = LoRaWAN.new(self.AppKey)
-        lorawan.create(MHDR.JOIN_REQUEST, {'deveui': self.DevEui,
-                                           'appeui': self.AppEui,
-                                           'devnonce': self.DevNonce})
+        lorawan.create(
+            MHDR.JOIN_REQUEST, {
+                'deveui': self.DevEui,
+                'appeui': self.AppEui,
+                'devnonce': self.DevNonce
+            })
 
         self.write_payload(lorawan.to_raw())
         self.set_mode(MODE.TX)
@@ -237,12 +254,17 @@ class LoRaWANOtaa(LoRa):
 class LoraProtocol(MessagingProtocol):
 
     LORA_MTU = const(51)
-    LORA_SEND_INTERVAL = const(10) # 600
+    LORA_SEND_INTERVAL = const(10)  # 600
 
     _Instance = None
 
-    def __init__(self, config, directory="/", send_interval=LORA_SEND_INTERVAL):
-        super().__init__(client=None, mtu=self.LORA_MTU, send_interval=send_interval)
+    def __init__(self,
+                 config,
+                 directory="/",
+                 send_interval=LORA_SEND_INTERVAL):
+        super().__init__(client=None,
+                         mtu=self.LORA_MTU,
+                         send_interval=send_interval)
         LoraProtocol._Instance = self
         self.AppKey = config["app_key"]
         self.DevEui = config["dev_eui"]
@@ -250,11 +272,10 @@ class LoraProtocol(MessagingProtocol):
         self.Config = config
         self.Lora = None
         self.Params = LoRaWANParams(directory)
-        Log.info("DevEUI: {} | AppEUI: {} | AppKey: {}".format(self.DevEui,
-                                                               self.AppEui,
-                                                               self.AppKey))
-        Log.info("MTU: {} bytes | Send interval: {} sec".format(self.Mtu,
-                                                                self.SendInterval))
+        Log.info("DevEUI: {} | AppEUI: {} | AppKey: {}".format(
+            self.DevEui, self.AppEui, self.AppKey))
+        Log.info("MTU: {} bytes | Send interval: {} sec".format(
+            self.Mtu, self.SendInterval))
         return
 
     def Setup(self, recv_callback, msg_mappings):
@@ -285,9 +306,12 @@ class LoraProtocol(MessagingProtocol):
         if self.Params.HasSession() is False:
             dev_nonce = [randrange(256), randrange(256)]
 
-            self.Lora = LoRaWANOtaa(dev_nonce, self.DevEui,
-                                    self.AppEui, self.AppKey,
-                                    self.Params, verbose=True)
+            self.Lora = LoRaWANOtaa(dev_nonce,
+                                    self.DevEui,
+                                    self.AppEui,
+                                    self.AppKey,
+                                    self.Params,
+                                    verbose=True)
             self._ConfigureLora()
             self.Lora.Start()
 
@@ -322,4 +346,3 @@ class LoraProtocol(MessagingProtocol):
         #self.Lora.set_agc_auto_on(1)
 
         Log.debug(str(self.Lora))
-

@@ -3,12 +3,11 @@ try:
 except:
     import json
 
-
-MSG_SPEC_KEY_TYPE       = "type"
-MSG_SPEC_KEY_SUBTYPE    = "stype"
-MSG_SPEC_KEY_DATA       = "data"
-MSG_SPEC_KEY_URL        = "url"
-MSG_SPEC_KEY_DIR        = "dir"
+MSG_SPEC_KEY_TYPE = "type"
+MSG_SPEC_KEY_SUBTYPE = "stype"
+MSG_SPEC_KEY_DATA = "data"
+MSG_SPEC_KEY_URL = "url"
+MSG_SPEC_KEY_DIR = "dir"
 
 
 class MessageSpecification:
@@ -22,7 +21,8 @@ class MessageSpecification:
 
     UrlFields = None
 
-    def __init__(self, msg_type, msg_subtype, msg_data_def, msg_url, direction):
+    def __init__(self, msg_type, msg_subtype, msg_data_def, msg_url,
+                 direction):
         self.Type = msg_type
         self.Subtype = msg_subtype
         self.DataDef = msg_data_def
@@ -47,8 +47,7 @@ class MessageSpecification:
             return url
         for key in MessageSpecification.UrlFields:
             if key in url:
-                url = url.replace(key,
-                                  MessageSpecification.UrlFields[key])
+                url = url.replace(key, MessageSpecification.UrlFields[key])
         return url
 
     @staticmethod

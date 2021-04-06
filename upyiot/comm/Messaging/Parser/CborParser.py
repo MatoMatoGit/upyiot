@@ -3,7 +3,6 @@ import cbor
 
 
 class CborParser(MessageParser):
-
     def __init__(self):
         return
 

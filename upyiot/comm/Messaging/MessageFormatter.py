@@ -6,7 +6,6 @@ Log = ExtLogging.Create("MsgFmt")
 
 
 class MessagePartSource:
-
     def __init__(self, msg_formatter_obj, key, complete_count):
         self.MsgFormatter = msg_formatter_obj
         self.Key = key
@@ -25,10 +24,9 @@ class MessagePartSource:
         if self.Count is self.CompleteCount:
             self.Count = 0
             self.MsgFormatter.MessagePartFinalize()
-            
+
 
 class MessagePartSink:
-
     def __init__(self, msg_formatter_obj, key, complete_count):
         self.MsgFormatter = msg_formatter_obj
         self.Key = key
@@ -50,7 +48,6 @@ class MessagePartSink:
 
 
 class MessagePartObserver(MessagePartSource, Observer):
-
     def __init__(self, msg_formatter_obj, key, complete_count):
         super().__init__(msg_formatter_obj, key, complete_count)
 
@@ -59,17 +56,16 @@ class MessagePartObserver(MessagePartSource, Observer):
 
 
 class MessagePartStream(MessagePartSource):
-
     def __init__(self, msg_formatter_obj, key, complete_count):
         super().__init__(msg_formatter_obj, key, complete_count)
 
     def write(self, data):
         self.Put(data)
-        
+
 
 class MessageFormatter:
-    SEND_ON_CHANGE      = const(0)
-    SEND_ON_COMPLETE    = const(1)
+    SEND_ON_CHANGE = const(0)
+    SEND_ON_COMPLETE = const(1)
 
     def __init__(self, msg_ex_obj, mode, msg_spec_obj, msg_meta_dict=None):
         self.MsgOut = msg_spec_obj.DataDef.copy()
