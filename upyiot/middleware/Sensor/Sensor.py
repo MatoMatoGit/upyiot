@@ -25,8 +25,8 @@ class Sensor(SensorService):
     FILE_SAMPLES_MAX        = const(9999)
     SAMPLE_FMT              = "<i"
       
-    def __init__(self, directory: str, name: str, filter_depth, sensor_driver_obj,
-                 samples_per_update=1, dec_round=True, store_data=True):
+    def __init__(self, directory: str, name: str, filter_depth: int, sensor_driver_obj,
+                 samples_per_update: int = 1, dec_round: bool = True, store_data: bool = True):
         """
 
         :param directory:
