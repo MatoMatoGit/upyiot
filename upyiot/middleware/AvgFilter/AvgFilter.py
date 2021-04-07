@@ -1,22 +1,19 @@
 class AvgFilter:
 
-    ##
-    # Constructor
-    # @param[in] Depth Filter Depth
-    #
     def __init__(self, depth, dec_round=True):
         self.Depth = depth
         self.Round = dec_round
         self.Values = []
 
-    ##
-    # Adds an input sample to the averaging filter.
-    # @param[in] sample Input sample
-    #
-    def Input(self, sample):
-        print("Input: {}".format(sample))
-        # Add the new sample to the filter values.
-        self.Values.append(sample)
+    def Input(self, value):
+        """
+        Adds an input value to the averaging filter.
+        :param value: Value to add.
+        :type value: number
+        """
+        print("Input: {}".format(value))
+        # Add the new value to the filter values.
+        self.Values.append(value)
         # If the filter has reached its maximum Depth,
         # pop the last item from the filter values.
         if len(self.Values) > self.Depth:
@@ -24,12 +21,12 @@ class AvgFilter:
             self.Values.pop(s)
         print("Filter ({}): {}".format(len(self.Values), self.Values))
 
-    ##
-    # Calculates the average of the current filter
-    # values.
-    # @retval average
-    #
     def Output(self):
+        """
+        Calculates the average of the current filter values.
+        :return: Average value.
+        :rtype: number
+        """
         filter_sum = 0
         # Calculate the sum of all filter values.
         for s in self.Values:
@@ -47,13 +44,11 @@ class AvgFilter:
         print("Output: {}".format(avg))
         return avg
 
-    ##
-    # Resets the filter values.
-    #
     def Reset(self):
-        print("Reset")
+        """
+        Resets the filter values.
+        """
         n = len(self.Values)
         for i in range(0, n):
-            print("Deleting item", i)
             self.Values.pop(i)
 
