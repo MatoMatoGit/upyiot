@@ -34,10 +34,25 @@ class test_Sensor(unittest.TestCase):
         test_Sensor.Sensor.SamplesDelete()
         return
 
+    def GetFiltered(self, filter, start_index):
+        print(start_index)
+        j = start_index
+        for i in range(0, filter.Depth):
+            print(i)
+            print(j)
+            filter.Input(self.Samples[j])
+            if j < (len(self.Samples) - 1):
+                j += 1
+            else:
+                j = 0
+
+        return filter.Output(), j
+
     def test_Read(self):
         sample = self.Sensor.Read()
+
         print(sample)
-        #self.assertEqual(sample, self.Samples[0])
+        self.assertEqual(sample, self.GetFiltered(self.Filter, 0)[0])
 
     def test_NewSampleObserverSingleSample(self):
         sample_observer = TestObserver.TestObserver()
@@ -85,17 +100,18 @@ class test_Sensor(unittest.TestCase):
         self.assertEqual(sample_observer.UpdateCount, int(len(self.Samples) / num_samples))
 
     def test_SamplesGet(self):
-        filtered = bytearray(len(self.Samples))
-        i = 0
-        for v in self.Samples:
-            self.Filter.Input(v)
-            filtered[i] = self.Filter.Output()
+        filtered = list()
+        sample_index = 0
+        for i in range(0, len(self.Samples)):
             sample = self.Sensor.Read()
-            self.assertEqual(filtered[i], sample)
-            i = i + 1
+            filtered_sample, sample_index = self.GetFiltered(self.Filter, sample_index)
+            filtered.append(filtered_sample)
+            self.assertEqual(filtered_sample, sample)
 
         cnt, buf = self.Sensor.SamplesGet()
+        print(cnt, buf)
         self.assertEqual(cnt, len(self.Samples))
+        self.assertEqual(self.Sensor.SamplesCount, 0)
 
         for i in range(0, cnt):
             self.assertEqual(filtered[i], buf[i])
