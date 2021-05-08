@@ -3,6 +3,7 @@ from upyiot.middleware.StructFile import StructFile
 from micropython import const
 import uos as os
 import sys
+import utime
 
 CRITICAL = 50
 ERROR    = 40
@@ -43,7 +44,7 @@ class LogFileManager:
     COUNT_DATA_LAST = const(1)
     COUNT_DATA_LINES = const(2)
 
-    def __init__(self, dir, prefix, file_limit):
+    def __init__(self, dir: str, prefix: str, file_limit: int):
         file_path = dir + self.COUNT_FILE_NAME
         self.SFile = StructFile.StructFile(file_path, self.COUNT_FILE_FMT)
         self.Last = 0
@@ -133,13 +134,14 @@ class LogFile:
 
 _stream = sys.stderr
 
-
 class Logger:
 
     level = NOTSET
 
-    def __init__(self, name):
+    def __init__(self, name: str, print_enabled: bool = True, timestamp_enabled: bool = False):
         self.name = name
+        self.PrintEnabled = print_enabled
+        self.TimestampEnabled = timestamp_enabled
 
     def _level_str(self, level):
         l = _level_dict.get(level)
@@ -161,7 +163,13 @@ class Logger:
             else:
                 log_entry += msg % args
 
-            print("%s" % log_entry)
+            if self.TimestampEnabled is True:
+                timestamp = "[%u] " % (utime.ticks_ms())
+                log_entry = timestamp + log_entry
+            
+            if self.PrintEnabled is True:
+                print("%s" % log_entry)
+            
             log_entry += '\n'
             _stream.write(log_entry)
 
@@ -220,14 +228,16 @@ class LoggerStream(object):
 
 class ExtLogger(Logger):
 
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self, name, print_enabled, timestamp_enabled):
+        super().__init__(name, print_enabled, timestamp_enabled)
 
 
 _level = INFO
 _loggers = {}
 _Stream = None
 _File = None
+_PrintEnabled = True
+_TimestampEnabled = False
 Mngr = None
 
 
@@ -240,10 +250,15 @@ def _ConfigBasic(level=INFO, stream=None):
     print("[ExtLog] Configured.")
 
 
-def ConfigGlobal(level=INFO, stream=None, dir=None, file_prefix=None, line_limit=1000, file_limit=10):
+def ConfigGlobal(level=INFO, stream: str = None, dir: str = None, file_prefix: str = "", line_limit: int = 1000, file_limit: int = 10, print_enabled: bool = True, timestamp_enabled: bool = False):
     global _Stream
     global _File
+    global _PrintEnabled
+    global _TimestampEnabled
     global Mngr
+
+    _PrintEnabled = print_enabled
+    _TimestampEnabled = timestamp_enabled
 
     if dir is not None:
         if Mngr is None:
@@ -265,10 +280,13 @@ def Stop():
 
 
 def Create(name):
+    global _PrintEnabled
+    global _TimestampEnabled
+
     if name in _loggers:
         return _loggers[name]
     print("[ExtLog] Creating new ExtLogger for \"{}\"".format(name))
-    logger = ExtLogger(name)
+    logger = ExtLogger(name, _PrintEnabled, _TimestampEnabled)
     _loggers[name] = logger
     return logger
 
