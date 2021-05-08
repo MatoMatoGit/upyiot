@@ -17,10 +17,8 @@ class Mcp9700Temp(SensorBase):
         self.TempAdc.width(ADC.WIDTH_10BIT)
 
     def Read(self):
-        self.TempEn.Enable()
         val = self.TempAdc.read()
-        val = self._RawToCelsius(val)
-        self.TempEn.Disable()
+        # val = self._RawToCelsius(val)
         return val
 
     def Enable(self):
