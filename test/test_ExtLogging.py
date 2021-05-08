@@ -43,7 +43,8 @@ class test_ExtLogging(unittest.TestCase):
         line_limit = 10
 
         ExtLogging.ConfigGlobal(level=ExtLogging.INFO, stream=TestStream(), dir=self.DIR,
-                                file_prefix=file, line_limit=line_limit, file_limit=file_limit)
+                                file_prefix=file, line_limit=line_limit, file_limit=file_limit,
+                                print_enabled=True, timestamp_enabled=True)
 
         log = ExtLogging.Create(name)
         print(log)
@@ -73,6 +74,7 @@ class test_ExtLogging(unittest.TestCase):
                 self.assertFalse(exc_occurred)
                 self.assertTrue(text in line)
                 self.assertTrue(name in line)
+                self.assertTrue("[" in line)
 
             f.close()
 
