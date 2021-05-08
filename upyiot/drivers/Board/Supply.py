@@ -22,24 +22,24 @@ class Supply:
 
     def Enable(self):
         self.EnCount += 1
-        print("[Supply] Enable count: {}".format(self.EnCount))
+        # print("[Supply] Enable count: {}".format(self.EnCount))
 
         if self.EnCount is 1:
-            print("[Supply] Enabling supply")
+            # print("[Supply] Enabling supply")
             self.EnPin.on()
             utime.sleep_ms(self.SettleTime)
         return 0
 
     def Disable(self):
         if self.EnCount is 0:
-            print("[Supply] Supply cannot be disabled")
+            # print("[Supply] Supply cannot be disabled")
             return -1
 
         self.EnCount -= 1
-        print("[Supply] Enable count: {}".format(self.EnCount))
+        # print("[Supply] Enable count: {}".format(self.EnCount))
 
         if self.EnCount is 0:
-            print("[Supply] Disabling supply")
+            # print("[Supply] Disabling supply")
             self.EnPin.off()
             utime.sleep_ms(self.SettleTime)
 
