@@ -250,7 +250,14 @@ def _ConfigBasic(level=INFO, stream=None):
     print("[ExtLog] Configured.")
 
 
-def ConfigGlobal(level=INFO, stream: str = None, dir: str = None, file_prefix: str = "", line_limit: int = 1000, file_limit: int = 10, print_enabled: bool = True, timestamp_enabled: bool = False):
+def ConfigGlobal(level=INFO, 
+                 stream: str = None, 
+                 dir: str = None, 
+                 file_prefix: str = "", 
+                 line_limit: int = 1000, 
+                 file_limit: int = 10, 
+                 print_enabled: bool = True, 
+                 timestamp_enabled: bool = False):
     global _Stream
     global _File
     global _PrintEnabled
