@@ -7,12 +7,9 @@ class VoltageSensor(SensorBase):
 
     RANGE_MAX = const(1024)
 
-    VoltageToAttnMap = {
-        1.0: ADC.ATTN_0DB,
-        1.34: ADC.ATTN_2_5DB,
-        2.0: ADC.ATTN_6DB,
-        3.6: ADC.ATTN_11DB
-    }
+    NUM_VOLTAGES = const(4)
+    VoltageList = [1.0, 1.34, 2.0, 3.6]
+    AttenuationList = [ADC.ATTN_0DB, ADC.ATTN_2_5DB, ADC.ATTN_6DB, ADC.ATTN_11DB]
 
     def __init__(self, pin_nr: int, en_supply_obj=None, max_voltage: float = 3.3):
         self.VoltAdc = ADC(Pin(pin_nr))
@@ -45,7 +42,8 @@ class VoltageSensor(SensorBase):
             self.Supply.Disable()
 
     def _VoltageToAttenuation(self, voltage: float):
-        for v in self.VoltageToAttnMap.keys():
-            if voltage <= v:
-                return self.VoltageToAttnMap[v]
+        for i in range(0, self.NUM_VOLTAGES):
+            if voltage <= self.VoltageList[i]:
+                print("[VoltSensor] Selected attenuation {}, max voltage {}".format(self.AttenuationList[i], self.VoltageList[i]))
+                return self.AttenuationList[i]
         raise Exception("Voltage too high for ADC input. No attenuation level found.")
