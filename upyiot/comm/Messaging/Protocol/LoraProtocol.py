@@ -28,10 +28,12 @@ class LoRaWANParams:
     SESSION_DATA_FMT = "<4s16s16s"  # DevAddr, AppSKey, NwkSKey
     FCNT_DATA_FMT = "<I"
 
-    def __init__(self, dir):
-        self.SessionSFile = StructFile.StructFile(dir + '/session',
+    def __init__(self, dir: str, dev_eui: str):
+        # The session file is written once when a the device registers successfully.
+        self.SessionSFile = StructFile.StructFile(dir + '/session_' + dev_eui,
                                                   self.SESSION_DATA_FMT)
-        self.FrameCountSFile = StructFile.StructFile(dir + '/fcnt',
+        # The frame count file is written whenever an uplink message is sent.
+        self.FrameCountSFile = StructFile.StructFile(dir + '/fcnt_' + dev_eui,
                                                      self.FCNT_DATA_FMT)
 
         try:
@@ -42,8 +44,7 @@ class LoRaWANParams:
             self.FrameCounter = 0
 
         try:
-            self.DevAddr, self.AppSKey, self.NwkSKey = self.SessionSFile.ReadData(
-                0)
+            self.DevAddr, self.AppSKey, self.NwkSKey = self.SessionSFile.ReadData(0)
             self.DevAddr = list(self.DevAddr)
             self.AppSKey = list(self.AppSKey)
             self.NwkSKey = list(self.NwkSKey)
@@ -271,7 +272,7 @@ class LoraProtocol(MessagingProtocol):
         self.AppEui = config["app_eui"]
         self.Config = config
         self.Lora = None
-        self.Params = LoRaWANParams(directory)
+        self.Params = LoRaWANParams(directory, config["dev_eui_str"])
         Log.info("DevEUI: {} | AppEUI: {} | AppKey: {}".format(
             self.DevEui, self.AppEui, self.AppKey))
         Log.info("MTU: {} bytes | Send interval: {} sec".format(
