@@ -26,7 +26,11 @@ class HttpProtocol(MessagingProtocol):
         decoded = payload.decode("utf-8")
         print(type(payload), type(decoded))
         Log.info("POST to {}: {}".format(route, decoded))
-        urequests.post(msg_map[MessageExchange.MSG_MAP_ROUTING], data=decoded)
+        headers = {
+            'Content-type':'application/json',
+            'Accept':'application/json'
+        }
+        urequests.post(msg_map[MessageExchange.MSG_MAP_ROUTING], json=decoded, headers=headers)
         return
 
     def Receive(self):
