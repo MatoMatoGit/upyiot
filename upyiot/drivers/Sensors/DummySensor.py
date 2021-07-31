@@ -3,7 +3,7 @@ from upyiot.drivers.Sensors.SensorBase import SensorBase
 
 class DummySensor(SensorBase):
     
-    def __init__(self, samples):
+    def __init__(self, samples: list):
         self.Samples = samples
         self.NumSamples = len(samples)
         self.Index = 0
