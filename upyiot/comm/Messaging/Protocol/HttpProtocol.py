@@ -1,8 +1,10 @@
 from upyiot.comm.Messaging.Protocol.MessagingProtocol import MessagingProtocol
 from upyiot.comm.Messaging.MessageExchange import MessageExchange
+from upyiot.system.ExtLogging import ExtLogging
 from micropython import const
 import urequests
 
+Log = ExtLogging.Create("HttpProto")
 
 class HttpProtocol(MessagingProtocol):
 
@@ -11,7 +13,6 @@ class HttpProtocol(MessagingProtocol):
     _Instance = None
 
     def __init__(self):
-        # TODO: Add logging
         super().__init__(None, self.HTTP_MTU)
         HttpProtocol._Instance = self
         return
@@ -21,15 +22,19 @@ class HttpProtocol(MessagingProtocol):
         return
 
     def Send(self, msg_map, payload, size):
+        route = msg_map[MessageExchange.MSG_MAP_ROUTING]
+        Log.info("POST to {}: {}".format(route, payload))
         urequests.post(msg_map[MessageExchange.MSG_MAP_ROUTING], data=payload)
         return
 
     def Receive(self):
         for msg_map in self.MessageMappings:
-            resp = urequests.get(msg_map[MessageExchange.MSG_MAP_ROUTING])
+            route = msg_map[MessageExchange.MSG_MAP_ROUTING]
+            Log.info("GET from {}: {}".format(route))
+            resp = urequests.get()
             if resp.status_code > 200:
                 self.RecvCallback(resp.content,
-                                  msg_map[MessageExchange.MSG_MAP_ROUTING])
+                                  route)
             # TODO: Add error handling.
         return
 
