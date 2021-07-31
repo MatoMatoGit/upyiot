@@ -1,4 +1,8 @@
-import machine
+try:
+    import machine
+except ImportError:
+    machine = None
+
 import ubinascii
 
 _DeviceId = None
