@@ -23,7 +23,7 @@ class HttpProtocol(MessagingProtocol):
 
     def Send(self, msg_map, payload, size):
         route = msg_map[MessageExchange.MSG_MAP_ROUTING]
-        Log.info("POST to {}: {}".format(route, payload))
+        Log.info("POST to {}: {}".format(route, payload.decode("utf-8")))
         urequests.post(msg_map[MessageExchange.MSG_MAP_ROUTING], data=payload.decode("utf-8"))
         return
 
