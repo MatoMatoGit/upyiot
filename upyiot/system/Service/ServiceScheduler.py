@@ -1,7 +1,6 @@
 from upyiot.system.Service.Service import Service
 from upyiot.system.Service.Service import ServiceExceptionSuspend
 from upyiot.system.Service.Service import ServiceException
-from upyiot.drivers.Sleep.MachineDeepSleep import MachineDeepSleep
 from upyiot.middleware.StructFile.StructFile import StructFile
 from upyiot.system.ExtLogging import ExtLogging
 
@@ -171,6 +170,7 @@ class ServiceScheduler:
         self.State = self.SCHED_STATE_STOPPED
 
         if self.DeepSleep is None:
+            from upyiot.drivers.Sleep.MachineDeepSleep import MachineDeepSleep
             self.DeepSleep = MachineDeepSleep()
 
         return
