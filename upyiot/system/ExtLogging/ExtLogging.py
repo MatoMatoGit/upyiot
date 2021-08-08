@@ -128,11 +128,14 @@ class LogFile:
         try:
             self.File.write(string)
         except ValueError:
-            print("[LogFile] ERROR: Cannot write to file")
+            print("[LogFile] ERROR: Cannot write to closed file")
 
     def close(self):
         self.Mngr.Sync()
-        self.File.close()
+        try:
+            self.File.close()
+        except ValueError:
+            print("[LogFile] ERROR: Cannot close closed file")        
 
 
 _stream = sys.stderr
