@@ -30,7 +30,10 @@ class HttpProtocol(MessagingProtocol):
             'Content-type':'application/json',
             'Accept':'application/json'
         }
-        urequests.post(msg_map[MessageExchange.MSG_MAP_ROUTING], json=decoded, headers=headers)
+        try:
+            urequests.post(msg_map[MessageExchange.MSG_MAP_ROUTING], json=decoded, headers=headers)
+        except OSError:
+            Log.error("POST failed")
         return
 
     def Receive(self):
