@@ -121,11 +121,14 @@ class LogFile:
 
     def write(self, string):
         if self.Mngr.LineCount >= self.LineLimit:
-            print("[LogFileMngr] Line limit reached")
+            print("[LogFile] Line limit reached")
             self.File = self.Mngr.New()
 
         self.Mngr.LineCount += 1
-        self.File.write(string)
+        try:
+            self.File.write(string)
+        except ValueError:
+            print("[LogFile] ERROR: Cannot write to file")
 
     def close(self):
         self.Mngr.Sync()
