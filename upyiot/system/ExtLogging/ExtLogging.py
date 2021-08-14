@@ -81,7 +81,10 @@ class LogFileManager:
         self.SFile.WriteData(0, self.First, self.Last, self.LineCount)
 
     def New(self):
-        self.File.close()
+        try:
+            self.File.close()
+        except ValueError:
+            print("[LogFileMngr] ERROR: Cannot close closed file")
 
         self.Last += 1
 
