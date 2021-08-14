@@ -294,6 +294,7 @@ class StructFile(object):
             Log.error("Could not access Struct file: {}".format(ferr))
 
     def _FileReadUserMetaStruct(self):
+        f = None
         try:
             f = open(self.FilePath, 'r')
 
@@ -308,6 +309,7 @@ class StructFile(object):
             return None
 
     def _FileWriteUserMetaStruct(self, meta_struct):
+        f = None
         try:
             f = open(self.FilePath, 'r+')
 
@@ -323,6 +325,7 @@ class StructFile(object):
     def _FileWriteStruct(self, index, struct):
         if index < 0:
             return None
+        f = None
         try:
             f = open(self.FilePath, 'r+') 
             offset = self.IndexToOffset(index)
@@ -338,10 +341,9 @@ class StructFile(object):
 
     def _FileReadStruct(self, index):
         offset = self.IndexToOffset(index)
-
+        f = None
         try:
             f = open(self.FilePath, 'r') 
-            
             f.seek(offset)
             Log.debug("Reading struct at offset: {}".format(f.tell()))
             struct = f.read(self.DataSize)
@@ -354,6 +356,7 @@ class StructFile(object):
     
     def _FileCreate(self):
         Log.info("Creating Struct file '{}'.".format(self.FilePath))
+        f = None
         try:
             f = open(self.FilePath, 'r')
             f.close()
