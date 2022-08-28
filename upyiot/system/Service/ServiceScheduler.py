@@ -1,3 +1,4 @@
+import sys
 from upyiot.system.Service.Service import Service
 from upyiot.system.Service.Service import ServiceExceptionSuspend
 from upyiot.system.Service.Service import ServiceException
@@ -188,7 +189,9 @@ class ServiceScheduler:
                 service.SvcDeinit()
                 service.SvcStateSet(Service.STATE_UNINITIALIZED)
                 Log.debug("Deregistered service: {}".format(service.SvcName))
-        except:
+        except Exception as e:
+            Log.error("Exception occurred while deregistering service {}: {}".format(service.SvcName, e))
+            sys.print_exception(e)
             service.SvcStateSet(Service.STATE_DISABLED)
             res = -1
         finally:
@@ -379,6 +382,8 @@ class ServiceScheduler:
         except ServiceException:
             Log.error("Error occurred, disabling service.")
             service.SvcStateSet(Service.STATE_DISABLED)
+        except Exception as e:
+            sys.print_exception(e)
 
         if service.SvcState is not Service.STATE_DISABLED:
             # Update the last run timestamp.
@@ -394,7 +399,9 @@ class ServiceScheduler:
                 res = 0
             else:
                 res = 1
-        except:
+        except Exception as e:
+            Log.error("Exception occurred while initializing service {}: {}".format(service.SvcName, e))
+            sys.print_exception(e)
             service.SvcStateSet(Service.STATE_DISABLED)
             res = -1
 

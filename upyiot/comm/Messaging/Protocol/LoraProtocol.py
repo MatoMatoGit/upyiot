@@ -241,9 +241,12 @@ class LoRaWANOtaa(LoRa):
                 'devnonce': self.DevNonce
             })
 
+        Log.debug("Writing payload")
         self.write_payload(lorawan.to_raw())
+        Log.debug("Setting LoRa TX mode")
         self.set_mode(MODE.TX)
 
+        # Log.debug("TX done: {}, Timeout: {}".format(self.Done, timeout))
         timeout = 0
         while self.Done is False and timeout < RX_TIMEOUT_SEC:
             sleep(TIMEOUT_POLL_SEC)
@@ -346,4 +349,4 @@ class LoraProtocol(MessagingProtocol):
         self.Lora.set_detection_threshold(0x0A)  # 0x0A for SF7-SF12
         #self.Lora.set_agc_auto_on(1)
 
-        Log.debug(str(self.Lora))
+        # Log.debug(str(self.Lora))
